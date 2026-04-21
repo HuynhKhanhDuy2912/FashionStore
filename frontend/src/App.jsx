@@ -1,11 +1,23 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import AdminLayout from "./components/AdminLayout.jsx";
+import AdminRoute from "./components/AdminRoute.jsx";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage.jsx";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage.jsx";
+import AdminOutfitsPage from "./pages/admin/AdminOutfitsPage.jsx";
+import AdminProductImagesPage from "./pages/admin/AdminProductImagesPage.jsx";
+import AdminProductsPage from "./pages/admin/AdminProductsPage.jsx";
+import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
+import AdminVariantsPage from "./pages/admin/AdminVariantsPage.jsx";
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import OrdersPage from "./pages/OrdersPage.jsx";
+import ProductDetailPage from "./pages/ProductDetailPage.jsx";
 import ProductsPage from "./pages/ProductsPage.jsx";
 import RecommendationsPage from "./pages/RecommendationsPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
@@ -16,10 +28,11 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/products" replace />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:productId" element={<ProductDetailPage />} />
           <Route
             path="/recommendations"
             element={
@@ -60,6 +73,23 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="categories" element={<AdminCategoriesPage />} />
+            <Route path="products" element={<AdminProductsPage />} />
+            <Route path="product-images" element={<AdminProductImagesPage />} />
+            <Route path="variants" element={<AdminVariantsPage />} />
+            <Route path="outfits" element={<AdminOutfitsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="orders" element={<AdminOrdersPage />} />
+          </Route>
         </Route>
       </Routes>
     </AuthProvider>

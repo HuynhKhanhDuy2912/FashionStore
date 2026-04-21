@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function ProductCard({
   product,
   onAddToWishlist,
@@ -11,12 +13,16 @@ export default function ProductCard({
   return (
     <article className="card product-card">
       <div className="product-image-frame">
-        <img src={previewImage} alt={product.name} className="product-image" />
+        <Link to={`/products/${product._id}`}>
+          <img src={previewImage} alt={product.name} className="product-image" />
+        </Link>
         <div className="card-chip">{product.style}</div>
       </div>
       <div className="product-copy">
         <div className="product-heading">
-          <h3>{product.name}</h3>
+          <h3>
+            <Link to={`/products/${product._id}`}>{product.name}</Link>
+          </h3>
           <p className="price">{product.price?.toLocaleString("vi-VN")} VND</p>
         </div>
         <p>{product.description}</p>

@@ -3,8 +3,11 @@ import { createCrudControllers } from "./base.controller.js";
 import {
   cancelOrder,
   createOrderFromCart,
+  getAdminOrderDetail,
+  getAdminOrders,
   getMyOrders,
-  getOrderDetail
+  getOrderDetail,
+  updateAdminOrderStatus
 } from "../services/order.service.js";
 
 const baseOrderController = createCrudControllers(Order, {
@@ -84,10 +87,68 @@ export const cancelMyOrder = async (req, res) => {
   }
 };
 
+export const getAdminOrderList = async (_req, res) => {
+  try {
+    const orders = await getAdminOrders();
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin orders fetched successfully",
+      data: orders
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getAdminOrderById = async (req, res) => {
+  try {
+    const order = await getAdminOrderDetail(req.params.orderId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin order fetched successfully",
+      data: order
+    });
+  } catch (error) {
+    const statusCode = error.message === "Order not found" ? 404 : 400;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const updateAdminOrder = async (req, res) => {
+  try {
+    const order = await updateAdminOrderStatus(req.params.orderId, req.body.status);
+
+    return res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: order
+    });
+  } catch (error) {
+    const statusCode = error.message === "Order not found" ? 404 : 400;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 export default {
   ...baseOrderController,
   checkoutMyOrder,
   getMyOrderList,
   getMyOrderById,
-  cancelMyOrder
+  cancelMyOrder,
+  getAdminOrderList,
+  getAdminOrderById,
+  updateAdminOrder
 };
