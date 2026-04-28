@@ -4,6 +4,27 @@ import { Home, History, IdCard, LogOut, Search, User, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 
+const ROWS_PER_COLUMN = 5;
+
+function getParentId(category) {
+  if (!category?.parentId) {
+    return null;
+  }
+  return typeof category.parentId === "string" ? category.parentId : category.parentId._id || null;
+}
+
+function sortByCreatedAt(items) {
+  return [...items].sort((left, right) => new Date(left.createdAt || 0) - new Date(right.createdAt || 0));
+}
+
+function chunkArray(items, chunkSize) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
 export default function Layout() {
   const { isAuthenticated, user, logout } = useAuth();
   const location = useLocation();
@@ -27,7 +48,7 @@ export default function Layout() {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    apiRequest("/categories")
+    apiRequest("/categories?limit=500")
       .then((response) => setCategories(response.data || []))
       .catch(() => {});
   }, []);
@@ -43,11 +64,40 @@ export default function Layout() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const rootCategories = categories.filter((category) => !category.parentId);
-  const childrenOf = (rootId) =>
-    categories.filter((category) => category.parentId?._id === rootId);
-  const activeMegaRoot = rootCategories.find((root) => root._id === activeMegaMenu);
-  const activeChildren = activeMegaRoot ? childrenOf(activeMegaRoot._id) : [];
+  const rootCategories = useMemo(
+    () => sortByCreatedAt(categories.filter((category) => !getParentId(category))),
+    [categories]
+  );
+
+  const childrenOf = (parentId) =>
+    sortByCreatedAt(categories.filter((category) => getParentId(category) === parentId));
+
+  const activeMegaRoot = rootCategories.find((root) => root._id === activeMegaMenu) || null;
+  const level2Categories = activeMegaRoot ? childrenOf(activeMegaRoot._id) : [];
+
+  const menuColumns = useMemo(() => {
+    if (!activeMegaRoot) {
+      return [];
+    }
+
+    const groupedByLevel3 = level2Categories.some((group) => childrenOf(group._id).length > 0);
+
+    if (!groupedByLevel3) {
+      return chunkArray(level2Categories, ROWS_PER_COLUMN).slice(0, 3).map((rows, colIndex) => ({
+        key: `flat-col-${colIndex}`,
+        rows: rows.map((row) => ({ ...row, isGroupAll: false }))
+      }));
+    }
+
+    return level2Categories.slice(0, 3).map((group) => {
+      const level3 = childrenOf(group._id);
+      const rows = [{ ...group, isGroupAll: true }, ...level3].slice(0, ROWS_PER_COLUMN);
+      return {
+        key: group._id,
+        rows
+      };
+    });
+  }, [activeMegaRoot, level2Categories]);
 
   const handleCategoryClick = (categoryId) => {
     setActiveMegaMenu(null);
@@ -64,8 +114,6 @@ export default function Layout() {
 
     setActiveMegaMenu((current) => (current === rootId ? null : rootId));
   };
-
-  const topHighlights = activeChildren.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-white font-sans text-black">
@@ -91,9 +139,7 @@ export default function Layout() {
                     end
                     className={({ isActive }) =>
                       `px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                        isActive
-                          ? "border-b-2 border-black text-black"
-                          : "text-gray-500 hover:text-black"
+                        isActive ? "border-b-2 border-black text-black" : "text-gray-500 hover:text-black"
                       }`
                     }
                   >
@@ -108,9 +154,7 @@ export default function Layout() {
                         type="button"
                         onClick={() => toggleMegaMenu(root._id)}
                         className={`border-none bg-transparent px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                          isActive
-                            ? "border-b-2 border-black text-black"
-                            : "text-gray-500 hover:text-black"
+                          isActive ? "border-b-2 border-black text-black" : "text-gray-500 hover:text-black"
                         }`}
                       >
                         {root.name}
@@ -124,9 +168,7 @@ export default function Layout() {
                         to="/recommendations"
                         className={({ isActive }) =>
                           `px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                            isActive
-                              ? "border-b-2 border-black text-black"
-                              : "text-gray-500 hover:text-black"
+                            isActive ? "border-b-2 border-black text-black" : "text-gray-500 hover:text-black"
                           }`
                         }
                       >
@@ -136,9 +178,7 @@ export default function Layout() {
                         to="/wishlist"
                         className={({ isActive }) =>
                           `px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                            isActive
-                              ? "border-b-2 border-black text-black"
-                              : "text-gray-500 hover:text-black"
+                            isActive ? "border-b-2 border-black text-black" : "text-gray-500 hover:text-black"
                           }`
                         }
                       >
@@ -243,11 +283,7 @@ export default function Layout() {
                 )}
 
                 {isAuthenticated ? (
-                  <NavLink
-                    to="/cart"
-                    className="text-black transition hover:text-gray-500"
-                    aria-label="Giỏ hàng"
-                  >
+                  <NavLink to="/cart" className="text-black transition hover:text-gray-500" aria-label="Giỏ hàng">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -264,10 +300,7 @@ export default function Layout() {
 
           {activeMegaMenu && activeMegaRoot ? (
             <>
-              <div
-                className="fixed inset-0 z-40 bg-black/30"
-                onClick={() => setActiveMegaMenu(null)}
-              />
+              <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setActiveMegaMenu(null)} />
 
               <div className="fixed left-0 right-0 top-[89px] z-50 max-h-[82vh] overflow-y-auto border-t border-gray-200 bg-white shadow-xl">
                 <div className="mx-auto max-w-[1280px] px-6 py-8 lg:px-10">
@@ -295,71 +328,37 @@ export default function Layout() {
                     </button>
                   </div>
 
-                  {topHighlights.length > 0 ? (
-                    <div className="mb-8 grid gap-4 border-b border-gray-100 pb-8 md:grid-cols-2 xl:grid-cols-4">
-                      {topHighlights.map((child) => (
-                        <button
-                          key={`highlight-${child._id}`}
-                          type="button"
-                          onClick={() => handleCategoryClick(child._id)}
-                          className="group grid gap-3 border border-gray-200 bg-white p-4 text-left transition hover:border-black"
-                        >
-                          <div className="aspect-[4/2.3] overflow-hidden bg-gray-100">
-                            {child.imageUrl ? (
-                              <img
-                                src={child.imageUrl}
-                                alt={child.name}
-                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="grid h-full w-full place-items-center text-[11px] font-bold uppercase tracking-[0.25em] text-gray-300">
-                                No image
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
-                              Nổi bật
-                            </p>
-                            <p className="mt-2 text-sm font-bold uppercase tracking-widest text-black">
-                              {child.name}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {activeChildren.map((child) => (
-                      <button
-                        key={child._id}
-                        type="button"
-                        onClick={() => handleCategoryClick(child._id)}
-                        className="group flex items-center gap-4 rounded-sm border border-transparent px-3 py-3 text-left transition hover:border-gray-200 hover:bg-gray-50"
-                      >
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border border-gray-200 bg-white">
-                          {child.imageUrl ? (
-                            <img
-                              src={child.imageUrl}
-                              alt={child.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="grid h-full w-full place-items-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
-                              IMG
+                  <div className="grid gap-x-10 gap-y-6 lg:grid-cols-3">
+                    {menuColumns.map((column) => (
+                      <div key={column.key} className="grid content-start gap-1">
+                        {column.rows.map((item) => (
+                          <button
+                            key={item._id}
+                            type="button"
+                            onClick={() => handleCategoryClick(item._id)}
+                            className="group flex items-center gap-4 bg-white py-1 text-left transition"
+                          >
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-white">
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="grid h-full w-full place-items-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-200">
+                                  IMG
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium uppercase tracking-widest text-gray-700 transition group-hover:text-black">
-                            {child.name}
-                          </p>
-                          <p className="mt-1 text-[11px] uppercase tracking-[0.22em] text-gray-400">
-                            Danh mục con
-                          </p>
-                        </div>
-                      </button>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium uppercase tracking-[0.12em] text-gray-700 transition group-hover:text-black">
+                                {item.isGroupAll ? `Tất cả ${item.name}` : item.name}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     ))}
                   </div>
 
@@ -394,7 +393,7 @@ export default function Layout() {
 
       {!isAdminView ? (
         <footer className="mt-16 border-t border-gray-100 bg-white py-12">
-          <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 lg:px-8 md:grid-cols-4">
+          <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-8 px-4 md:grid-cols-4 lg:px-8">
             <div>
               <h3 className="mb-4 text-lg font-extrabold uppercase tracking-[0.1em]">FashionStore</h3>
               <p className="mb-4 text-sm leading-relaxed text-gray-500">
@@ -420,11 +419,7 @@ export default function Layout() {
             <div>
               <h4 className="mb-4 text-sm font-bold uppercase tracking-widest">Đăng ký nhận tin</h4>
               <div className="flex border-b border-black pb-2">
-                <input
-                  type="email"
-                  placeholder="Nhập email của bạn"
-                  className="w-full bg-transparent text-sm outline-none"
-                />
+                <input type="email" placeholder="Nhập email của bạn" className="w-full bg-transparent text-sm outline-none" />
                 <button className="text-xs font-bold uppercase hover:text-gray-500">Gửi</button>
               </div>
             </div>

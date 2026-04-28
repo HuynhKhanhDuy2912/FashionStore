@@ -12,27 +12,25 @@ const remove = async (req, res) => {
     const category = await Category.findById(req.params.id).populate("parentId", "name");
 
     if (!category) {
-      return res.status(404).json({ success: false, message: "Danh mục không tồn tại" });
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
     }
 
-    // Nếu là danh mục gốc: kiểm tra có danh mục con không
-    const isRoot = !category.parentId;
-    if (isRoot) {
-      const childCount = await Category.countDocuments({ parentId: category._id });
-      if (childCount > 0) {
-        return res.status(400).json({
-          success: false,
-          message: `Không thể xóa danh mục gốc "${category.name}" vì đang có ${childCount} danh mục con. Hãy xóa danh mục con trước.`
-        });
-      }
+    const childCount = await Category.countDocuments({ parentId: category._id });
+    if (childCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete category "${category.name}" because it still has ${childCount} child categories`
+      });
     }
 
-    // Kiểm tra có sản phẩm nào thuộc danh mục này không
     const productCount = await Product.countDocuments({ categoryId: category._id });
     if (productCount > 0) {
       return res.status(400).json({
         success: false,
-        message: `Không thể xóa danh mục "${category.name}" vì đang có ${productCount} sản phẩm. Hãy chuyển hoặc xóa các sản phẩm trước.`
+        message: `Cannot delete category "${category.name}" because it is used by ${productCount} products`
       });
     }
 
@@ -40,11 +38,14 @@ const remove = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Đã xóa danh mục "${category.name}"`,
+      message: `Category "${category.name}" deleted`,
       data: category
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 

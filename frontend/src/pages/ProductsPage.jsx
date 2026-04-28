@@ -4,17 +4,54 @@ import PageHeader from "../components/PageHeader.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
-import {
-  attachVariantsToProducts,
-  buildCatalogFilters,
-  filterProducts
-} from "../lib/catalog.js";
+import { attachVariantsToProducts, buildCatalogFilters, filterProducts } from "../lib/catalog.js";
+
+function getDirectParentId(category) {
+  if (!category?.parentId) {
+    return null;
+  }
+
+  return typeof category.parentId === "string" ? category.parentId : category.parentId._id || null;
+}
+
+function getProductCategoryId(product) {
+  if (!product?.categoryId) {
+    return null;
+  }
+
+  return typeof product.categoryId === "string" ? product.categoryId : product.categoryId._id || null;
+}
+
+function collectCategoryScope(categories, rootCategoryId) {
+  if (!rootCategoryId) {
+    return new Set();
+  }
+
+  const scope = new Set([rootCategoryId]);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    categories.forEach((category) => {
+      const categoryId = category._id;
+      const parentId = getDirectParentId(category);
+
+      if (!scope.has(categoryId) && parentId && scope.has(parentId)) {
+        scope.add(categoryId);
+        changed = true;
+      }
+    });
+  }
+
+  return scope;
+}
 
 export default function ProductsPage() {
   const { token } = useAuth();
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
@@ -24,16 +61,20 @@ export default function ProductsPage() {
     occasion: ""
   });
 
+  const selectedCategoryId = searchParams.get("categoryId") || "";
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [productResponse, variantResponse] = await Promise.all([
-          apiRequest("/products"),
-          apiRequest("/product-variants")
+        const [productResponse, variantResponse, categoryResponse] = await Promise.all([
+          apiRequest("/products?limit=500"),
+          apiRequest("/product-variants?limit=500"),
+          apiRequest("/categories?limit=500")
         ]);
 
-        setProducts(productResponse.data);
-        setVariants(variantResponse.data);
+        setProducts(productResponse.data || []);
+        setVariants(variantResponse.data || []);
+        setCategories(categoryResponse.data || []);
       } catch (loadError) {
         setError(loadError.message);
       }
@@ -53,13 +94,30 @@ export default function ProductsPage() {
     () => attachVariantsToProducts(products, variants),
     [products, variants]
   );
+
   const filterOptions = useMemo(
     () => buildCatalogFilters(productsWithVariants),
     [productsWithVariants]
   );
-  const filteredProducts = useMemo(
-    () => filterProducts(productsWithVariants, filters),
-    [productsWithVariants, filters]
+
+  const categoryScope = useMemo(
+    () => collectCategoryScope(categories, selectedCategoryId),
+    [categories, selectedCategoryId]
+  );
+
+  const filteredProducts = useMemo(() => {
+    const byPanelFilters = filterProducts(productsWithVariants, filters);
+
+    if (!selectedCategoryId) {
+      return byPanelFilters;
+    }
+
+    return byPanelFilters.filter((product) => categoryScope.has(getProductCategoryId(product)));
+  }, [productsWithVariants, filters, selectedCategoryId, categoryScope]);
+
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category._id === selectedCategoryId) || null,
+    [categories, selectedCategoryId]
   );
 
   const handleWishlist = async (product) => {
@@ -98,38 +156,64 @@ export default function ProductsPage() {
     }
   };
 
-  const inputClass = "border border-gray-200 rounded-none px-4 py-2.5 bg-white text-black transition-colors focus:border-black focus:outline-none w-full text-sm appearance-none";
-  const labelClass = "font-bold text-black text-xs uppercase tracking-widest mb-2 block";
+  const inputClass =
+    "w-full appearance-none border border-gray-200 bg-white px-4 py-2.5 text-sm text-black transition-colors focus:border-black focus:outline-none";
+  const labelClass = "mb-2 block text-xs font-bold uppercase tracking-widest text-black";
 
   return (
     <div className="flex flex-col pb-16">
-      <div className="px-4 md:px-0 mt-8">
+      <div className="mt-8 px-4 md:px-0">
         <PageHeader
-          title="TẤT CẢ SẢN PHẨM"
-          description="Khám phá bộ sưu tập thời trang hiện đại với thiết kế tối giản."
-          aside={<span className="text-black font-bold border border-black px-4 py-2 text-xs uppercase tracking-widest">{filteredProducts.length} SẢN PHẨM</span>}
+          title={selectedCategory ? selectedCategory.name.toUpperCase() : "TẤT CẢ SẢN PHẨM"}
+          description={
+            selectedCategory
+              ? `Đang hiển thị sản phẩm thuộc danh mục "${selectedCategory.name}" và các danh mục con.`
+              : "Khám phá bộ sưu tập thời trang hiện đại với thiết kế tối giản."
+          }
+          aside={
+            <span className="border border-black px-4 py-2 text-xs font-bold uppercase tracking-widest text-black">
+              {filteredProducts.length} SẢN PHẨM
+            </span>
+          }
         />
-        
-        {message ? <p className="text-black bg-gray-100 px-6 py-4 border-l-4 border-black font-medium mb-6">{message}</p> : null}
-        {error ? <p className="text-red-600 bg-red-50 px-6 py-4 border-l-4 border-red-600 font-medium mb-6">{error}</p> : null}
-        
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className="w-full lg:w-64 shrink-0 bg-white sticky top-24">
-            <div className="mb-6 pb-6 border-b border-gray-200">
+
+        {message ? (
+          <p className="mb-6 border-l-4 border-black bg-gray-100 px-6 py-4 font-medium text-black">{message}</p>
+        ) : null}
+        {error ? (
+          <p className="mb-6 border-l-4 border-red-600 bg-red-50 px-6 py-4 font-medium text-red-600">{error}</p>
+        ) : null}
+
+        <div className="flex items-start gap-8 lg:flex-row flex-col">
+          <aside className="sticky top-24 w-full shrink-0 bg-white lg:w-64">
+            <div className="mb-6 border-b border-gray-200 pb-6">
               <label className={labelClass}>TÌM KIẾM</label>
               <div className="relative border-b border-gray-300 focus-within:border-black">
                 <input
-                  className="w-full bg-transparent py-2 pl-2 pr-8 text-sm focus:outline-none"
+                  className="w-full bg-transparent py-2 pl-2 pr-8 text-sm outline-none"
                   placeholder="Nhập từ khóa..."
                   value={filters.search}
                   onChange={(event) =>
                     setFilters((current) => ({ ...current, search: event.target.value }))
                   }
                 />
-                <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <svg
+                  className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-black"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
               </div>
             </div>
-            <div className="space-y-6 mb-8">
+
+            <div className="mb-8 space-y-6">
               <div>
                 <label className={labelClass}>KIỂU DÁNG</label>
                 <div className="relative">
@@ -147,9 +231,9 @@ export default function ProductsPage() {
                       </option>
                     ))}
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
+
               <div>
                 <label className={labelClass}>GIỚI TÍNH</label>
                 <div className="relative">
@@ -167,9 +251,9 @@ export default function ProductsPage() {
                       </option>
                     ))}
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
+
               <div>
                 <label className={labelClass}>DỊP SỬ DỤNG</label>
                 <div className="relative">
@@ -187,12 +271,12 @@ export default function ProductsPage() {
                       </option>
                     ))}
                   </select>
-                  <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
             </div>
+
             <button
-              className="w-full px-4 py-3 font-bold text-black border border-black bg-transparent hover:bg-black hover:text-white transition-colors text-xs tracking-widest uppercase cursor-pointer"
+              className="w-full cursor-pointer border border-black bg-transparent px-4 py-3 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-black hover:text-white"
               onClick={() =>
                 setFilters({
                   search: "",
@@ -206,20 +290,25 @@ export default function ProductsPage() {
             </button>
           </aside>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-end mb-6">
-              <Link className="text-xs font-bold text-black hover:text-gray-500 transition-colors uppercase tracking-widest border-b border-black pb-1" to="/recommendations">
+          <div className="min-w-0 flex-1">
+            <div className="mb-6 flex justify-end">
+              <Link
+                className="border-b border-black pb-1 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:text-gray-500"
+                to="/recommendations"
+              >
                 GỢI Ý CHO BẠN
               </Link>
             </div>
-            
+
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-32 bg-gray-50 border border-gray-200">
-                <h3 className="text-lg font-bold text-black mb-2 uppercase tracking-widest">Không tìm thấy sản phẩm</h3>
-                <p className="text-gray-500 text-sm">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+              <div className="border border-gray-200 bg-gray-50 py-32 text-center">
+                <h3 className="mb-2 text-lg font-bold uppercase tracking-widest text-black">
+                  Không tìm thấy sản phẩm
+                </h3>
+                <p className="text-sm text-gray-500">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 gap-y-10">
+              <div className="grid grid-cols-2 gap-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product._id}
