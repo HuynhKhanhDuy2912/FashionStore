@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import toast from "react-hot-toast";
 
 const orderStatuses = [
   { value: "pending", label: "CHỜ XÁC NHẬN" },
@@ -14,15 +15,13 @@ const orderStatuses = [
 export default function AdminOrdersPage() {
   const { token } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const loadOrders = async () => {
     try {
       const response = await apiRequest("/orders/admin/all", { token });
       setOrders(response.data);
     } catch (loadError) {
-      setError(loadError.message);
+      toast.error(loadError.message);
     }
   };
 
@@ -37,18 +36,16 @@ export default function AdminOrdersPage() {
         token,
         body: { status }
       });
-      setMessage("Đã cập nhật trạng thái đơn hàng");
+      toast.success("Đã cập nhật trạng thái đơn hàng");
       loadOrders();
     } catch (updateError) {
-      setError(updateError.message);
+      toast.error(updateError.message);
     }
   };
 
   return (
     <section className="grid gap-6">
       <AdminPageHeader title="ĐƠN HÀNG" description="Quản lý và cập nhật trạng thái đơn hàng." />
-      {message ? <p className="text-black bg-gray-100 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-black m-0">{message}</p> : null}
-      {error ? <p className="text-red-600 bg-red-50 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-red-600 m-0">{error}</p> : null}
       <section className="bg-white border border-gray-200 p-7">
         <h3 className="text-black text-sm m-0 mb-6 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">DANH SÁCH ĐƠN HÀNG</h3>
         <div className="grid gap-0 divide-y divide-gray-100">

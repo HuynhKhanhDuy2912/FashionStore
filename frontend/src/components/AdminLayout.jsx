@@ -14,7 +14,6 @@ const adminNavItems = [
       { to: "/admin/products/add", label: "Thêm sản phẩm mới" }
     ]
   },
-  { to: "/admin/variants", label: "BIẾN THỂ" },
   { to: "/admin/users", label: "NGƯỜI DÙNG" },
   { to: "/admin/orders", label: "ĐƠN HÀNG" }
 ];

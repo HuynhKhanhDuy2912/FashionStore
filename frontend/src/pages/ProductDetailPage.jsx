@@ -29,15 +29,13 @@ export default function ProductDetailPage() {
       try {
         const [productResponse, productsResponse, variantResponse, imgResponse] = await Promise.all([
           apiRequest(`/products/${productId}`),
-          apiRequest("/products"),
-          apiRequest("/product-variants"),
+          apiRequest("/products?limit=100"),
+          apiRequest(`/product-variants?productId=${productId}&limit=100`),
           apiRequest(`/product-images?productId=${productId}&limit=50`)
         ]);
 
         const currentProduct = productResponse.data;
-        const currentVariants = variantResponse.data.filter(
-          v => v.productId?._id === currentProduct._id
-        );
+        const currentVariants = variantResponse.data || [];
         const pImages = imgResponse.data || [];
 
         setProduct(currentProduct);
@@ -46,10 +44,13 @@ export default function ProductDetailPage() {
         setVariants(currentVariants);
         setProductImages(pImages);
 
+        // Set default image: prefer gallery main image, then variant, then product main image
+        const mainGalleryImg = pImages.find(i => i.isMain);
         const defaultImage =
+          mainGalleryImg?.imageUrl ||
+          pImages[0]?.imageUrl ||
           currentVariants[0]?.image ||
-          currentProduct.images?.[0] ||
-          pImages[0]?.imageUrl || "";
+          currentProduct.images?.[0] || "";
         setActiveImage(defaultImage);
 
         if (currentVariants.length > 0) {
@@ -82,20 +83,33 @@ export default function ProductDetailPage() {
   );
 
   const galleryImages = useMemo(() => {
+    // Lấy ảnh gallery: ảnh chung (không có màu) hoặc ảnh đúng màu đang chọn
+    const imgsForColor = productImages
+      .filter(i => !i.color || i.color === selectedColor)
+      .map(i => i.imageUrl);
+    
+    // Lấy ảnh của biến thể màu hiện tại
+    const variantImage = variants.find(v => v.color === selectedColor)?.image;
+
     const all = [
+      ...imgsForColor,
+      variantImage,
       ...(product?.images || []),
-      ...variants.map(v => v.image).filter(Boolean),
-      ...productImages.map(i => i.imageUrl).filter(Boolean)
     ];
     return [...new Set(all)].filter(Boolean);
-  }, [product, variants, productImages]);
+  }, [product, variants, productImages, selectedColor]);
 
   const handleColorChange = (color) => {
     setSelectedColor(color);
     const sizesForColor = variants.filter(v => v.color === color).map(v => v.size);
     if (!sizesForColor.includes(selectedSize)) setSelectedSize(sizesForColor[0]);
-    const variantImg = variants.find(v => v.color === color && v.image);
-    if (variantImg?.image) setActiveImage(variantImg.image);
+    
+    // Khi đổi màu, ưu tiên lấy ảnh đầu tiên của gallery màu đó, nếu không có mới lấy ảnh biến thể
+    const imgsForColor = productImages.filter(i => i.color === color).map(i => i.imageUrl);
+    const variantImg = variants.find(v => v.color === color)?.image;
+    
+    if (imgsForColor.length > 0) setActiveImage(imgsForColor[0]);
+    else if (variantImg) setActiveImage(variantImg);
   };
 
   const activeIndex = galleryImages.indexOf(activeImage);
@@ -194,7 +208,6 @@ export default function ProductDetailPage() {
             <div className="py-3 text-xs text-gray-600 leading-relaxed space-y-2">
               {product.material && <p><strong>Chất liệu:</strong> {product.material}</p>}
               <p><strong>Kiểu dáng:</strong> <span className="capitalize">{product.style}</span></p>
-              <p><strong>Giới tính:</strong> <span className="capitalize">{product.gender}</span></p>
               {product.brand && <p><strong>Thương hiệu:</strong> {product.brand}</p>}
               <p><strong>Mã SP:</strong> SKU-{product._id.slice(-6).toUpperCase()}</p>
             </div>
@@ -359,30 +372,50 @@ export default function ProductDetailPage() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {availableSizes.map(size => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-10 min-w-[44px] px-3 border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                      size === selectedSize
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {availableSizes.map(size => {
+                  const variant = variants.find(v => v.color === selectedColor && v.size === size);
+                  const isOutOfStock = variant?.stock === 0;
+
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => !isOutOfStock && setSelectedSize(size)}
+                      disabled={isOutOfStock}
+                      className={`h-10 min-w-[44px] px-3 border text-xs font-bold uppercase tracking-wider transition-all relative ${
+                        isOutOfStock
+                          ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                          : size === selectedSize
+                            ? "border-black bg-black text-white cursor-pointer"
+                            : "border-gray-300 bg-white text-black hover:border-black cursor-pointer"
+                      }`}
+                    >
+                      {size}
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                          <div className="w-[140%] h-[1px] bg-gray-400 transform -rotate-45"></div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Số lượng */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-black mb-3">SỐ LƯỢNG</p>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-black">SỐ LƯỢNG</p>
+              {selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
+                <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">
+                  Chỉ còn {selectedVariant.stock} sản phẩm
+                </span>
+              )}
+            </div>
             <div className="inline-flex items-center border border-gray-300 h-11">
-              <button className="px-4 text-lg hover:bg-gray-100 h-full cursor-pointer border-none bg-transparent" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
-              <span className="px-5 text-sm font-bold min-w-[3rem] text-center border-l border-r border-gray-300 h-full flex items-center justify-center">{quantity}</span>
-              <button className="px-4 text-lg hover:bg-gray-100 h-full cursor-pointer border-none bg-transparent" onClick={() => setQuantity(quantity + 1)}>+</button>
+              <button disabled={selectedVariant?.stock === 0} className="px-4 text-lg hover:bg-gray-100 h-full cursor-pointer border-none bg-transparent disabled:opacity-50" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+              <span className="px-5 text-sm font-bold min-w-[3rem] text-center border-l border-r border-gray-300 h-full flex items-center justify-center">{selectedVariant?.stock === 0 ? 0 : quantity}</span>
+              <button disabled={selectedVariant?.stock === 0 || quantity >= selectedVariant?.stock} className="px-4 text-lg hover:bg-gray-100 h-full cursor-pointer border-none bg-transparent disabled:opacity-50" onClick={() => setQuantity(quantity + 1)}>+</button>
             </div>
           </div>
 
@@ -391,13 +424,15 @@ export default function ProductDetailPage() {
             <div className="flex flex-col gap-3 mt-2">
               <button
                 onClick={handleAddToCart}
-                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors cursor-pointer border-none text-center"
+                disabled={!selectedVariant || selectedVariant.stock === 0}
+                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors cursor-pointer border-none text-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                THÊM VÀO GIỎ HÀNG
+                {!selectedVariant || selectedVariant.stock === 0 ? "HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG"}
               </button>
               <button
                 onClick={handleBuyNow}
-                className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center"
+                disabled={!selectedVariant || selectedVariant.stock === 0}
+                className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 MUA NGAY
               </button>

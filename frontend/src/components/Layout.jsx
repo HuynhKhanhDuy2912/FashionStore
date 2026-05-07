@@ -26,7 +26,7 @@ function sortByCreatedAt(items) {
 
 function chunkArray(items, columns = 4) {
   const result = Array.from({ length: columns }, () => []);
-  const maxPerColumn = 5;
+  const maxPerColumn = 4;
   items.forEach((item, index) => {
     const colIndex = Math.min(Math.floor(index / maxPerColumn), columns - 1);
     result[colIndex].push(item);

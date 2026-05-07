@@ -4,6 +4,7 @@ import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import ImageUpload from "../../components/ImageUpload.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import toast from "react-hot-toast";
 
 const initialRootForm = { name: "", imageUrl: "" };
 const initialLevel2Form = { name: "", parentId: "", imageUrl: "" };
@@ -78,25 +79,17 @@ export default function AdminCategoriesPage() {
   const [editForm, setEditForm] = useState(initialEditForm);
   const [activeForm, setActiveForm] = useState("root");
   const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const inputClass =
     "w-full border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black";
   const labelClass = "flex flex-col gap-2 text-xs font-bold uppercase tracking-widest text-black";
-
-  const showMessage = (value) => {
-    setMessage(value);
-    setError("");
-    window.setTimeout(() => setMessage(""), 3000);
-  };
 
   const loadCategories = async () => {
     try {
       const response = await apiRequest("/categories?limit=1000", { token });
       setCategories(response.data || []);
     } catch (loadError) {
-      setError(loadError.message);
+      toast.error(loadError.message);
     }
   };
 
@@ -154,11 +147,11 @@ export default function AdminCategoriesPage() {
         }
       });
 
-      showMessage(`Đã thêm danh mục cấp 1 "${rootForm.name}"`);
+      toast.success(`Đã thêm danh mục cấp 1 "${rootForm.name}"`);
       setRootForm(initialRootForm);
       await loadCategories();
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     }
   };
 
@@ -167,13 +160,13 @@ export default function AdminCategoriesPage() {
     if (!level2Form.name.trim() || !level2Form.parentId) return;
 
     if (!level2Form.imageUrl.trim()) {
-      setError("Danh mục cấp 2 bắt buộc có ảnh.");
+      toast.error("Danh mục cấp 2 bắt buộc có ảnh.");
       return;
     }
 
     const parentDepth = depthById.get(level2Form.parentId);
     if (parentDepth !== 0) {
-      setError("Danh mục cấp 2 phải chọn cha là danh mục cấp 1.");
+      toast.error("Danh mục cấp 2 phải chọn cha là danh mục cấp 1.");
       return;
     }
 
@@ -188,11 +181,11 @@ export default function AdminCategoriesPage() {
         }
       });
 
-      showMessage(`Đã thêm danh mục cấp 2 "${level2Form.name}"`);
+      toast.success(`Đã thêm danh mục cấp 2 "${level2Form.name}"`);
       setLevel2Form(initialLevel2Form);
       await loadCategories();
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     }
   };
 
@@ -201,13 +194,13 @@ export default function AdminCategoriesPage() {
     if (!level3Form.name.trim() || !level3Form.parentId) return;
 
     if (!level3Form.imageUrl.trim()) {
-      setError("Danh mục cấp 3 bắt buộc có ảnh.");
+      toast.error("Danh mục cấp 3 bắt buộc có ảnh.");
       return;
     }
 
     const parentDepth = depthById.get(level3Form.parentId);
     if (parentDepth !== 1) {
-      setError("Danh mục cấp 3 phải chọn cha là danh mục cấp 2.");
+      toast.error("Danh mục cấp 3 phải chọn cha là danh mục cấp 2.");
       return;
     }
 
@@ -222,11 +215,11 @@ export default function AdminCategoriesPage() {
         }
       });
 
-      showMessage(`Đã thêm danh mục cấp 3 "${level3Form.name}"`);
+      toast.success(`Đã thêm danh mục cấp 3 "${level3Form.name}"`);
       setLevel3Form(initialLevel3Form);
       await loadCategories();
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     }
   };
 
@@ -249,12 +242,12 @@ export default function AdminCategoriesPage() {
     const nextDepth = nextParentDepth + 1;
 
     if (nextDepth > 2) {
-      setError("Danh mục chỉ hỗ trợ tối đa 3 cấp.");
+      toast.error("Danh mục chỉ hỗ trợ tối đa 3 cấp.");
       return;
     }
 
     if (nextDepth > 0 && !editForm.imageUrl.trim()) {
-      setError("Danh mục cấp 2/3 bắt buộc có ảnh.");
+      toast.error("Danh mục cấp 2/3 bắt buộc có ảnh.");
       return;
     }
 
@@ -269,12 +262,12 @@ export default function AdminCategoriesPage() {
         }
       });
 
-      showMessage("Đã cập nhật danh mục");
+      toast.success("Đã cập nhật danh mục");
       setEditingId("");
       setEditForm(initialEditForm);
       await loadCategories();
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     }
   };
 
@@ -285,10 +278,10 @@ export default function AdminCategoriesPage() {
         token
       });
 
-      showMessage("Đã xóa danh mục");
+      toast.success("Đã xóa danh mục");
       await loadCategories();
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     }
   };
 
@@ -367,19 +360,8 @@ export default function AdminCategoriesPage() {
     <section className="grid gap-6 p-6">
       <AdminPageHeader
         title="DANH MỤC"
-        description="Quản lý 3 cấp: Cấp 1 (có/không ảnh), cấp 2 (có ảnh), cấp 3 (có ảnh)."
+        description=""
       />
-
-      {message ? (
-        <p className="m-0 border-l-4 border-black bg-gray-100 px-4 py-3 text-xs font-bold uppercase tracking-widest text-black">
-          {message}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="m-0 border-l-4 border-red-600 bg-red-50 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-600">
-          {error}
-        </p>
-      ) : null}
 
       {editingId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

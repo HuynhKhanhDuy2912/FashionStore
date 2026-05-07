@@ -2,19 +2,18 @@ import { useEffect, useState } from "react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import toast from "react-hot-toast";
 
 export default function AdminUsersPage() {
   const { token } = useAuth();
   const [users, setUsers] = useState([]);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const loadUsers = async () => {
     try {
       const response = await apiRequest("/users", { token });
       setUsers(response.data);
     } catch (loadError) {
-      setError(loadError.message);
+      toast.error(loadError.message);
     }
   };
 
@@ -32,18 +31,16 @@ export default function AdminUsersPage() {
           ...changes
         }
       });
-      setMessage("Đã cập nhật người dùng");
+      toast.success("Đã cập nhật người dùng");
       loadUsers();
     } catch (updateError) {
-      setError(updateError.message);
+      toast.error(updateError.message);
     }
   };
 
   return (
     <section className="grid gap-6">
       <AdminPageHeader title="NGƯỜI DÙNG" description="Quản lý phân quyền và kích hoạt tài khoản." />
-      {message ? <p className="text-black bg-gray-100 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-black m-0">{message}</p> : null}
-      {error ? <p className="text-red-600 bg-red-50 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-red-600 m-0">{error}</p> : null}
       <section className="bg-white border border-gray-200 p-7">
         <h3 className="text-black text-sm m-0 mb-6 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">DANH SÁCH NGƯỜI DÙNG</h3>
         <div className="grid gap-0 divide-y divide-gray-100">

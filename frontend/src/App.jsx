@@ -7,12 +7,13 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage.jsx";
-import AdminProductImagesPage from "./pages/admin/AdminProductImagesPage.jsx";
+import { Toaster } from "react-hot-toast";
+
 import AdminProductsPage from "./pages/admin/AdminProductsPage.jsx";
 import AdminProductAddPage from "./pages/admin/AdminProductAddPage.jsx";
 import AdminProductListPage from "./pages/admin/AdminProductListPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
-import AdminVariantsPage from "./pages/admin/AdminVariantsPage.jsx";
+
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
@@ -27,6 +28,7 @@ import WishlistPage from "./pages/WishlistPage.jsx";
 export default function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
@@ -87,8 +89,7 @@ export default function App() {
             <Route path="products" element={<AdminProductListPage />} />
             <Route path="products/list" element={<AdminProductListPage />} />
             <Route path="products/add" element={<AdminProductAddPage />} />
-            <Route path="product-images" element={<AdminProductImagesPage />} />
-            <Route path="variants" element={<AdminVariantsPage />} />
+
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
           </Route>

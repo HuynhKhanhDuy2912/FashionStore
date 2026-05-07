@@ -3,21 +3,20 @@ import { useNavigate } from "react-router-dom";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import toast from "react-hot-toast";
 
 export default function AdminProductListPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   const loadProducts = async () => {
     try {
       const res = await apiRequest("/products?limit=100", { token });
       setProducts(res.data);
     } catch (e) {
-      setError(e.message);
+      toast.error(e.message);
     }
   };
 
@@ -29,10 +28,10 @@ export default function AdminProductListPage() {
     if (!window.confirm(`Xóa sản phẩm "${product.name}"? Thao tác này không thể hoàn tác.`)) return;
     try {
       await apiRequest(`/products/${product._id}`, { method: "DELETE", token });
-      setMessage(`Đã xóa sản phẩm "${product.name}"`);
+      toast.success(`Đã xóa sản phẩm "${product.name}"`);
       loadProducts();
     } catch (e) {
-      setError(e.message);
+      toast.error(e.message);
     }
   };
 
@@ -65,18 +64,6 @@ export default function AdminProductListPage() {
           + THÊM SẢN PHẨM
         </button>
       </div>
-
-      {/* Thông báo */}
-      {message && (
-        <p className="text-black bg-gray-100 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-black m-0">
-          {message}
-        </p>
-      )}
-      {error && (
-        <p className="text-red-600 bg-red-50 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-red-600 m-0">
-          {error}
-        </p>
-      )}
 
       {/* Bảng sản phẩm */}
       <div className="bg-white border border-gray-200">
@@ -115,7 +102,7 @@ export default function AdminProductListPage() {
                 <div>
                   <strong className="block text-black text-sm mb-1 line-clamp-1">{product.name}</strong>
                   <p className="m-0 text-[10px] text-gray-400 uppercase tracking-widest">
-                    {product.gender} · {product.style}
+                    {product.style}
                   </p>
                 </div>
 

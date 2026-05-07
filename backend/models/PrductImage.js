@@ -8,8 +8,8 @@ const productImageSchema = new mongoose.Schema({
   },
 
   imageUrl: String,
+  color: { type: String, trim: true, default: "" },
   isMain: { type: Boolean, default: false }
-
 });
 
 productImageSchema.pre('findOneAndDelete', async function(next) {
