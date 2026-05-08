@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
@@ -57,6 +57,15 @@ export default function AdminProductAddPage() {
   const [variantForm, setVariantForm] = useState(initialVariantForm);
   const [editingVariantId, setEditingVariantId] = useState("");
   const [loading, setLoading] = useState(false);
+  const variantsRef = useRef(null);
+
+  useEffect(() => {
+    if (editId && searchParams.get("new") === "true" && variantsRef.current) {
+      setTimeout(() => {
+        variantsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 500);
+    }
+  }, [editId, searchParams]);
 
   useEffect(() => {
     const load = async () => {
@@ -217,8 +226,7 @@ export default function AdminProductAddPage() {
         );
 
         toast.success("Đã thêm sản phẩm thành công!");
-        setForm(initialForm);
-        // Không redirect sang trang Edit nữa để form được làm trống
+        navigate(`/admin/products/add?id=${newProductId}&new=true`, { replace: true });
       }
     } catch (e) {
       toast.error(e.message);
@@ -903,7 +911,7 @@ export default function AdminProductAddPage() {
 
       {/* ── VARIANTS SECTION ── */}
       {editId && (
-        <div className="border-t border-gray-200 p-8">
+        <div className="border-t border-gray-200 p-8" ref={variantsRef}>
           <div className={cardCls}>
             <h2 className={headingCls}>
               Biến thể sản phẩm ({variants.length})

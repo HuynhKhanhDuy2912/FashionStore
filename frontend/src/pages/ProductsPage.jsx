@@ -571,7 +571,7 @@ export default function ProductsPage() {
                     className={`group bg-white ${viewMode === "list" ? "grid grid-cols-[220px_1fr] gap-4 border border-gray-200 p-3" : ""}`}
                   >
                     <div className="relative overflow-hidden bg-gray-100">
-                      <Link to={`/products/${product._id}`} className="absolute inset-0 block">
+                      <Link to={`/products/${product._id}?color=${encodeURIComponent(activeColorName)}`} className="absolute inset-0 block">
                         <img
                           src={primaryImage}
                           alt={product.name}
@@ -644,7 +644,7 @@ export default function ProductsPage() {
 
                     <div className={`${viewMode === "list" ? "pt-2" : "px-3 py-3"} bg-white`}>
                       <h3 className="line-clamp-1 text-sm text-black">
-                        <Link to={`/products/${product._id}`} className="hover:text-red-600">
+                        <Link to={`/products/${product._id}?color=${encodeURIComponent(activeColorName)}`} className="hover:text-red-600">
                           {product.name}
                         </Link>
                       </h3>
@@ -661,13 +661,18 @@ export default function ProductsPage() {
                             onClick={() =>
                               setActiveSwatchByProduct((current) => ({ ...current, [product._id]: group.color }))
                             }
-                            className={`h-5 w-5 rounded-sm border ${
+                            className={`relative overflow-hidden w-8 h-10 border transition-all p-0 m-0 bg-white ${
                               activeColorName === group.color
-                                ? "border-black ring-1 ring-black ring-offset-1"
-                                : "border-gray-300"
+                                ? "border-black"
+                                : "border-gray-200 opacity-70 hover:opacity-100"
                             }`}
-                            style={{ backgroundColor: group.hex }}
-                          />
+                          >
+                            {group.previewImage ? (
+                              <img src={group.previewImage} alt={group.color} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[8px] font-bold uppercase tracking-widest text-center flex items-center justify-center h-full w-full leading-tight px-0.5">{group.color}</span>
+                            )}
+                          </button>
                         ))}
                       </div>
 

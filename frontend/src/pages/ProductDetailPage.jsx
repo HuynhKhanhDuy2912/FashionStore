@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Star, ZoomIn } from "lucide-react";
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { token } = useAuth();
 
   const [product, setProduct] = useState(null);
@@ -44,20 +45,27 @@ export default function ProductDetailPage() {
         setVariants(currentVariants);
         setProductImages(pImages);
 
-        // Set default image: prefer gallery main image, then variant, then product main image
-        const mainGalleryImg = pImages.find(i => i.isMain);
-        const defaultImage =
-          mainGalleryImg?.imageUrl ||
-          pImages[0]?.imageUrl ||
-          currentVariants[0]?.image ||
-          currentProduct.images?.[0] || "";
-        setActiveImage(defaultImage);
-
         if (currentVariants.length > 0) {
           const uniqueColors = [...new Set(currentVariants.map(v => v.color))];
-          setSelectedColor(uniqueColors[0]);
-          const firstColorSizes = currentVariants.filter(v => v.color === uniqueColors[0]).map(v => v.size);
-          setSelectedSize(firstColorSizes[0]);
+          const initialColor = searchParams.get("color");
+          const colorToSet = initialColor && uniqueColors.includes(initialColor) ? initialColor : uniqueColors[0];
+          
+          setSelectedColor(colorToSet);
+          const sizesForColor = currentVariants.filter(v => v.color === colorToSet).map(v => v.size);
+          setSelectedSize(sizesForColor[0]);
+          
+          const imgsForColor = pImages.filter(i => i.color === colorToSet).map(i => i.imageUrl);
+          const variantImg = currentVariants.find(v => v.color === colorToSet)?.image;
+          
+          if (imgsForColor.length > 0) setActiveImage(imgsForColor[0]);
+          else if (variantImg) setActiveImage(variantImg);
+          else {
+            const mainGalleryImg = pImages.find(i => i.isMain);
+            setActiveImage(mainGalleryImg?.imageUrl || pImages[0]?.imageUrl || currentProduct.images?.[0] || "");
+          }
+        } else {
+          const mainGalleryImg = pImages.find(i => i.isMain);
+          setActiveImage(mainGalleryImg?.imageUrl || pImages[0]?.imageUrl || currentProduct.images?.[0] || "");
         }
       } catch (e) {
         setError(e.message);
