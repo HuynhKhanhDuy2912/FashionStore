@@ -202,7 +202,7 @@ export default function AdminProductsPage() {
               </select>
             </label>
             <label className={labelClass}>
-              Kiểu dáng
+              Phong cách
               <select
                 className={inputClass}
                 value={form.style}

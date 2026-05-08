@@ -303,41 +303,41 @@ export default function Layout() {
                         {isAdminUser ? (
                           <NavLink
                             to="/admin"
-                            className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 text-xs font-normal uppercase tracking-widest text-black transition hover:bg-gray-50"
+                            className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 text-sm font-normal tracking-widest text-black transition hover:bg-gray-50"
                             onClick={() => setIsAccountOpen(false)}
                           >
-                            <Home className="h-4 w-4" />
+                            <Home className="h-5 w-5" />
                             Trang quản trị
                           </NavLink>
                         ) : null}
 
                         <NavLink
                           to="/profile"
-                          className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 text-xs font-normal uppercase tracking-widest text-black transition hover:bg-gray-50"
+                          className="flex items-center gap-3 border-b border-gray-100 px-5 py-4 text-sm font-normal tracking-widest text-black transition hover:bg-gray-50"
                           onClick={() => setIsAccountOpen(false)}
                         >
-                          <IdCard className="h-4 w-4" />
+                          <IdCard className="h-5 w-5" />
                           Thông tin tài khoản
                         </NavLink>
 
                         <NavLink
                           to="/orders"
-                          className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 text-xs font-normal uppercase tracking-widest text-black transition hover:bg-gray-50"
+                          className="flex items-center gap-3 border-b border-gray-100 px-4 py-4 text-sm font-normal tracking-widest text-black transition hover:bg-gray-50"
                           onClick={() => setIsAccountOpen(false)}
                         >
-                          <History className="h-4 w-4" />
+                          <History className="h-5 w-5" />
                           Lịch sử đặt hàng
                         </NavLink>
 
                         <button
                           type="button"
-                          className="flex w-full items-center gap-3 border-none bg-white px-4 py-4 text-xs font-normal uppercase tracking-widest text-red-500 transition hover:bg-gray-50"
+                          className="flex w-full items-center gap-3 border-none bg-white px-4 py-4 text-sm font-normal tracking-widest text-red-500 transition hover:bg-gray-50"
                           onClick={() => {
                             setIsAccountOpen(false);
                             logout();
                           }}
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut className="h-5 w-5" />
                           Đăng xuất
                         </button>
                       </div>

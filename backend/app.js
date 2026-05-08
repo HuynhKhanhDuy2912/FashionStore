@@ -15,7 +15,7 @@ app.use(
   })
 );
 app.use(helmet());
-app.use(morgan("dev"));
+// app.use(morgan("dev")); log request HTTP
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -83,20 +83,28 @@ export default function ProductDetailPage() {
   );
 
   const galleryImages = useMemo(() => {
-    // Lấy ảnh gallery: ảnh chung (không có màu) hoặc ảnh đúng màu đang chọn
+    // Lấy ảnh gallery: chỉ ảnh có màu đúng với selectedColor, HOẶC ảnh không có màu (!i.color)
     const imgsForColor = productImages
-      .filter(i => !i.color || i.color === selectedColor)
+      .filter(i => i.color === selectedColor)
       .map(i => i.imageUrl);
     
     // Lấy ảnh của biến thể màu hiện tại
     const variantImage = variants.find(v => v.color === selectedColor)?.image;
 
+    // Lấy ảnh chung (không có màu)
+    const uncoloredImages = productImages
+      .filter(i => !i.color)
+      .map(i => i.imageUrl);
+
     const all = [
       ...imgsForColor,
-      variantImage,
-      ...(product?.images || []),
-    ];
-    return [...new Set(all)].filter(Boolean);
+      ...uncoloredImages,
+      variantImage
+    ].filter(Boolean);
+
+    // Chỉ dùng ảnh gốc của sản phẩm (thường là mảng rỗng hoặc ảnh chính) nếu không có ảnh nào khác
+    if (all.length > 0) return [...new Set(all)];
+    return [...new Set(product?.images || [])].filter(Boolean);
   }, [product, variants, productImages, selectedColor]);
 
   const handleColorChange = (color) => {
@@ -207,8 +215,8 @@ export default function ProductDetailPage() {
             </summary>
             <div className="py-3 text-xs text-gray-600 leading-relaxed space-y-2">
               {product.material && <p><strong>Chất liệu:</strong> {product.material}</p>}
-              <p><strong>Kiểu dáng:</strong> <span className="capitalize">{product.style}</span></p>
-              {product.brand && <p><strong>Thương hiệu:</strong> {product.brand}</p>}
+              <p><strong>Phong cách:</strong> <span className="capitalize">{product.style}</span></p>
+              {/* {product.brand && <p><strong>Thương hiệu:</strong> {product.brand}</p>} */}
               <p><strong>Mã SP:</strong> SKU-{product._id.slice(-6).toUpperCase()}</p>
             </div>
           </details>

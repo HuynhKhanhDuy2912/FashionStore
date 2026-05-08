@@ -360,7 +360,7 @@ export default function ProductsPage() {
                 <>
                   <span className="text-gray-600">Thời trang nam</span>
                   <span className="text-gray-400">&gt;</span>
-                  <span className="font-semibold text-black">Áo nam</span>
+                  <span className="font-semibold text-black">Áo</span>
                 </>
               )}
             </div>
@@ -471,7 +471,7 @@ export default function ProductsPage() {
             </label>
 
             <label>
-              <span className={labelClass}>Kiểu dáng</span>
+              <span className={labelClass}>Phong cách</span>
               <select
                 className={inputClass}
                 value={filters.style}

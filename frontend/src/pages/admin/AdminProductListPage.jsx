@@ -52,7 +52,7 @@ export default function AdminProductListPage() {
       <div className="flex gap-4 items-center justify-between">
         <input
           type="text"
-          placeholder="Tìm kiếm theo tên, danh mục, thương hiệu..."
+          placeholder="Tìm kiếm theo tên, danh mục,..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="border border-gray-300 px-4 py-3 bg-white text-black text-sm focus:border-black focus:outline-none flex-1 max-w-md"
