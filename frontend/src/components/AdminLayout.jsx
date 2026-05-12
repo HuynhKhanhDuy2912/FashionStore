@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 const adminNavItems = [
   { to: "/admin", label: "TỔNG QUAN", end: true },
   { to: "/admin/categories", label: "DANH MỤC" },
+  { to: "/admin/collections", label: "BỘ SƯU TẬP" },
   {
     label: "SẢN PHẨM",
     basePath: "/admin/products",

@@ -1,6 +1,7 @@
 import express from "express";
 import authRoutes from "./auth.routes.js";
 import categoryRoutes from "./category.routes.js";
+import collectionRoutes from "./collection.routes.js";
 import userRoutes from "./user.routes.js";
 import productRoutes from "./product.routes.js";
 import productVariantRoutes from "./productVariant.routes.js";
@@ -29,6 +30,7 @@ router.get("/health", (_req, res) => {
 
 router.use("/auth", authRoutes);
 router.use("/categories", categoryRoutes);
+router.use("/collections", collectionRoutes);
 router.use("/users", userRoutes);
 router.use("/products", productRoutes);
 router.use("/product-variants", productVariantRoutes);

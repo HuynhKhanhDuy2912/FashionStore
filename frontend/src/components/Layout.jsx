@@ -256,7 +256,7 @@ export default function Layout() {
                 <NavLink to="/products" className="text-[15px] text-black hover:text-red-600">
                   Về FashionStore
                 </NavLink>
-                <NavLink to="/products" className="text-[15px] text-black hover:text-red-600">
+                <NavLink to="/collections" className="text-[15px] text-black hover:text-red-600">
                   Bộ sưu tập
                 </NavLink>
                 <NavLink to="/products?tag=uu-dai" className="text-[15px] text-red-600 hover:opacity-80">

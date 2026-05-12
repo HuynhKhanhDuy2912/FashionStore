@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast";
 import AdminProductsPage from "./pages/admin/AdminProductsPage.jsx";
 import AdminProductAddPage from "./pages/admin/AdminProductAddPage.jsx";
 import AdminProductListPage from "./pages/admin/AdminProductListPage.jsx";
+import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 
 import CartPage from "./pages/CartPage.jsx";
@@ -24,6 +25,8 @@ import ProductsPage from "./pages/ProductsPage.jsx";
 import RecommendationsPage from "./pages/RecommendationsPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import WishlistPage from "./pages/WishlistPage.jsx";
+import CollectionsPage from "./pages/CollectionsPage.jsx";
+import CollectionDetailPage from "./pages/CollectionDetailPage.jsx";
 
 export default function App() {
   return (
@@ -36,6 +39,8 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:productId" element={<ProductDetailPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
+          <Route path="/collections/:collectionId" element={<CollectionDetailPage />} />
           <Route
             path="/recommendations"
             element={
@@ -89,6 +94,7 @@ export default function App() {
             <Route path="products" element={<AdminProductListPage />} />
             <Route path="products/list" element={<AdminProductListPage />} />
             <Route path="products/add" element={<AdminProductAddPage />} />
+            <Route path="collections" element={<AdminCollectionsPage />} />
 
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
