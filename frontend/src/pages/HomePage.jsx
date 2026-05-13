@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -28,6 +28,7 @@ const editCards = [
 
 export default function HomePage() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
@@ -38,8 +39,8 @@ export default function HomePage() {
     const loadData = async () => {
       try {
         const [productResponse, variantResponse] = await Promise.all([
-          apiRequest("/products"),
-          apiRequest("/product-variants")
+          apiRequest("/products?limit=100"),
+          apiRequest("/product-variants?limit=1200")
         ]);
 
         setProducts(productResponse.data);
@@ -87,6 +88,11 @@ export default function HomePage() {
   );
 
   const handleWishlist = async (product, addedFrom = "home") => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     try {
       await apiRequest("/wishlists/me", {
         method: "POST",
@@ -104,6 +110,11 @@ export default function HomePage() {
   };
 
   const handleAddToCart = async (product, variant) => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     try {
       await apiRequest("/carts/me/items", {
         method: "POST",
@@ -177,13 +188,13 @@ export default function HomePage() {
             XEM TẤT CẢ
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10">
+        <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
           {newArrivals.map((product) => (
             <ProductCard
               key={product._id}
               product={product}
-              onAddToWishlist={token ? (item) => handleWishlist(item, "home") : null}
-              onAddToCart={token ? handleAddToCart : null}
+              onAddToWishlist={(item) => handleWishlist(item, "home")}
+              onAddToCart={handleAddToCart}
             />
           ))}
         </div>
@@ -221,13 +232,13 @@ export default function HomePage() {
             XEM TẤT CẢ
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10">
+        <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
           {bestSellers.map((product) => (
             <ProductCard
               key={product._id}
               product={product}
-              onAddToWishlist={token ? (item) => handleWishlist(item, "home") : null}
-              onAddToCart={token ? handleAddToCart : null}
+              onAddToWishlist={(item) => handleWishlist(item, "home")}
+              onAddToCart={handleAddToCart}
             />
           ))}
         </div>
@@ -263,13 +274,13 @@ export default function HomePage() {
               XEM TẤT CẢ
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10">
+          <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
             {recommendations.map((product) => (
               <ProductCard
                 key={product._id}
                 product={product}
-                onAddToWishlist={token ? (item) => handleWishlist(item, "home") : null}
-                onAddToCart={token ? handleAddToCart : null}
+                onAddToWishlist={(item) => handleWishlist(item, "home")}
+                onAddToCart={handleAddToCart}
               />
             ))}
           </div>

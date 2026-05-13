@@ -385,9 +385,8 @@ export default function ProductsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  showFilterPanel ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${showFilterPanel ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
+                  }`}
                 onClick={() => setShowFilterPanel((current) => !current)}
                 aria-label="Bộ lọc"
               >
@@ -407,9 +406,8 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  viewMode === "grid" ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${viewMode === "grid" ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
+                  }`}
                 aria-label="Chế độ lưới"
               >
                 <LayoutGrid size={16} />
@@ -418,9 +416,8 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  viewMode === "list" ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${viewMode === "list" ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black"
+                  }`}
                 aria-label="Chế độ danh sách"
               >
                 <List size={16} />
@@ -437,11 +434,10 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={() => handleSelectQuickTag(quickTagBaseId)}
-                    className={`border px-5 py-3 text-[17px] font-medium transition ${
-                      selectedScopeForTag === quickTagBaseId
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
+                    className={`border px-5 py-3 text-[17px] font-medium transition ${selectedScopeForTag === quickTagBaseId
+                      ? "border-black bg-black text-white"
+                      : "border-gray-300 bg-white text-black hover:border-black"
+                      }`}
                   >
                     Tất cả
                   </button>
@@ -452,11 +448,10 @@ export default function ProductsPage() {
                     key={tag._id}
                     type="button"
                     onClick={() => handleSelectQuickTag(tag._id)}
-                    className={`border px-5 py-3 text-[17px] font-medium transition ${
-                      selectedScopeForTag === tag._id
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
+                    className={`border px-5 py-3 text-[17px] font-medium transition ${selectedScopeForTag === tag._id
+                      ? "border-black bg-black text-white"
+                      : "border-gray-300 bg-white text-black hover:border-black"
+                      }`}
                   >
                     {tag.name}
                   </button>
@@ -511,7 +506,6 @@ export default function ProductsPage() {
                 <option value="">Tất cả</option>
                 <option value="male">Nam</option>
                 <option value="female">Nữ</option>
-                <option value="unisex">Unisex</option>
               </select>
             </label>
 
@@ -610,7 +604,7 @@ export default function ProductsPage() {
                             "repeating-linear-gradient(90deg, rgba(219,231,245,0.55) 0px, rgba(219,231,245,0.55) 2px, rgba(255,255,255,0.9) 2px, rgba(255,255,255,0.9) 4px)"
                         }}
                       >
-                        <div className="flex h-full items-center justify-between gap-3">
+                        <div className="flex h-full items-center justify-center">
                           <p className="text-[32px] md:text-[31px] lg:text-[30px]">{""}</p>
                           <p className="max-w-[70%] text-[31px]">{""}</p>
                           {productCollectionMap.get(product._id) && (
@@ -638,11 +632,10 @@ export default function ProductsPage() {
                                 key={size}
                                 type="button"
                                 onClick={() => handleQuickAddSize(product._id, size)}
-                                className={`h-8 w-8 border text-xs font-medium transition ${
-                                  selectedSize === size
-                                    ? "border-black bg-black text-white"
-                                    : "border-gray-300 bg-white text-black hover:border-black"
-                                }`}
+                                className={`h-8 w-8 border text-xs font-medium transition ${selectedSize === size
+                                  ? "border-black bg-black text-white"
+                                  : "border-gray-300 bg-white text-black hover:border-black"
+                                  }`}
                               >
                                 {size}
                               </button>
@@ -660,11 +653,6 @@ export default function ProductsPage() {
                     </div>
 
                     <div className={`${viewMode === "list" ? "pt-2" : "px-3 py-3"} bg-white`}>
-                      <h3 className="line-clamp-1 text-sm text-black">
-                        <Link to={getProductPath(product, { color: activeColorName })} className="hover:text-red-600">
-                          {product.name}
-                        </Link>
-                      </h3>
 
                       <div className="mt-2 flex items-center gap-2">
                         {colorGroups.slice(0, 6).map((group) => (
@@ -678,11 +666,10 @@ export default function ProductsPage() {
                             onClick={() =>
                               setActiveSwatchByProduct((current) => ({ ...current, [product._id]: group.color }))
                             }
-                            className={`relative overflow-hidden w-8 h-10 border transition-all p-0 m-0 bg-white ${
-                              activeColorName === group.color
-                                ? "border-black"
-                                : "border-gray-200 opacity-70 hover:opacity-100"
-                            }`}
+                            className={`relative overflow-hidden w-8 h-10 border transition-all p-0 m-0 bg-white ${activeColorName === group.color
+                              ? "border-black"
+                              : "border-gray-200 opacity-70 hover:opacity-100"
+                              }`}
                           >
                             {group.previewImage ? (
                               <img src={group.previewImage} alt={group.color} className="w-full h-full object-cover" />
@@ -694,7 +681,7 @@ export default function ProductsPage() {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
-                        <p className="text-[18px] font-semibold text-black">{formatPrice(product.price + (selectedVariant?.priceAdjustment || 0))}</p>
+                        <p className="text-[16px] font-semibold text-black">{formatPrice(product.price + (selectedVariant?.priceAdjustment || 0))}</p>
                         <button
                           type="button"
                           onClick={() => handleWishlist(product)}
@@ -703,6 +690,11 @@ export default function ProductsPage() {
                           Yêu thích
                         </button>
                       </div>
+                      <h2 className="line-clamp-1 text-s text-black font-bold">
+                        <Link to={getProductPath(product, { color: activeColorName })} className="hover:text-red-600">
+                          {product.name}
+                        </Link>
+                      </h2>
                     </div>
                   </article>
                 );
