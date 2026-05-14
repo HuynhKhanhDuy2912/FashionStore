@@ -63,6 +63,10 @@ const sanitizeUser = (user) => ({
   authProviders: user.authProviders,
   isPhoneVerified: user.isPhoneVerified,
   isActive: user.isActive,
+  city: user.city,
+  dateOfBirth: user.dateOfBirth,
+  height: user.height,
+  weight: user.weight,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt
 });
@@ -371,6 +375,138 @@ export const verifyPhoneOtp = async (req, res) => {
     await user.save();
 
     return issueAuthResponse(res, user, 200, "Phone login successful");
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const {
+      full_name,
+      gender,
+      bodyShape,
+      favoriteStyles,
+      favoriteColors,
+      sizeProfile,
+      budgetRange,
+      address,
+      phone_number,
+      avatar,
+      city,
+      dateOfBirth,
+      height,
+      weight
+    } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (phone_number) {
+      const normalizedPhone = normalizePhone(phone_number);
+      const phoneExists = await User.findOne({
+        phone_number: normalizedPhone,
+        _id: { $ne: user._id }
+      });
+
+      if (phoneExists) {
+        return res.status(409).json({
+          success: false,
+          message: "Phone number already exists"
+        });
+      }
+
+      user.phone_number = normalizedPhone;
+    }
+
+    if (full_name !== undefined) user.full_name = full_name;
+    if (gender !== undefined) user.gender = gender;
+    if (bodyShape !== undefined) user.bodyShape = bodyShape;
+    if (favoriteStyles !== undefined) user.favoriteStyles = favoriteStyles;
+    if (favoriteColors !== undefined) user.favoriteColors = favoriteColors;
+    if (sizeProfile !== undefined) user.sizeProfile = sizeProfile;
+    if (budgetRange !== undefined) user.budgetRange = budgetRange;
+    if (address !== undefined) user.address = address;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (city !== undefined) user.city = city;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+    if (height !== undefined) user.height = height;
+    if (weight !== undefined) user.weight = weight;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: sanitizeUser(user)
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "currentPassword and newPassword are required"
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters"
+      });
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "This account does not have a password set"
+      });
+    }
+
+    const isPasswordValid = await user.comparePassword(currentPassword);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect"
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully"
+    });
   } catch (error) {
     return res.status(400).json({
       success: false,

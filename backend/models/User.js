@@ -137,6 +137,29 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
 
+    city: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+    dateOfBirth: {
+      type: Date,
+      default: null
+    },
+
+    height: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    weight: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
     phone_number: {
       type: String,
       trim: true

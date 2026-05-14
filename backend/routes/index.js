@@ -18,6 +18,7 @@ import orderItemRoutes from "./orderItem.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import reviewRoutes from "./review.routes.js";
 import uploadRoutes from "./upload.route.js";
+import addressRoutes from "./address.routes.js";
 
 const router = express.Router();
 
@@ -44,8 +45,9 @@ router.use("/carts", cartRoutes);
 router.use("/cart-items", cartItemRoutes);
 router.use("/orders", orderRoutes);
 router.use("/order-items", orderItemRoutes);
-router.use("/payments", paymentRoutes);
+router.use("/payment", paymentRoutes);
 router.use("/reviews", reviewRoutes);
 router.use("/upload", uploadRoutes);
+router.use("/addresses", addressRoutes);
 
 export default router;

@@ -28,6 +28,9 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import WishlistPage from "./pages/WishlistPage.jsx";
 import CollectionsPage from "./pages/CollectionsPage.jsx";
 import CollectionDetailPage from "./pages/CollectionDetailPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage.jsx";
+import PaymentFailedPage from "./pages/PaymentFailedPage.jsx";
 
 export default function App() {
   return (
@@ -83,6 +86,16 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/failed" element={<PaymentFailedPage />} />
           <Route
             path="/admin"
             element={
