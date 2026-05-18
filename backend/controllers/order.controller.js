@@ -70,7 +70,7 @@ export const getMyOrderById = async (req, res) => {
 
 export const cancelMyOrder = async (req, res) => {
   try {
-    const order = await cancelOrder(req.user._id, req.params.orderId);
+    const order = await cancelOrder(req.user._id, req.params.orderId, req.body.cancellationReason || "");
 
     return res.status(200).json({
       success: true,
@@ -125,7 +125,11 @@ export const getAdminOrderById = async (req, res) => {
 
 export const updateAdminOrder = async (req, res) => {
   try {
-    const order = await updateAdminOrderStatus(req.params.orderId, req.body.status);
+    const order = await updateAdminOrderStatus(
+      req.params.orderId,
+      req.body.status,
+      req.body.cancellationReason || ""
+    );
 
     return res.status(200).json({
       success: true,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api.js";
-import { Search, Filter, Calendar, ChevronDown, ChevronUp, MapPin, CreditCard, Package, Clock, CheckCircle, Truck, XCircle } from "lucide-react";
+import { Search, Filter, Calendar, ChevronDown, ChevronUp, MapPin, CreditCard, Package, Clock, CheckCircle, Truck, XCircle, X } from "lucide-react";
 
 export default function OrdersTab({ token }) {
   const [orders, setOrders] = useState([]);
@@ -18,6 +18,9 @@ export default function OrdersTab({ token }) {
   const [dateFromCompleted, setDateFromCompleted] = useState("");
   const [dateToCompleted, setDateToCompleted] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
 
   const loadOrders = async () => {
     try {
@@ -84,14 +87,34 @@ export default function OrdersTab({ token }) {
     setFilteredOrders(result);
   }, [orders, searchTerm, statusFilter, paymentMethodFilter, dateFromOrder, dateToOrder, dateFromCompleted, dateToCompleted]);
 
-  const cancelOrder = async (orderId) => {
-    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) return;
+  const openCancelModal = (orderId) => {
+    setCancelOrderId(orderId);
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setCancelOrderId("");
+    setCancelReason("");
+  };
+
+  const cancelOrder = async () => {
+    const reason = cancelReason.trim();
+    if (!reason) {
+      setError("Vui lòng nhập lý do hủy đơn hàng");
+      return;
+    }
 
     try {
-      await apiRequest(`/orders/me/${orderId}/cancel`, {
+      await apiRequest(`/orders/me/${cancelOrderId}/cancel`, {
         method: "PATCH",
-        token
+        token,
+        body: {
+          cancellationReason: reason
+        }
       });
+      closeCancelModal();
       loadOrders();
     } catch (requestError) {
       setError(requestError.message);
@@ -396,9 +419,9 @@ export default function OrdersTab({ token }) {
                     {order.items?.slice(0, isExpanded ? undefined : 2).map((item) => (
                       <div key={item._id} className="flex gap-4">
                         <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                          {item.productId?.images?.[0] && (
+                          {(item.variantId?.image || item.productId?.images?.[0]) && (
                             <img
-                              src={item.productId.images[0]}
+                              src={item.variantId?.image || item.productId.images[0]}
                               alt={item.productId?.name}
                               className="w-full h-full object-cover"
                             />
@@ -506,6 +529,15 @@ export default function OrdersTab({ token }) {
                         </div>
                       </div>
                     )}
+
+                    {order.status === "cancelled" && order.cancellationReason && (
+                      <div className="mt-4">
+                        <h5 className="text-sm font-semibold text-gray-900 mb-2">Lý do hủy đơn</h5>
+                        <div className="bg-red-50 rounded-lg border border-red-200 p-4 text-sm text-red-700">
+                          {order.cancellationReason}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -530,7 +562,7 @@ export default function OrdersTab({ token }) {
 
                   {["pending", "confirmed"].includes(order.status) && (
                     <button
-                      onClick={() => cancelOrder(order._id)}
+                      onClick={() => openCancelModal(order._id)}
                       className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                     >
                       Hủy đơn hàng
@@ -540,6 +572,66 @@ export default function OrdersTab({ token }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-gray-900">Hủy đơn hàng</h3>
+              <button
+                type="button"
+                onClick={closeCancelModal}
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              <p className="text-sm text-gray-700">
+                Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng này. Thông tin này giúp chúng tôi cải thiện dịch vụ tốt hơn.
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Lý do hủy đơn <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Ví dụ: Tôi muốn thay đổi địa chỉ giao hàng, Tôi tìm được sản phẩm tốt hơn, Thời gian giao hàng quá lâu..."
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-black resize-none"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeCancelModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={cancelOrder}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Xác nhận hủy
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

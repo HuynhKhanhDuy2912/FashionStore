@@ -117,7 +117,7 @@ export const getMyOrders = async (userId) => {
     orders.map(async (order) => {
       const items = await OrderItem.find({ orderId: order._id })
         .populate("productId", "name price discount images")
-        .populate("variantId", "size color sku priceAdjustment");
+        .populate("variantId", "size color sku image priceAdjustment");
 
       return { ...order.toObject(), items };
     })
@@ -132,12 +132,15 @@ export const getOrderDetail = async (userId, orderId) => {
 
   const items = await OrderItem.find({ orderId })
     .populate("productId", "name price discount images")
-    .populate("variantId", "size color sku stock priceAdjustment");
+    .populate("variantId", "size color sku image stock priceAdjustment");
 
   return { ...order.toObject(), items };
 };
 
-export const cancelOrder = async (userId, orderId) => {
+export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
+  const reason = cancellationReason.trim();
+  if (!reason) throw new Error("Cancellation reason is required");
+
   const order = await Order.findOne({ _id: orderId, userId });
   if (!order) throw new Error("Order not found");
   if (!["pending", "confirmed"].includes(order.status)) {
@@ -155,6 +158,7 @@ export const cancelOrder = async (userId, orderId) => {
   }
 
   order.status = "cancelled";
+  order.cancellationReason = reason;
   await order.save();
   return order;
 };
@@ -169,14 +173,17 @@ export const getAdminOrderDetail = async (orderId) => {
 
   const items = await OrderItem.find({ orderId })
     .populate("productId", "name price images")
-    .populate("variantId", "size color image");
+    .populate("variantId", "size color sku image");
 
   return { ...order.toObject(), items };
 };
 
-export const updateAdminOrderStatus = async (orderId, status) => {
+export const updateAdminOrderStatus = async (orderId, status, cancellationReason = "") => {
   const validStatuses = ["pending", "confirmed", "shipping", "completed", "cancelled"];
   if (!validStatuses.includes(status)) throw new Error("Invalid status");
+
+  const reason = cancellationReason.trim();
+  if (status === "cancelled" && !reason) throw new Error("Cancellation reason is required");
 
   const order = await Order.findById(orderId);
   if (!order) throw new Error("Order not found");
@@ -218,8 +225,10 @@ export const updateAdminOrderStatus = async (orderId, status) => {
   // Cập nhật cancelledAt khi đơn hàng bị hủy
   if (status === "cancelled") {
     order.cancelledAt = new Date();
+    order.cancellationReason = reason;
   } else if (previousStatus === "cancelled" && status !== "cancelled") {
     order.cancelledAt = null;
+    order.cancellationReason = "";
   }
 
   order.status = status;

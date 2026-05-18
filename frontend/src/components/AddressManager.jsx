@@ -21,6 +21,7 @@ export default function AddressManager({ token }) {
     district: "",
     ward: "",
     street: "",
+    addressDetail: "",
     isDefault: false
   });
 
@@ -43,10 +44,13 @@ export default function AddressManager({ token }) {
     try {
       const res = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
       const data = await res.json();
-      setDistricts(data.districts || []);
+      const districtList = data.districts || [];
+      setDistricts(districtList);
       setWards([]);
+      return districtList;
     } catch (err) {
       console.error(err);
+      return [];
     }
   };
 
@@ -54,9 +58,12 @@ export default function AddressManager({ token }) {
     try {
       const res = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
       const data = await res.json();
-      setWards(data.wards || []);
+      const wardList = data.wards || [];
+      setWards(wardList);
+      return wardList;
     } catch (err) {
       console.error(err);
+      return [];
     }
   };
 
@@ -93,7 +100,7 @@ export default function AddressManager({ token }) {
     }
   };
 
-  const openModal = (address = null) => {
+  const openModal = async (address = null) => {
     if (address) {
       setEditingId(address._id);
       setFormData({
@@ -103,17 +110,17 @@ export default function AddressManager({ token }) {
         district: address.district,
         ward: address.ward,
         street: address.street,
+        addressDetail: address.addressDetail || "",
         isDefault: address.isDefault
       });
 
       const selectedProvince = provinces.find((p) => p.name === address.province);
       if (selectedProvince) {
-        loadDistricts(selectedProvince.code).then(() => {
-          const selectedDistrict = districts.find((d) => d.name === address.district);
-          if (selectedDistrict) {
-            loadWards(selectedDistrict.code);
-          }
-        });
+        const districtList = await loadDistricts(selectedProvince.code);
+        const selectedDistrict = districtList.find((d) => d.name === address.district);
+        if (selectedDistrict) {
+          await loadWards(selectedDistrict.code);
+        }
       }
     } else {
       setEditingId(null);
@@ -124,6 +131,7 @@ export default function AddressManager({ token }) {
         district: "",
         ward: "",
         street: "",
+        addressDetail: "",
         isDefault: false
       });
       setDistricts([]);
@@ -249,6 +257,7 @@ export default function AddressManager({ token }) {
                   </div>
                   <p className="mb-1 text-sm text-gray-600">{address.phoneNumber}</p>
                   <p className="text-sm text-gray-600">
+                    {address.addressDetail ? `${address.addressDetail}, ` : ""}
                     {address.street}, {address.ward}, {address.district}, {address.province}
                   </p>
                 </div>
@@ -308,31 +317,37 @@ export default function AddressManager({ token }) {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-2 block text-sm">Tên</label>
+                    <label className="mb-2 block text-sm">Họ</label>
                     <input
                       type="text"
-                      name="fullName"
-                      value={formData.fullName.split(" ")[0] || ""}
+                      value={formData.fullName.split(" ").slice(0, -1).join(" ") || ""}
                       onChange={(e) => {
-                        const firstName = e.target.value;
-                        const lastName = formData.fullName.split(" ").slice(1).join(" ");
-                        setFormData((prev) => ({ ...prev, fullName: `${firstName} ${lastName}`.trim() }));
+                        const lastName = e.target.value;
+                        const firstName = formData.fullName.split(" ").slice(-1)[0] || "";
+                        setFormData((prev) => ({
+                          ...prev,
+                          fullName: firstName ? `${lastName} ${firstName}` : lastName
+                        }));
                       }}
-                      required
                       className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm">Họ</label>
+                    <label className="mb-2 block text-sm">Tên</label>
                     <input
                       type="text"
-                      value={formData.fullName.split(" ").slice(1).join(" ") || ""}
+                      name="fullName"
+                      value={formData.fullName.split(" ").slice(-1)[0] || ""}
                       onChange={(e) => {
-                        const firstName = formData.fullName.split(" ")[0];
-                        const lastName = e.target.value;
-                        setFormData((prev) => ({ ...prev, fullName: `${firstName} ${lastName}`.trim() }));
+                        const firstName = e.target.value;
+                        const lastName = formData.fullName.split(" ").slice(0, -1).join(" ");
+                        setFormData((prev) => ({
+                          ...prev,
+                          fullName: lastName ? `${lastName} ${firstName}` : firstName
+                        }));
                       }}
+                      required
                       className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                     />
                   </div>
@@ -346,7 +361,7 @@ export default function AddressManager({ token }) {
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
                     required
-                    placeholder="+ 84"
+                    placeholder="09xxxxxxxx"
                     className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                   />
                 </div>
@@ -427,6 +442,9 @@ export default function AddressManager({ token }) {
                   </label>
                   <input
                     type="text"
+                    name="addressDetail"
+                    value={formData.addressDetail}
+                    onChange={handleInputChange}
                     className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                   />
                 </div>

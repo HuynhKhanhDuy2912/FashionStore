@@ -8,6 +8,7 @@ import { CartProvider } from "./context/CartContext.jsx";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage.jsx";
+import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage.jsx";
 import { Toaster } from "react-hot-toast";
 
 import AdminProductsPage from "./pages/admin/AdminProductsPage.jsx";
@@ -109,6 +110,7 @@ export default function App() {
 
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="banners" element={<AdminBannersPage />} />
           </Route>
           </Route>

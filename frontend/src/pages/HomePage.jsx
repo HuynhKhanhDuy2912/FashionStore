@@ -320,7 +320,7 @@ export default function HomePage() {
         
         {/* New Arrivals */}
         <section>
-          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4 border-b border-gray-200 pb-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4 border-b border-gray-200 pb-4 pt-4">
             <div>
               <h2 className="text-3xl font-extrabold tracking-widest text-black uppercase">
                 SẢN PHẨM MỚI

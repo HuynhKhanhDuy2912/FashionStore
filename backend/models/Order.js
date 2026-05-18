@@ -36,7 +36,8 @@ const orderSchema = new mongoose.Schema({
   note: { type: String, trim: true, default: "" },
 
   completedAt: { type: Date, default: null },
-  cancelledAt: { type: Date, default: null }
+  cancelledAt: { type: Date, default: null },
+  cancellationReason: { type: String, trim: true, default: "" }
 
 }, { timestamps: true });
 

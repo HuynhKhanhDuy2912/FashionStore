@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:routine.vn)"
+      "WebFetch(domain:routine.vn)",
+      "Bash(npm run *)"
     ]
   }
 }
