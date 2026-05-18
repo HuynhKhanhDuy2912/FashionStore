@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiRequest } from "../lib/api.js";
 import { Search, Filter, Calendar, ChevronDown, ChevronUp, MapPin, CreditCard, Package, Clock, CheckCircle, Truck, XCircle, X } from "lucide-react";
 
@@ -116,6 +117,19 @@ export default function OrdersTab({ token }) {
       });
       closeCancelModal();
       loadOrders();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  const markOrderAsReceived = async (orderId) => {
+    try {
+      setError("");
+      await apiRequest(`/orders/me/${orderId}/received`, {
+        method: "PATCH",
+        token
+      });
+      await loadOrders();
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -441,6 +455,21 @@ export default function OrdersTab({ token }) {
                           <div className="text-sm font-semibold text-gray-900">
                             {(item.price * item.quantity)?.toLocaleString("vi-VN")}₫
                           </div>
+
+                          {order.status === "completed" && item.productId?._id && (
+                            item.isReviewed ? (
+                              <span className="mt-2 inline-flex rounded-md border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                                Đã đánh giá
+                              </span>
+                            ) : (
+                              <Link
+                                to={`/products/${item.productId._id}?color=${encodeURIComponent(item.variantId?.color || "")}&review=true`}
+                                className="mt-2 inline-flex rounded-md bg-black px-3 py-1 text-xs font-semibold text-white transition hover:bg-gray-800"
+                              >
+                                Đánh giá sản phẩm
+                              </Link>
+                            )
+                          )}
                         </div>
                       </div>
                     ))}
@@ -521,14 +550,12 @@ export default function OrdersTab({ token }) {
                       </div>
                     </div>
 
-                    {order.note && (
-                      <div className="mt-4">
-                        <h5 className="text-sm font-semibold text-gray-900 mb-2">Ghi chú</h5>
-                        <div className="bg-white rounded-lg border border-gray-200 p-4 text-sm text-gray-600">
-                          {order.note}
-                        </div>
+                    <div className="mt-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-2">Ghi chú</h5>
+                      <div className="bg-white rounded-lg border border-gray-200 p-4 text-sm text-gray-600">
+                        {order.note?.trim() ? order.note : "Không có ghi chú"}
                       </div>
-                    )}
+                    </div>
 
                     {order.status === "cancelled" && order.cancellationReason && (
                       <div className="mt-4">
@@ -566,6 +593,15 @@ export default function OrdersTab({ token }) {
                       className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                     >
                       Hủy đơn hàng
+                    </button>
+                  )}
+
+                  {order.status === "shipping" && (
+                    <button
+                      onClick={() => markOrderAsReceived(order._id)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Đã nhận được hàng
                     </button>
                   )}
                 </div>

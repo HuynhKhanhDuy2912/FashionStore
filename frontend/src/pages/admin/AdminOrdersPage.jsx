@@ -8,7 +8,8 @@ import {
   Truck,
   Wallet,
   X,
-  XCircle
+  XCircle,
+  Filter,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -20,7 +21,7 @@ const orderStatuses = [
   { value: "confirmed", label: "Đã xác nhận" },
   { value: "shipping", label: "Đang giao" },
   { value: "completed", label: "Hoàn thành" },
-  { value: "cancelled", label: "Đã hủy" }
+  { value: "cancelled", label: "Đã hủy" },
 ];
 
 const paymentMethods = [
@@ -28,41 +29,54 @@ const paymentMethods = [
   { value: "cod", label: "COD" },
   { value: "vnpay", label: "VNPay" },
   { value: "momo", label: "MoMo" },
-  { value: "paypal", label: "PayPal" }
+  { value: "paypal", label: "PayPal" },
 ];
 
 const paymentStatusText = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
-  failed: "Thanh toán thất bại"
+  failed: "Thanh toán thất bại",
 };
 
 const statusMap = {
   pending: {
     label: "Chờ xác nhận",
     className: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    icon: Clock3
+    icon: Clock3,
   },
   confirmed: {
     label: "Đã xác nhận",
     className: "border-blue-200 bg-blue-50 text-blue-700",
-    icon: CheckCircle2
+    icon: CheckCircle2,
   },
   shipping: {
     label: "Đang giao",
     className: "border-purple-200 bg-purple-50 text-purple-700",
-    icon: Truck
+    icon: Truck,
   },
   completed: {
     label: "Hoàn thành",
     className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    icon: CheckCircle2
+    icon: CheckCircle2,
   },
   cancelled: {
     label: "Đã hủy",
     className: "border-gray-200 bg-gray-100 text-gray-700",
-    icon: XCircle
-  }
+    icon: XCircle,
+  },
+};
+
+const allowedStatusTransitions = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["shipping", "cancelled"],
+  shipping: ["completed"],
+  completed: [],
+  cancelled: [],
+};
+
+const getAllowedStatuses = (currentStatus) => {
+  const nextStatuses = allowedStatusTransitions[currentStatus] || [];
+  return [currentStatus, ...nextStatuses];
 };
 
 const formatDateTime = (value) => {
@@ -72,7 +86,7 @@ const formatDateTime = (value) => {
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   });
 };
 
@@ -119,7 +133,11 @@ export default function AdminOrdersPage() {
     if (searchTerm.trim()) {
       const keyword = searchTerm.trim().toLowerCase();
       result = result.filter((order) => {
-        const customerName = (order.userId?.full_name || order.userId?.username || "").toLowerCase();
+        const customerName = (
+          order.userId?.full_name ||
+          order.userId?.username ||
+          ""
+        ).toLowerCase();
         const receiverName = (order.receiverName || "").toLowerCase();
         const receiverPhone = (order.receiverPhone || "").toLowerCase();
         return (
@@ -137,7 +155,9 @@ export default function AdminOrdersPage() {
     }
 
     if (paymentMethodFilter !== "all") {
-      result = result.filter((order) => order.paymentMethod === paymentMethodFilter);
+      result = result.filter(
+        (order) => order.paymentMethod === paymentMethodFilter,
+      );
     }
 
     if (dateFrom) {
@@ -162,7 +182,11 @@ export default function AdminOrdersPage() {
     setDateTo("");
   };
 
-  const submitStatusUpdate = async (orderId, status, cancellationReason = "") => {
+  const submitStatusUpdate = async (
+    orderId,
+    status,
+    cancellationReason = "",
+  ) => {
     try {
       setUpdatingOrderId(orderId);
       await apiRequest(`/orders/admin/${orderId}/status`, {
@@ -170,8 +194,8 @@ export default function AdminOrdersPage() {
         token,
         body: {
           status,
-          cancellationReason
-        }
+          cancellationReason,
+        },
       });
       toast.success("Cập nhật trạng thái đơn hàng thành công");
       await loadOrders();
@@ -239,8 +263,8 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <label className="mb-2 block text-xs font-semibold text-gray-500">
-              Lọc theo trạng thái đơn
+            <label className=" flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
+              <Filter className="h-4 w-4" />Trạng thái đơn
             </label>
             <select
               value={statusFilter}
@@ -257,8 +281,8 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <label className="mb-2 block text-xs font-semibold text-gray-500">
-              Lọc theo phương thức thanh toán
+            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
+              <Filter className="h-4 w-4" /> Phương thức thanh toán
             </label>
             <select
               value={paymentMethodFilter}
@@ -274,8 +298,8 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <label className="mb-2 block text-xs font-semibold text-gray-500">
-              Lọc theo ngày tạo đơn (từ ngày)
+            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
+              <Filter className="h-4 w-4" /> Ngày tạo đơn
             </label>
             <label className="flex items-center gap-2 rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
               <Calendar className="h-4 w-4 text-gray-400" />
@@ -289,8 +313,8 @@ export default function AdminOrdersPage() {
           </div>
 
           <div className="lg:col-span-2">
-            <label className="mb-2 block text-xs font-semibold text-gray-500">
-              Lọc theo ngày tạo đơn (đến ngày)
+            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
+              <Filter className="h-4 w-4" /> Ngày hoàn thành
             </label>
             <label className="flex items-center gap-2 rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
               <Calendar className="h-4 w-4 text-gray-400" />
@@ -306,7 +330,11 @@ export default function AdminOrdersPage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
           <div className="text-sm text-gray-600">
-            Có <span className="font-semibold text-black">{filteredOrders.length}</span> đơn hàng phù hợp bộ lọc
+            Có{" "}
+            <span className="font-semibold text-black">
+              {filteredOrders.length}
+            </span>{" "}
+            đơn hàng phù hợp bộ lọc
           </div>
           <button
             type="button"
@@ -318,7 +346,9 @@ export default function AdminOrdersPage() {
         </div>
 
         {error && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
         )}
       </section>
 
@@ -353,25 +383,41 @@ export default function AdminOrdersPage() {
                 </tr>
               ) : (
                 filteredOrders.map((order) => {
-                  const statusConfig = statusMap[order.status] || statusMap.pending;
+                  const statusConfig =
+                    statusMap[order.status] || statusMap.pending;
                   const StatusIcon = statusConfig.icon;
 
+                  const allowedStatuses = getAllowedStatuses(order.status);
+
                   return (
-                    <tr key={order._id} className="align-top transition hover:bg-gray-50/80 text-center">
+                    <tr
+                      key={order._id}
+                      className="align-top transition hover:bg-gray-50/80 text-center"
+                    >
                       <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-black">#{order._id.slice(-8).toUpperCase()}</p>
-                        <p className="mt-1 text-xs text-gray-500">{formatDateTime(order.createdAt)}</p>
+                        <p className="text-sm font-semibold text-black">
+                          #{order._id.slice(-8).toUpperCase()}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {formatDateTime(order.createdAt)}
+                        </p>
                       </td>
 
                       <td className="px-6 py-4 text-sm text-gray-700">
                         <p className="font-medium text-gray-900">
-                          {order.userId?.full_name || order.userId?.username || "-"}
+                          {order.userId?.full_name ||
+                            order.userId?.username ||
+                            "-"}
                         </p>
-                        <p className="text-xs text-gray-500">{order.userId?.email || "-"}</p>
+                        <p className="text-xs text-gray-500">
+                          {order.userId?.email || "-"}
+                        </p>
                       </td>
 
                       <td className="px-6 py-4 text-sm text-gray-700">
-                        <p className="font-medium text-gray-900">{order.receiverName || "-"}</p>
+                        <p className="font-medium text-gray-900">
+                          {order.receiverName || "-"}
+                        </p>
                         <p>{order.receiverPhone || "-"}</p>
                       </td>
 
@@ -381,7 +427,9 @@ export default function AdminOrdersPage() {
                           {order.paymentMethod?.toUpperCase() || "-"}
                         </div>
                         <p className="mt-2 text-xs text-gray-600">
-                          {paymentStatusText[order.paymentStatus] || order.paymentStatus || "-"}
+                          {paymentStatusText[order.paymentStatus] ||
+                            order.paymentStatus ||
+                            "-"}
                         </p>
                       </td>
 
@@ -392,11 +440,12 @@ export default function AdminOrdersPage() {
                           <StatusIcon className="h-3.5 w-3.5" />
                           {statusConfig.label}
                         </span>
-                        {order.status === "cancelled" && order.cancellationReason && (
-                          <p className="mt-2 max-w-[260px] text-xs text-red-600">
-                            Lý do: {order.cancellationReason}
-                          </p>
-                        )}
+                        {order.status === "cancelled" &&
+                          order.cancellationReason && (
+                            <p className="mt-2 max-w-[260px] text-xs text-red-600">
+                              Lý do: {order.cancellationReason}
+                            </p>
+                          )}
                       </td>
 
                       <td className="px-6 py-4 text-sm font-semibold text-black">
@@ -407,14 +456,20 @@ export default function AdminOrdersPage() {
                         <select
                           disabled={updatingOrderId === order._id}
                           value={order.status}
-                          onChange={(event) => handleStatusChange(order, event.target.value)}
+                          onChange={(event) =>
+                            handleStatusChange(order, event.target.value)
+                          }
                           className="w-[120px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium outline-none transition focus:border-black disabled:cursor-not-allowed disabled:bg-gray-100"
                         >
-                          {orderStatuses.map((status) => (
-                            <option key={status.value} value={status.value}>
-                              {status.label}
-                            </option>
-                          ))}
+                          {orderStatuses
+                            .filter((status) =>
+                              allowedStatuses.includes(status.value),
+                            )
+                            .map((status) => (
+                              <option key={status.value} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
                         </select>
                       </td>
 
@@ -439,7 +494,9 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h3 className="text-base font-bold text-gray-900">Hủy đơn hàng</h3>
+              <h3 className="text-base font-bold text-gray-900">
+                Hủy đơn hàng
+              </h3>
               <button
                 type="button"
                 onClick={closeCancelModal}
@@ -452,7 +509,11 @@ export default function AdminOrdersPage() {
             <div className="space-y-4 px-6 py-5">
               <p className="text-sm text-gray-700">
                 Vui lòng nhập lý do hủy cho đơn hàng
-                <span className="font-semibold"> #{cancelTarget?._id?.slice(-8)?.toUpperCase()}</span>.
+                <span className="font-semibold">
+                  {" "}
+                  #{cancelTarget?._id?.slice(-8)?.toUpperCase()}
+                </span>
+                .
               </p>
 
               <textarea

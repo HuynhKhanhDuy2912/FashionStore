@@ -7,6 +7,7 @@ import {
   getAdminOrders,
   getMyOrders,
   getOrderDetail,
+  markOrderAsReceivedByUser,
   updateAdminOrderStatus
 } from "../services/order.service.js";
 
@@ -87,6 +88,25 @@ export const cancelMyOrder = async (req, res) => {
   }
 };
 
+export const markMyOrderAsReceived = async (req, res) => {
+  try {
+    const order = await markOrderAsReceivedByUser(req.user._id, req.params.orderId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Order marked as received successfully",
+      data: order
+    });
+  } catch (error) {
+    const statusCode = error.message === "Order not found" ? 404 : 400;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 export const getAdminOrderList = async (_req, res) => {
   try {
     const orders = await getAdminOrders();
@@ -152,6 +172,7 @@ export default {
   getMyOrderList,
   getMyOrderById,
   cancelMyOrder,
+  markMyOrderAsReceived,
   getAdminOrderList,
   getAdminOrderById,
   updateAdminOrder

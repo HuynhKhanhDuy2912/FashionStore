@@ -27,6 +27,16 @@ const reviewSchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000,
     default: ""
+  },
+
+  imageUrls: {
+    type: [String],
+    default: []
+  },
+
+  videoUrls: {
+    type: [String],
+    default: []
   }
 
 }, { timestamps: true });

@@ -5,19 +5,19 @@ import { ChevronDown } from "lucide-react";
 
 const adminNavItems = [
   { to: "/admin", label: "TỔNG QUAN", end: true },
-  { to: "/admin/categories", label: "DANH MỤC" },
-  { to: "/admin/collections", label: "BỘ SƯU TẬP" },
+  { to: "/admin/categories", label: "QUẢN LÝ DANH MỤC" },
+  { to: "/admin/collections", label: "QUẢN LÝ BỘ SƯU TẬP" },
   {
-    label: "SẢN PHẨM",
+    label: "QUẢN LÝ SẢN PHẨM",
     basePath: "/admin/products",
     children: [
       { to: "/admin/products/list", label: "Danh sách sản phẩm" },
       { to: "/admin/products/add", label: "Thêm sản phẩm mới" }
     ]
   },
-  { to: "/admin/users", label: "NGƯỜI DÙNG" },
-  { to: "/admin/orders", label: "ĐƠN HÀNG" },
-  { to: "/admin/banners", label: "BANNER" }
+  { to: "/admin/users", label: "QUẢN LÝ NGƯỜI DÙNG" },
+  { to: "/admin/orders", label: "QUẢN LÝ ĐƠN HÀNG" },
+  { to: "/admin/banners", label: "QUẢN LÝ BANNER" }
 ];
 
 
@@ -68,7 +68,7 @@ export default function AdminLayout() {
                   {/* Parent button */}
                   <button
                     onClick={() => toggleMenu(item.label)}
-                    className={`w-full flex items-center justify-between px-6 py-4 text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer border-none ${
+                    className={`w-full flex items-center justify-between px-6 py-4 text-xs font-bold transition-colors cursor-pointer border-none ${
                       isActive
                         ? "bg-black text-white"
                         : "bg-white text-gray-500 hover:text-black hover:bg-gray-50"
@@ -111,7 +111,7 @@ export default function AdminLayout() {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `px-6 py-4 text-xs font-bold uppercase tracking-widest transition-colors ${
+                  `px-6 py-4 text-xs font-bold transition-colors ${
                     isActive
                       ? "bg-black text-white"
                       : "text-gray-500 hover:text-black hover:bg-gray-50"

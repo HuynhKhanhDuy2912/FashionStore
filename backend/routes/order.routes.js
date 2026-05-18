@@ -17,5 +17,6 @@ router.get("/me", protect, orderController.getMyOrderList);
 router.get("/me/:orderId", protect, orderController.getMyOrderById);
 router.post("/checkout", protect, orderController.checkoutMyOrder);
 router.patch("/me/:orderId/cancel", protect, orderController.cancelMyOrder);
+router.patch("/me/:orderId/received", protect, orderController.markMyOrderAsReceived);
 
 export default router;

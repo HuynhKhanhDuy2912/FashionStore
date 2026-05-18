@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import Payment from "../models/Payment.js";
 import ProductVariant from "../models/ProductVariant.js";
+import Review from "../models/Review.js";
 
 const ORDER_POPULATE = [
   { path: "userId", select: "username email full_name" }
@@ -119,7 +120,27 @@ export const getMyOrders = async (userId) => {
         .populate("productId", "name price discount images")
         .populate("variantId", "size color sku image priceAdjustment");
 
-      return { ...order.toObject(), items };
+      if (order.status !== "completed") {
+        const itemsWithReviewFlag = items.map((item) => ({
+          ...item.toObject(),
+          isReviewed: false
+        }));
+        return { ...order.toObject(), items: itemsWithReviewFlag };
+      }
+
+      const productIds = [...new Set(items.map((item) => item.productId?._id?.toString()).filter(Boolean))];
+      const reviewedRecords = await Review.find({
+        userId,
+        productId: { $in: productIds }
+      }).select("productId");
+
+      const reviewedProductIds = new Set(reviewedRecords.map((review) => review.productId.toString()));
+      const itemsWithReviewFlag = items.map((item) => ({
+        ...item.toObject(),
+        isReviewed: reviewedProductIds.has(item.productId?._id?.toString())
+      }));
+
+      return { ...order.toObject(), items: itemsWithReviewFlag };
     })
   );
 
@@ -178,6 +199,28 @@ export const getAdminOrderDetail = async (orderId) => {
   return { ...order.toObject(), items };
 };
 
+export const markOrderAsReceivedByUser = async (userId, orderId) => {
+  const order = await Order.findOne({ _id: orderId, userId });
+  if (!order) throw new Error("Order not found");
+  if (order.status !== "shipping") {
+    throw new Error("Only shipping orders can be marked as received");
+  }
+
+  order.status = "completed";
+  order.completedAt = new Date();
+
+  if (order.paymentMethod === "cod") {
+    order.paymentStatus = "paid";
+    await Payment.findOneAndUpdate(
+      { orderId: order._id },
+      { paymentStatus: "paid", paidAt: new Date() }
+    );
+  }
+
+  await order.save();
+  return order;
+};
+
 export const updateAdminOrderStatus = async (orderId, status, cancellationReason = "") => {
   const validStatuses = ["pending", "confirmed", "shipping", "completed", "cancelled"];
   if (!validStatuses.includes(status)) throw new Error("Invalid status");
@@ -189,6 +232,19 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
   if (!order) throw new Error("Order not found");
 
   const previousStatus = order.status;
+
+  // Validate allowed status transitions
+  const allowedTransitions = {
+    pending: ["confirmed", "cancelled"],
+    confirmed: ["shipping", "cancelled"],
+    shipping: ["completed"],
+    completed: [],
+    cancelled: []
+  };
+
+  if (!allowedTransitions[previousStatus]?.includes(status)) {
+    throw new Error(`Cannot change status from ${previousStatus} to ${status}`);
+  }
 
   // Khi chuyển từ pending sang confirmed - trừ stock
   if (previousStatus === "pending" && status === "confirmed") {
@@ -232,6 +288,15 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
   }
 
   order.status = status;
+
+  if (status === "completed" && order.paymentMethod === "cod") {
+    order.paymentStatus = "paid";
+    await Payment.findOneAndUpdate(
+      { orderId: order._id },
+      { paymentStatus: "paid", paidAt: new Date() }
+    );
+  }
+
   await order.save();
   return order;
 };

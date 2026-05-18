@@ -116,7 +116,7 @@ export const checkReviewEligibility = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { productId, rating, comment = "" } = req.body;
+    const { productId, rating, comment = "", imageUrls = [], videoUrls = [] } = req.body;
     const normalizedRating = Number(rating);
 
     if (!isValidObjectId(productId)) {
@@ -161,11 +161,20 @@ const create = async (req, res) => {
       });
     }
 
+    const normalizedImageUrls = Array.isArray(imageUrls)
+      ? imageUrls.filter((url) => typeof url === "string" && url.trim())
+      : [];
+    const normalizedVideoUrls = Array.isArray(videoUrls)
+      ? videoUrls.filter((url) => typeof url === "string" && url.trim())
+      : [];
+
     const review = await Review.create({
       userId: req.user._id,
       productId,
       rating: normalizedRating,
-      comment
+      comment,
+      imageUrls: normalizedImageUrls,
+      videoUrls: normalizedVideoUrls
     });
 
     await updateProductRatingSummary(productId);

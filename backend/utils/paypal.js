@@ -34,8 +34,8 @@ const getAccessToken = async () => {
 
 export const createPayPalOrder = async (orderId, amount, currency = "USD") => {
   const accessToken = await getAccessToken();
-  const returnUrl = process.env.PAYPAL_RETURN_URL || "http://localhost:3000/payment/paypal/callback";
-  const cancelUrl = process.env.PAYPAL_CANCEL_URL || "http://localhost:3000/checkout";
+  const returnUrl = process.env.PAYPAL_RETURN_URL || "http://localhost:5000/api/payment/paypal/callback";
+  const cancelUrl = process.env.PAYPAL_CANCEL_URL || "http://localhost:3000/payment/failed";
 
   try {
     const response = await axios.post(

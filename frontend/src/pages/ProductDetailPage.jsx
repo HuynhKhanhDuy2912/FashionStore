@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
+import ReviewModal from "../components/ReviewModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
-import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler, X } from "lucide-react";
+import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler } from "lucide-react";
 import toast from "react-hot-toast";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
@@ -18,7 +19,7 @@ function isVideoMedia(url = "") {
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedColorParam = searchParams.get("color") || "";
   const { token } = useAuth();
 
@@ -38,6 +39,8 @@ export default function ProductDetailPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewImageFiles, setReviewImageFiles] = useState([]);
+  const [reviewVideoFiles, setReviewVideoFiles] = useState([]);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -103,6 +106,15 @@ export default function ProductDetailPage() {
     setError("");
     window.scrollTo(0, 0);
   }, [navigate, productId, selectedColorParam]);
+
+  useEffect(() => {
+    if (!product || searchParams.get("review") !== "true" || !token) return;
+
+    handleOpenReviewForm();
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("review");
+    setSearchParams(newParams, { replace: true });
+  }, [product, searchParams, setSearchParams, token]);
 
   const selectedVariant = useMemo(
     () => variants.find(v => v.color === selectedColor && v.size === selectedSize) || variants[0],
@@ -254,13 +266,44 @@ export default function ProductDetailPage() {
     setReviewSubmitting(true);
 
     try {
+      const imageUrls = [];
+      const videoUrls = [];
+
+      // Upload images
+      for (const file of reviewImageFiles) {
+        const formData = new FormData();
+        formData.append("image", file);
+        const uploadResponse = await apiRequest("/upload", {
+          method: "POST",
+          token,
+          body: formData,
+          isFormData: true
+        });
+        imageUrls.push(uploadResponse.imageUrl || uploadResponse.mediaUrl);
+      }
+
+      // Upload videos
+      for (const file of reviewVideoFiles) {
+        const formData = new FormData();
+        formData.append("image", file);
+        const uploadResponse = await apiRequest("/upload", {
+          method: "POST",
+          token,
+          body: formData,
+          isFormData: true
+        });
+        videoUrls.push(uploadResponse.imageUrl || uploadResponse.mediaUrl);
+      }
+
       await apiRequest("/reviews", {
         method: "POST",
         token,
         body: {
           productId: product._id,
           rating: reviewRating,
-          comment: reviewComment
+          comment: reviewComment,
+          imageUrls,
+          videoUrls
         }
       });
 
@@ -269,6 +312,8 @@ export default function ProductDetailPage() {
       setShowReviewForm(false);
       setReviewRating(5);
       setReviewComment("");
+      setReviewImageFiles([]);
+      setReviewVideoFiles([]);
       toast.success("Cảm ơn bạn đã đánh giá sản phẩm!");
     } catch (e) {
       toast.error(e.message);
@@ -766,66 +811,25 @@ export default function ProductDetailPage() {
         </section>
       )}
 
-      {showReviewForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <form onSubmit={handleSubmitReview} className="w-full max-w-md bg-white p-6 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4 border-b border-gray-200 pb-4">
-              <div>
-                <h2 className="text-sm font-extrabold uppercase tracking-widest text-black">Đánh giá sản phẩm</h2>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-1">{product.name}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowReviewForm(false)}
-                className="text-2xl leading-none text-gray-500 hover:text-black"
-                aria-label="Đóng form đánh giá"
-              >
-                <X size={16} strokeWidth={1.5} />
-              </button>
-            </div>
-
-            <div className="mb-5">
-              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-black">Số sao</p>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
-                    className="border-none bg-transparent p-0 text-yellow-400"
-                    aria-label={`${star} sao`}
-                  >
-                    <Star
-                      size={30}
-                      className={star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="mb-5 block">
-              <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">Nhận xét</span>
-              <textarea
-                value={reviewComment}
-                onChange={(event) => setReviewComment(event.target.value)}
-                maxLength={1000}
-                rows={4}
-                className="w-full resize-none border border-gray-300 px-3 py-3 text-sm outline-none focus:border-black"
-                placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={reviewSubmitting}
-              className="w-full bg-black py-4 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {reviewSubmitting ? "Đang gửi..." : "Gửi đánh giá"}
-            </button>
-          </form>
-        </div>
-      )}
+      <ReviewModal
+        open={showReviewForm}
+        onClose={() => setShowReviewForm(false)}
+        onSubmit={handleSubmitReview}
+        submitting={reviewSubmitting}
+        productName={product.name}
+        productSku={product._id.slice(-6).toUpperCase()}
+        imageUrl={activeImage}
+        rating={reviewRating}
+        onRatingChange={setReviewRating}
+        comment={reviewComment}
+        onCommentChange={setReviewComment}
+        selectedImages={reviewImageFiles}
+        selectedVideos={reviewVideoFiles}
+        onImageFilesChange={(files) => setReviewImageFiles(prev => [...prev, ...files])}
+        onVideoFilesChange={(files) => setReviewVideoFiles(prev => [...prev, ...files])}
+        onRemoveSelectedImage={(index) => setReviewImageFiles(prev => prev.filter((_, i) => i !== index))}
+        onRemoveSelectedVideo={(index) => setReviewVideoFiles(prev => prev.filter((_, i) => i !== index))}
+      />
     </div>
   );
 }

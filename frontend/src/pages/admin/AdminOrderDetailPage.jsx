@@ -55,6 +55,19 @@ const statusMap = {
   }
 };
 
+const allowedStatusTransitions = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["shipping", "cancelled"],
+  shipping: ["completed"],
+  completed: [],
+  cancelled: []
+};
+
+const getAllowedStatuses = (currentStatus) => {
+  const nextStatuses = allowedStatusTransitions[currentStatus] || [];
+  return [currentStatus, ...nextStatuses];
+};
+
 const paymentStatusText = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
@@ -195,6 +208,7 @@ export default function AdminOrderDetailPage() {
 
   const statusConfig = statusMap[order.status] || statusMap.pending;
   const StatusIcon = statusConfig.icon;
+  const allowedStatuses = getAllowedStatuses(order.status);
 
   return (
     <section className="min-h-screen bg-slate-50 p-6">
@@ -268,11 +282,13 @@ export default function AdminOrderDetailPage() {
                     onChange={(event) => handleStatusChange(event.target.value)}
                     className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                   >
-                    {orderStatuses.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
+                    {orderStatuses
+                      .filter((status) => allowedStatuses.includes(status.value))
+                      .map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
@@ -365,12 +381,12 @@ export default function AdminOrderDetailPage() {
             </div>
           </section>
 
-          {order.note && (
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900">Ghi chú đơn hàng</h3>
-              <p className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">{order.note}</p>
-            </section>
-          )}
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-base font-bold text-slate-900">Ghi chú đơn hàng</h3>
+            <p className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">
+              {order.note?.trim() ? order.note : "Không có ghi chú"}
+            </p>
+          </section>
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
@@ -426,7 +442,7 @@ export default function AdminOrderDetailPage() {
               <div className="mb-4 rounded-2xl bg-slate-950 p-4 text-white">
                 <div className="flex items-center gap-2 text-slate-300">
                   <Wallet className="h-4 w-4" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Phương thức</span>
+                  <span className="text-xs font-bold">Phương thức thanh toán</span>
                 </div>
                 <p className="mt-2 text-lg font-bold">
                   {paymentMethodText[order.paymentMethod] || order.paymentMethod || "-"}

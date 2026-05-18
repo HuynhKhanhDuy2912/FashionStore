@@ -32,6 +32,7 @@ import CollectionDetailPage from "./pages/CollectionDetailPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage.jsx";
 import PaymentFailedPage from "./pages/PaymentFailedPage.jsx";
+import PayPalCallbackPage from "./pages/PayPalCallbackPage.jsx";
 
 export default function App() {
   return (
@@ -93,6 +94,7 @@ export default function App() {
           />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/failed" element={<PaymentFailedPage />} />
+          <Route path="/payment/paypal/callback" element={<PayPalCallbackPage />} />
           <Route
             path="/admin"
             element={
