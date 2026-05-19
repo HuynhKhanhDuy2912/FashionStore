@@ -4,6 +4,7 @@ import { authorize, protect } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+router.get("/admin/stats", protect, authorize("admin"), orderController.getAdminDashboardStatsHandler);
 router.get("/admin/all", protect, authorize("admin"), orderController.getAdminOrderList);
 router.get("/admin/:orderId", protect, authorize("admin"), orderController.getAdminOrderById);
 router.patch(

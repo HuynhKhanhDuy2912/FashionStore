@@ -1,58 +1,168 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Headphones,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+  X,
+} from "lucide-react";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
 
-const editCards = [
+const categoryCards = [
   {
-    title: "THỜI TRANG NAM",
+    title: "Thời trang nam",
     copy: "Phom dáng thoải mái, tông màu nhã nhặn và những món đồ cơ bản linh hoạt.",
-    tone: "bg-gray-100 text-black",
     link: "/products?gender=male",
+    image:
+      "https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    title: "THỜI TRANG NỮ",
+    title: "Thời trang nữ",
     copy: "Đường nét mềm mại, layer thông minh và trang phục dạo phố thanh lịch.",
-    tone: "bg-gray-200 text-black",
     link: "/products?gender=female",
+    image:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    title: "BỘ SƯU TẬP",
-    copy: "Khám phá các gợi ý phối đồ và lựa chọn cá nhân hóa từ dữ liệu của bạn.",
-    tone: "bg-black text-white",
-    link: "/recommendations",
+    title: "Bộ sưu tập",
+    copy: "Khám phá các câu chuyện thời trang được tuyển chọn theo mùa và phong cách.",
+    link: "/collections",
+    image:
+      "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop",
   },
 ];
+
+const trustItems = [
+  {
+    icon: Truck,
+    title: "Giao hàng toàn quốc",
+    copy: "Miễn phí đơn từ 500.000₫",
+  },
+  {
+    icon: RotateCcw,
+    title: "Đổi trả 30 ngày",
+    copy: "Quy trình đơn giản, nhanh chóng",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Thanh toán an toàn",
+    copy: "MoMo, VNPay, PayPal",
+  },
+  {
+    icon: Headphones,
+    title: "Hỗ trợ 24/7",
+    copy: "Tư vấn mọi lúc bạn cần",
+  },
+];
+
+function SectionHeader({ eyebrow, title, description, linkTo, linkLabel = "Xem tất cả" }) {
+  return (
+    <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
+      <div>
+        {eyebrow ? (
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
+            {eyebrow}
+          </p>
+        ) : null}
+        <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">{title}</h2>
+        {description ? (
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">{description}</p>
+        ) : null}
+      </div>
+      {linkTo ? (
+        <Link
+          to={linkTo}
+          className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-black transition hover:gap-3"
+        >
+          {linkLabel}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="animate-pulse">
+          <div className="aspect-[4/5] rounded-sm bg-gray-200" />
+          <div className="mt-3 h-4 w-2/3 rounded bg-gray-200" />
+          <div className="mt-2 h-4 w-1/3 rounded bg-gray-200" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Toast({ message, error, onClose }) {
+  if (!message && !error) return null;
+
+  return (
+    <div
+      role="alert"
+      className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${
+        error
+          ? "border-red-200 bg-red-50 text-red-800"
+          : "border-gray-200 bg-white text-black"
+      }`}
+    >
+      <p className="flex-1 text-sm font-medium">{error || message}</p>
+      <button
+        type="button"
+        onClick={onClose}
+        className="shrink-0 text-gray-400 transition hover:text-black"
+        aria-label="Đóng thông báo"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [banners, setBanners] = useState([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
-        const [productResponse, variantResponse, bannerResponse] =
+        const [productResponse, variantResponse, bannerResponse, collectionResponse] =
           await Promise.all([
             apiRequest("/products?limit=100"),
             apiRequest("/product-variants?limit=1200"),
             apiRequest("/banners/active"),
+            apiRequest("/collections?limit=6&isActive=true"),
           ]);
 
         setProducts(productResponse.data);
         setVariants(variantResponse.data);
         setBanners(bannerResponse.data || []);
+        setCollections(collectionResponse.data || []);
+        setError("");
       } catch (loadError) {
         setError(loadError.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -71,6 +181,15 @@ export default function HomePage() {
     };
     loadRecommendations();
   }, [token]);
+
+  useEffect(() => {
+    if (!message && !error) return undefined;
+    const timer = setTimeout(() => {
+      setMessage("");
+      setError("");
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [message, error]);
 
   const productsWithVariants = useMemo(
     () => attachVariantsToProducts(products, variants),
@@ -96,6 +215,8 @@ export default function HomePage() {
         .slice(0, 4),
     [productsWithVariants],
   );
+
+  const featuredCollections = useMemo(() => collections.slice(0, 3), [collections]);
 
   const handleWishlist = async (product, addedFrom = "home") => {
     if (!token) {
@@ -158,16 +279,16 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (!banners.length) return;
+    if (!banners.length || isHeroPaused) return;
 
     const timer = setInterval(() => {
       setActiveBannerIndex((prev) =>
         prev === banners.length - 1 ? 0 : prev + 1,
       );
-    }, 5000);
+    }, 6000);
 
     return () => clearInterval(timer);
-  }, [banners]);
+  }, [banners, isHeroPaused]);
 
   useEffect(() => {
     if (activeBannerIndex >= banners.length && banners.length > 0) {
@@ -176,304 +297,304 @@ export default function HomePage() {
   }, [activeBannerIndex, banners.length]);
 
   const activeBanner = banners[activeBannerIndex] || null;
+  const bannerLink = activeBanner?.collectionId?.slug
+    ? `/collections/${activeBanner.collectionId.slug}`
+    : "/collections";
+  const bannerTitle =
+    activeBanner?.title ||
+    activeBanner?.collectionId?.name ||
+    "Bộ sưu tập mới";
 
   return (
-    <div className="pb-16">
-      {/* Hero Banner Slider (Full bleed) */}
-      <section className="relative h-[calc(100vh-64px)] min-h-[500px] overflow-hidden bg-black text-white mb-10">
+    <div className="bg-white">
+      <Toast
+        message={message}
+        error={error}
+        onClose={() => {
+          setMessage("");
+          setError("");
+        }}
+      />
+
+      {/* Hero */}
+      <section
+        className="relative h-[min(78vh,720px)] min-h-[480px] overflow-hidden bg-neutral-900 text-white"
+        onMouseEnter={() => setIsHeroPaused(true)}
+        onMouseLeave={() => setIsHeroPaused(false)}
+      >
         {activeBanner ? (
           <>
-            <Link
-              to={
-                activeBanner.collectionId?.slug
-                  ? `/collections/${activeBanner.collectionId.slug}`
-                  : "/collections"
-              }
-              className="absolute inset-0 block"
-              aria-label={
-                activeBanner.title ||
-                activeBanner.collectionId?.name ||
-                "Banner bộ sưu tập"
-              }
-            >
-              <img
-                src={activeBanner.imageUrl}
-                alt={
-                  activeBanner.title ||
-                  activeBanner.collectionId?.name ||
-                  "Banner"
-                }
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </Link>
-
-            {banners.length > 1 ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePrevBanner}
-                  className="absolute left-4 top-1/2 z-20 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
-                  aria-label="Banner trước"
+            <img
+              src={activeBanner.imageUrl}
+              alt={bannerTitle}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/20" />
+            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-end px-4 pb-16 pt-24 md:px-8 md:pb-20">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">
+                Bộ sưu tập nổi bật
+              </p>
+              <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+                {bannerTitle}
+              </h1>
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
+                Khám phá phong cách mới nhất - thiết kế tinh gọn, chất liệu cao cấp,
+                dễ phối mọi dịp.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to={bannerLink}
+                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
                 >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleNextBanner}
-                  className="absolute right-4 top-1/2 z-20 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
-                  aria-label="Banner sau"
+                  Khám phá ngay
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/products"
+                  className="inline-flex items-center gap-2 border border-white/80 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
                 >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-
-                <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
-                  {banners.map((banner, index) => (
-                    <button
-                      key={banner._id}
-                      type="button"
-                      onClick={() => setActiveBannerIndex(index)}
-                      className={`h-2.5 rounded-full transition-all ${index === activeBannerIndex ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"}`}
-                      aria-label={`Chuyển tới banner ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : null}
+                  Tất cả sản phẩm
+                </Link>
+              </div>
+            </div>
           </>
         ) : (
           <>
             <img
               src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop"
-              alt="Hero background"
-              className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay"
+              alt="Fashion hero"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            <div className="relative z-10 h-full flex items-center justify-center text-center px-6">
-              <div className="max-w-4xl flex flex-col items-center mt-20">
-                <span className="uppercase tracking-[0.3em] text-xs font-bold mb-6 block border border-white px-4 py-2 bg-black/30 backdrop-blur-sm">
-                  SPRING SUMMER 2026
-                </span>
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight tracking-tight uppercase">
-                  SỰ TỐI GIẢN LÊN NGÔI
-                </h2>
-                <p className="text-lg text-white/80 mb-10 max-w-2xl leading-relaxed">
-                  Khám phá trải nghiệm mua sắm thời trang hiện đại với bộ sưu
-                  tập độc quyền, mang đậm dấu ấn cá nhân và sự tinh tế.
-                </p>
-                <div className="flex gap-4 flex-wrap justify-center">
-                  <Link
-                    className="px-10 py-4 bg-white text-black font-bold uppercase tracking-wider hover:bg-gray-200 transition-colors"
-                    to="/products"
-                  >
-                    MUA NGAY
-                  </Link>
-                  <Link
-                    className="px-10 py-4 bg-transparent text-white border border-white font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-colors"
-                    to="/recommendations"
-                  >
-                    GỢI Ý CHO BẠN
-                  </Link>
-                </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-center px-4 md:px-8">
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">
+                Spring Summer 2026
+              </p>
+              <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+                Thời trang tối giản,
+                <br />
+                phong cách của bạn
+              </h1>
+              <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
+                Trải nghiệm mua sắm hiện đại với bộ sưu tập độc quyền - tinh tế,
+                bền vững và dễ phối đồ hàng ngày.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                >
+                  Mua ngay
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to={token ? "/recommendations" : "/login"}
+                  className="inline-flex items-center gap-2 border border-white/80 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
+                >
+                  {token ? "Gợi ý cho bạn" : "Đăng nhập"}
+                </Link>
               </div>
             </div>
           </>
         )}
-      </section>
-      
-      {/* Featured Categories Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-1">
-          {editCards.map((item) => (
-            <article
-              key={item.title}
-              className={`relative h-[500px] p-10 flex flex-col justify-end overflow-hidden group ${item.tone}`}
+
+        {banners.length > 1 ? (
+          <>
+            <button
+              type="button"
+              onClick={handlePrevBanner}
+              className="absolute left-4 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:left-8"
+              aria-label="Banner trước"
             >
-              <div className="relative z-10">
-                <h3 className="text-2xl font-bold mb-4 uppercase tracking-wider">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextBanner}
+              className="absolute right-4 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:right-8"
+              aria-label="Banner sau"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+              {banners.map((banner, index) => (
+                <button
+                  key={banner._id}
+                  type="button"
+                  onClick={() => setActiveBannerIndex(index)}
+                  className={`rounded-full transition-all ${
+                    index === activeBannerIndex
+                      ? "h-2.5 w-8 bg-white"
+                      : "h-2.5 w-2.5 bg-white/40 hover:bg-white/70"
+                  }`}
+                  aria-label={`Chuyển tới banner ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
+      </section>
+
+      {/* Trust bar */}
+      <section className="border-b border-gray-200 bg-gray-50">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-4 px-4 py-5 md:grid-cols-4 md:gap-6 md:px-8 md:py-6">
+          {trustItems.map((item) => (
+            <div key={item.title} className="flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-black shadow-sm">
+                <item.icon className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-black">
                   {item.title}
-                </h3>
-                <p className="opacity-80 mb-8 leading-relaxed max-w-[90%] text-sm">
+                </p>
+                <p className="mt-0.5 text-xs text-gray-500">{item.copy}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Category cards */}
+      <section className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:py-16">
+        <SectionHeader
+          eyebrow="Danh mục"
+          title="Mua sắm theo phong cách"
+          description="Chọn danh mục phù hợp với bạn - từ trang phục hàng ngày đến bộ sưu tập đặc biệt."
+        />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+          {categoryCards.map((item) => (
+            <Link
+              key={item.title}
+              to={item.link}
+              className="group relative flex min-h-[320px] flex-col justify-end overflow-hidden rounded-sm md:min-h-[380px]"
+            >
+              <img
+                src={item.image}
+                alt={item.title}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="relative z-10 p-6 text-white md:p-8">
+                <h3 className="text-xl font-bold md:text-2xl">{item.title}</h3>
+                <p className="mt-2 max-w-[90%] text-sm leading-relaxed text-white/80">
                   {item.copy}
                 </p>
-                <Link
-                  to={item.link}
-                  className="inline-block border-b-2 border-current pb-1 font-bold tracking-widest uppercase text-xs hover:opacity-50 transition-opacity"
-                >
-                  KHÁM PHÁ
-                </Link>
+                <span className="mt-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+                  Khám phá
+                  <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                </span>
               </div>
-            </article>
+            </Link>
           ))}
-        </section>
-        
-        {message ? (
-          <p className="text-black bg-gray-100 px-6 py-4 border-l-4 border-black font-medium">
-            {message}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="text-red-600 bg-red-50 px-6 py-4 border-l-4 border-red-600 font-medium">
-            {error}
-          </p>
-        ) : null}
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-16 px-4 md:px-6 lg:px-8">
-        
-        {/* New Arrivals */}
+        </div>
+      </section>
+
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-16 px-4 pb-20 md:px-8 md:pb-24">
+        {/* New arrivals */}
         <section>
-          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4 border-b border-gray-200 pb-4 pt-4">
-            <div>
-              <h2 className="text-3xl font-extrabold tracking-widest text-black uppercase">
-                SẢN PHẨM MỚI
-              </h2>
+          <SectionHeader
+            eyebrow="Mới về"
+            title="Sản phẩm mới"
+            description="Những thiết kế mới nhất vừa được bổ sung - cập nhật tủ đồ của bạn."
+            linkTo="/products"
+          />
+          {loading ? (
+            <ProductGridSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+              {newArrivals.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  onAddToWishlist={(item) => handleWishlist(item, "home")}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
             </div>
-            <Link
-              className="font-bold text-black hover:text-gray-500 transition-colors border-b-2 border-transparent hover:border-black pb-1 text-xs uppercase tracking-widest"
-              to="/products"
-            >
-              XEM TẤT CẢ
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
-            {newArrivals.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onAddToWishlist={(item) => handleWishlist(item, "home")}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
+          )}
         </section>
 
-        {/* Large Featured Panels */}
-        <section className="grid grid-cols-1 gap-1 md:grid-cols-2">
-          <article className="p-12 flex flex-col items-center justify-center min-h-[600px] bg-black text-white relative overflow-hidden group text-center">
-            <img
-              src="https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=1974&auto=format&fit=crop"
-              alt="Menswear"
-              className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000"
+        {/* Featured collections */}
+        {featuredCollections.length > 0 ? (
+          <section>
+            <SectionHeader
+              eyebrow="Editorial"
+              title="Bộ sưu tập nổi bật"
+              description="Các câu chuyện thời trang được tuyển chọn theo mùa và phong cách riêng."
+              linkTo="/collections"
             />
-            <div className="relative z-10 max-w-md">
-              <span className="uppercase tracking-[0.3em] text-xs font-bold text-white/70 mb-4 block">
-                BỘ SƯU TẬP
-              </span>
-              <h3 className="text-4xl lg:text-5xl font-extrabold mb-6 leading-tight uppercase tracking-wider">
-                THỜI TRANG NAM
-              </h3>
-              <p className="text-white/80 mb-10 text-sm leading-relaxed">
-                Trang phục thiết yếu hàng ngày mang đến sự cân bằng hoàn hảo
-                giữa sự thoải mái và sang trọng.
-              </p>
-              <Link
-                to="/products?gender=male"
-                className="px-10 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors inline-block"
-              >
-                MUA NGAY
-              </Link>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+              {featuredCollections.map((collection, index) => (
+                <Link
+                  key={collection._id}
+                  to={`/collections/${collection.slug || collection._id}`}
+                  className="group relative min-h-[280px] overflow-hidden rounded-sm bg-gray-100 md:min-h-[360px]"
+                >
+                  {collection.coverImage ? (
+                    <img
+                      src={collection.coverImage}
+                      alt={collection.name}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-neutral-200" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <span className="absolute left-4 top-4 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-black">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white md:p-6">
+                    <h3 className="text-lg font-bold md:text-xl">{collection.name}</h3>
+                    {collection.description ? (
+                      <p className="mt-1 line-clamp-2 text-sm text-white/75">
+                        {collection.description}
+                      </p>
+                    ) : null}
+                    <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest">
+                      Xem bộ sưu tập
+                      <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
-          </article>
-          <article className="p-12 flex flex-col items-center justify-center min-h-[600px] bg-gray-100 text-black relative overflow-hidden group text-center">
-            <img
-              src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop"
-              alt="Womenswear"
-              className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 grayscale"
-            />
-            <div className="relative z-10 max-w-md">
-              <span className="uppercase tracking-[0.3em] text-xs font-bold text-black/70 mb-4 block">
-                BỘ SƯU TẬP
-              </span>
-              <h3 className="text-4xl lg:text-5xl font-extrabold mb-6 leading-tight uppercase tracking-wider">
-                THỜI TRANG NỮ
-              </h3>
-              <p className="text-black/80 mb-10 text-sm leading-relaxed">
-                Cập nhật tủ đồ của bạn từ trang phục công sở thanh lịch đến dạo
-                phố sành điệu.
-              </p>
-              <Link
-                to="/products?gender=female"
-                className="px-10 py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors inline-block"
-              >
-                MUA NGAY
-              </Link>
+          </section>
+        ) : null}
+
+        {/* Best sellers */}
+        <section>
+          <SectionHeader
+            eyebrow="Yêu thích"
+            title="Bán chạy nhất"
+            description="Những sản phẩm được khách hàng đánh giá và mua nhiều nhất."
+            linkTo="/products"
+          />
+          {loading ? (
+            <ProductGridSkeleton />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+              {bestSellers.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  onAddToWishlist={(item) => handleWishlist(item, "home")}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
             </div>
-          </article>
+          )}
         </section>
 
-        {/* Best Sellers */}
-        <section className="mt-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4 border-b border-gray-200 pb-4">
-            <div>
-              <h2 className="text-3xl font-extrabold tracking-widest text-black uppercase">
-                BÁN CHẠY NHẤT
-              </h2>
-            </div>
-            <Link
-              className="font-bold text-black hover:text-gray-500 transition-colors border-b-2 border-transparent hover:border-black pb-1 text-xs uppercase tracking-widest"
-              to="/products"
-            >
-              XEM TẤT CẢ
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
-            {bestSellers.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onAddToWishlist={(item) => handleWishlist(item, "home")}
-                onAddToCart={handleAddToCart}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* Features - Minimalist */}
-        <section className="border-t border-b border-gray-200 py-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-center mt-8">
-          <div className="flex flex-col items-center">
-            <span className="text-2xl mb-4 block">01</span>
-            <h3 className="text-sm font-bold mb-3 uppercase tracking-widest">
-              GIAO HÀNG TOÀN QUỐC
-            </h3>
-            <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-              Miễn phí giao hàng cho tất cả đơn hàng từ 500,000đ trở lên.
-            </p>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-2xl mb-4 block">02</span>
-            <h3 className="text-sm font-bold mb-3 uppercase tracking-widest">
-              ĐỔI TRẢ DỄ DÀNG
-            </h3>
-            <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-              Hỗ trợ đổi trả trong vòng 30 ngày kể từ khi nhận hàng.
-            </p>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-2xl mb-4 block">03</span>
-            <h3 className="text-sm font-bold mb-3 uppercase tracking-widest">
-              HỖ TRỢ 24/7
-            </h3>
-            <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-              Đội ngũ chăm sóc khách hàng luôn sẵn sàng hỗ trợ bạn.
-            </p>
-          </div>
-        </section>
-
-        {/* Recommended for You */}
+        {/* Recommendations */}
         {token && recommendations.length > 0 ? (
-          <section className="mt-4">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4 border-b border-gray-200 pb-4">
-              <div>
-                <h2 className="text-3xl font-extrabold tracking-widest text-black uppercase">
-                  GỢI Ý CHO BẠN
-                </h2>
-              </div>
-              <Link
-                className="font-bold text-black hover:text-gray-500 transition-colors border-b-2 border-transparent hover:border-black pb-1 text-xs uppercase tracking-widest"
-                to="/recommendations"
-              >
-                XEM TẤT CẢ
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-4">
+          <section>
+            <SectionHeader
+              eyebrow="Dành cho bạn"
+              title="Gợi ý cá nhân hóa"
+              description="Dựa trên sở thích và lịch sử duyệt của bạn."
+              linkTo="/recommendations"
+            />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
               {recommendations.map((product) => (
                 <ProductCard
                   key={product._id}
@@ -485,6 +606,56 @@ export default function HomePage() {
             </div>
           </section>
         ) : null}
+
+        {/* CTA banner */}
+        <section className="relative overflow-hidden rounded-sm bg-neutral-900 px-6 py-14 text-center text-white md:px-12 md:py-16">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-20"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 50%, white 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
+          <div className="relative z-10 mx-auto max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/60">
+              Thành viên FashionStore
+            </p>
+            <h2 className="mt-3 text-2xl font-bold md:text-3xl">
+              Nhận gợi ý phối đồ thông minh
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-white/75">
+              Đăng nhập để hệ thống học sở thích của bạn và đề xuất sản phẩm phù hợp
+              nhất.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              {token ? (
+                <Link
+                  to="/recommendations"
+                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                >
+                  Xem gợi ý
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                  >
+                    Đăng ký ngay
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-2 border border-white/60 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
+                  >
+                    Đăng nhập
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

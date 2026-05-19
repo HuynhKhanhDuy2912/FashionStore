@@ -188,6 +188,8 @@ export const getAdminOrders = async () => {
   return Order.find({}).sort({ createdAt: -1 }).populate(ORDER_POPULATE);
 };
 
+export { getAdminDashboardStats } from "./dashboard.service.js";
+
 export const getAdminOrderDetail = async (orderId) => {
   const order = await Order.findById(orderId).populate(ORDER_POPULATE);
   if (!order) throw new Error("Order not found");

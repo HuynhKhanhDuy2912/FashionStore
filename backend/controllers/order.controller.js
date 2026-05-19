@@ -5,6 +5,7 @@ import {
   createOrderFromCart,
   getAdminOrderDetail,
   getAdminOrders,
+  getAdminDashboardStats,
   getMyOrders,
   getOrderDetail,
   markOrderAsReceivedByUser,
@@ -107,6 +108,23 @@ export const markMyOrderAsReceived = async (req, res) => {
   }
 };
 
+export const getAdminDashboardStatsHandler = async (_req, res) => {
+  try {
+    const stats = await getAdminDashboardStats();
+
+    return res.status(200).json({
+      success: true,
+      message: "Dashboard stats fetched successfully",
+      data: stats,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const getAdminOrderList = async (_req, res) => {
   try {
     const orders = await getAdminOrders();
@@ -174,6 +192,7 @@ export default {
   cancelMyOrder,
   markMyOrderAsReceived,
   getAdminOrderList,
+  getAdminDashboardStatsHandler,
   getAdminOrderById,
-  updateAdminOrder
+  updateAdminOrder,
 };

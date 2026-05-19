@@ -160,6 +160,7 @@ export const login = async (req, res) => {
       });
     }
 
+    await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
     return issueAuthResponse(res, user, 200, "Login successful");
   } catch (error) {
     return res.status(500).json({
@@ -232,6 +233,7 @@ export const googleAuth = async (req, res) => {
       await user.save();
     }
 
+    await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
     return issueAuthResponse(res, user, 200, "Google login successful");
   } catch (error) {
     return res.status(401).json({
@@ -372,8 +374,8 @@ export const verifyPhoneOtp = async (req, res) => {
       user.full_name = full_name;
     }
 
+    user.lastLoginAt = new Date();
     await user.save();
-
     return issueAuthResponse(res, user, 200, "Phone login successful");
   } catch (error) {
     return res.status(400).json({
