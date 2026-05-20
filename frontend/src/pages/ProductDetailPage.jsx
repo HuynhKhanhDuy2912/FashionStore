@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard.jsx";
 import ReviewModal from "../components/ReviewModal.jsx";
+import ReviewsModal from "../components/ReviewsModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
@@ -41,6 +42,9 @@ export default function ProductDetailPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewImageFiles, setReviewImageFiles] = useState([]);
   const [reviewVideoFiles, setReviewVideoFiles] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -95,6 +99,8 @@ export default function ProductDetailPage() {
           const mainGalleryImg = pImages.find(i => i.isMain);
           setActiveImage(mainGalleryImg?.imageUrl || pImages[0]?.imageUrl || currentProduct.images?.[0] || currentProduct.videos?.[0] || "");
         }
+
+        loadReviews(currentProduct._id);
       } catch (e) {
         setError(e.message);
       }
@@ -165,6 +171,18 @@ export default function ProductDetailPage() {
     if (variantImg) setActiveImage(variantImg);
     else if (imgsForColor.length > 0) setActiveImage(imgsForColor[0]);
     else if (product?.videos?.[0]) setActiveImage(product.videos[0]);
+  };
+
+  const loadReviews = async (prodId) => {
+    setReviewsLoading(true);
+    try {
+      const response = await apiRequest(`/reviews?productId=${prodId}&limit=50`);
+      setReviews(response.data || []);
+    } catch (e) {
+      console.error("Failed to load reviews:", e);
+    } finally {
+      setReviewsLoading(false);
+    }
   };
 
   const activeIndex = galleryImages.indexOf(activeImage);
@@ -309,6 +327,7 @@ export default function ProductDetailPage() {
 
       const refreshedProduct = await apiRequest(`/products/${product._id}`);
       setProduct(refreshedProduct.data);
+      await loadReviews(product._id);
       setShowReviewForm(false);
       setReviewRating(5);
       setReviewComment("");
@@ -407,10 +426,10 @@ export default function ProductDetailPage() {
 
                 <button
                   type="button"
-                  onClick={handleOpenReviewForm}
+                  onClick={() => setShowReviewsModal(true)}
                   className="mt-3 text-[14px] font-bold tracking-wide underline underline-offset-4 hover:text-gray-600 transition cursor-pointer bg-transparent border-none p-0"
                 >
-                  Viết đánh giá sản phẩm
+                  Xem tất cả đánh giá
                 </button>
               </div>
             </details>
@@ -810,6 +829,18 @@ export default function ProductDetailPage() {
           </div>
         </section>
       )}
+
+      <ReviewsModal
+        open={showReviewsModal}
+        onClose={() => setShowReviewsModal(false)}
+        reviews={reviews}
+        averageRating={averageRating}
+        totalReviews={totalReviews}
+        onWriteReview={() => {
+          setShowReviewsModal(false);
+          handleOpenReviewForm();
+        }}
+      />
 
       <ReviewModal
         open={showReviewForm}

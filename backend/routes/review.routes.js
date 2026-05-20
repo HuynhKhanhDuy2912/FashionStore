@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 router.get("/eligibility/:productId", protect, reviewController.checkReviewEligibility);
-router.get("/", protect, scopeToOwner("userId"), reviewController.list);
+router.get("/", reviewController.list);
 router.get("/:id", protect, checkOwnership(Review, "userId"), reviewController.getById);
 router.post("/", protect, attachOwner("userId"), reviewController.create);
 router.put("/:id", protect, checkOwnership(Review, "userId"), attachOwner("userId"), reviewController.update);

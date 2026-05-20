@@ -454,7 +454,11 @@ export default function AdminOrdersPage() {
 
                       <td className="px-6 py-4">
                         <select
-                          disabled={updatingOrderId === order._id}
+                          disabled={
+                            updatingOrderId === order._id ||
+                            order.status === "completed" ||
+                            order.status === "cancelled"
+                          }
                           value={order.status}
                           onChange={(event) =>
                             handleStatusChange(order, event.target.value)
@@ -473,7 +477,7 @@ export default function AdminOrdersPage() {
                         </select>
                       </td>
 
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-3 py-4 text-right">
                         <Link
                           to={`/admin/orders/${order._id}`}
                           className="inline-flex rounded-lg border border-black px-3 py-2 text-xs font-semibold text-black transition hover:bg-black hover:text-white"

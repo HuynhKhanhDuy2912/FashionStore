@@ -1,6 +1,5 @@
-import { Star, X, Camera, Video } from "lucide-react";
-
-const getObjectUrl = (file) => URL.createObjectURL(file);
+import { Star, X, Camera, Video, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function ReviewModal({
   open,
@@ -21,15 +20,38 @@ export default function ReviewModal({
   onRemoveSelectedImage,
   onRemoveSelectedVideo,
 }) {
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
+
+  useEffect(() => {
+    if (selectedImages.length > 0) {
+      const previews = selectedImages.map(file => URL.createObjectURL(file));
+      setImagePreviews(previews);
+      return () => previews.forEach(url => URL.revokeObjectURL(url));
+    } else {
+      setImagePreviews([]);
+    }
+  }, [selectedImages]);
+
+  useEffect(() => {
+    if (selectedVideos.length > 0) {
+      const previews = selectedVideos.map(file => URL.createObjectURL(file));
+      setVideoPreviews(previews);
+      return () => previews.forEach(url => URL.revokeObjectURL(url));
+    } else {
+      setVideoPreviews([]);
+    }
+  }, [selectedVideos]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-2xl bg-white shadow-2xl"
+        className="w-full max-w-2xl bg-white shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4 sticky top-0 bg-white z-10">
           <h2 className="text-sm font-extrabold uppercase tracking-widest text-black">
             Viết đánh giá sản phẩm
           </h2>
@@ -135,9 +157,64 @@ export default function ReviewModal({
               <span className="text-sm font-medium">Thêm video</span>
             </label>
           </div>
+
+          {imagePreviews.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-black mb-3">
+                Hình ảnh đã chọn ({imagePreviews.length})
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group aspect-square">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover border border-gray-200 rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRemoveSelectedImage(index)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      aria-label="Xóa ảnh"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {videoPreviews.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-black mb-3">
+                Video đã chọn ({videoPreviews.length})
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {videoPreviews.map((preview, index) => (
+                  <div key={index} className="relative group aspect-video">
+                    <video
+                      src={preview}
+                      className="w-full h-full object-cover border border-gray-200 rounded"
+                      controls
+                      preload="metadata"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRemoveSelectedVideo(index)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      aria-label="Xóa video"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 sticky bottom-0">
           <button
             type="submit"
             disabled={submitting}

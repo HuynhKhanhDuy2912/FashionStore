@@ -303,7 +303,7 @@ export default function AdminUsersPage() {
                         )}
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{user.full_name || user.username}</p>
-                          <p className="text-xs text-gray-400">@{user.username}</p>
+                          {/* <p className="text-xs text-gray-400">@{user.username}</p> */}
                         </div>
                       </div>
                     </td>
@@ -373,13 +373,13 @@ export default function AdminUsersPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setEditUser({ ...user })}
-                          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-black hover:bg-black hover:text-white"
+                          className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                         >
                           <Edit2 className="h-3.5 w-3.5" /> Sửa
                         </button>
                         <button
                           onClick={() => setDeleteTarget(user)}
-                          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-600 hover:text-white"
+                          className="flex items-center gap-1.5 rounded border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Xóa
                         </button>

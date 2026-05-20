@@ -78,7 +78,7 @@ export default function RegisterPage() {
         email: emailForm.email,
         password: emailForm.password
       });
-      navigate("/products", { replace: true });
+      navigate("/", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -95,7 +95,7 @@ export default function RegisterPage() {
       }
 
       await loginWithGoogle(credentialResponse.credential);
-      navigate("/products", { replace: true });
+      navigate("/", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
     }
@@ -136,7 +136,7 @@ export default function RegisterPage() {
 
     try {
       await verifyPhoneOtp(phoneForm);
-      navigate("/products", { replace: true });
+      navigate("/", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
     } finally {

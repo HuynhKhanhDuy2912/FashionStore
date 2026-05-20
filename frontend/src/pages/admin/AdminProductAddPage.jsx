@@ -66,7 +66,10 @@ export default function AdminProductAddPage() {
   useEffect(() => {
     if (editId && searchParams.get("new") === "true" && variantsRef.current) {
       setTimeout(() => {
-        variantsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        variantsRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 500);
     }
   }, [editId, searchParams]);
@@ -232,7 +235,9 @@ export default function AdminProductAddPage() {
         );
 
         toast.success("Đã thêm sản phẩm thành công!");
-        navigate(`/admin/products/add?id=${newProductId}&new=true`, { replace: true });
+        navigate(`/admin/products/add?id=${newProductId}&new=true`, {
+          replace: true,
+        });
       }
     } catch (e) {
       toast.error(e.message);
@@ -305,7 +310,10 @@ export default function AdminProductAddPage() {
       return;
     }
     try {
-      const variantPrice = variantForm.price === "" ? Number(form.price) : Number(variantForm.price);
+      const variantPrice =
+        variantForm.price === ""
+          ? Number(form.price)
+          : Number(variantForm.price);
       const calculatedAdjustment = variantPrice - Number(form.price);
 
       const baseBody = {
@@ -493,7 +501,7 @@ export default function AdminProductAddPage() {
                 Mô tả sản phẩm
                 <textarea
                   className={inputCls}
-                  rows="4"
+                  rows="8"
                   placeholder="Mô tả chi tiết..."
                   value={form.description}
                   onChange={(e) =>
@@ -609,112 +617,115 @@ export default function AdminProductAddPage() {
             </div>
 
             {/* Initial Variants (Only show when creating new product) */}
-            <div className={cardCls}>
-              <h2 className={headingCls}>Thông tin bán hàng</h2>
+            {!editId && (
+              <div className={cardCls}>
+                <>
+                  <h2 className={headingCls}>Thông tin bán hàng</h2>
 
-              <div className="grid gap-5">
-                {!editId && (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* ROW 1 */}
-                    <label className={labelCls}>
-                      Màu sắc *
-                      <input
-                        className={inputCls}
-                        required
-                        placeholder="Vd: Đen"
-                        {...field("color")}
-                      />
-                    </label>
-
-                    <label className={labelCls}>
-                      Giá gốc (VND) *
-                      <div className="relative">
+                  <div className="grid gap-5">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {/* ROW 1 */}
+                      <label className={labelCls}>
+                        Màu sắc *
                         <input
-                          className={inputCls + " pr-10"}
-                          type="number"
-                          min="0"
+                          className={inputCls}
                           required
-                          placeholder="0"
-                          {...field("price")}
+                          placeholder="Vd: Đen"
+                          {...field("color")}
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
-                          ₫
-                        </span>
-                      </div>
-                    </label>
+                      </label>
 
-                    {/* ROW 2 */}
-                    <label className={labelCls}>
-                      Kích cỡ *
-                      <input
-                        className={inputCls}
-                        required
-                        placeholder="S, M, L, XL"
-                        {...field("sizes")}
-                      />
-                    </label>
+                      <label className={labelCls}>
+                        Giá gốc (VND) *
+                        <div className="relative">
+                          <input
+                            className={inputCls + " pr-10"}
+                            type="number"
+                            min="0"
+                            required
+                            placeholder="0"
+                            {...field("price")}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                            ₫
+                          </span>
+                        </div>
+                      </label>
 
-                    <label className={labelCls}>
-                      Giảm giá (%)
-                      <div className="relative">
+                      {/* ROW 2 */}
+                      <label className={labelCls}>
+                        Kích cỡ *
                         <input
-                          className={inputCls + " pr-10"}
+                          className={inputCls}
+                          required
+                          placeholder="S, M, L, XL"
+                          {...field("sizes")}
+                        />
+                      </label>
+
+                      <label className={labelCls}>
+                        Giảm giá (%)
+                        <div className="relative">
+                          <input
+                            className={inputCls + " pr-10"}
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="0"
+                            value={form.discount === 0 ? "" : form.discount}
+                            onChange={(e) =>
+                              setForm((c) => ({
+                                ...c,
+                                discount:
+                                  e.target.value === "" ? 0 : e.target.value,
+                              }))
+                            }
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                            %
+                          </span>
+                        </div>
+                      </label>
+
+                      {/* ROW 3 */}
+                      <label className={labelCls}>
+                        Tồn kho mỗi size *
+                        <input
+                          className={inputCls}
+                          required
                           type="number"
                           min="0"
-                          max="100"
                           placeholder="0"
-                          value={form.discount === 0 ? "" : form.discount}
+                          value={form.stock === 0 ? "" : form.stock}
                           onChange={(e) =>
                             setForm((c) => ({
                               ...c,
-                              discount:
-                                e.target.value === "" ? 0 : e.target.value,
+                              stock: e.target.value === "" ? 0 : e.target.value,
                             }))
                           }
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
-                          %
+                      </label>
+                    </div>
+
+                    {form.price && Number(form.discount) > 0 && (
+                      <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border border-gray-200">
+                        <span className="text-xs text-gray-500 uppercase tracking-widest">
+                          Giá sau giảm
+                        </span>
+
+                        <span className="text-sm font-bold text-black">
+                          {Math.round(
+                            Number(form.price) *
+                              (1 - Number(form.discount) / 100),
+                          ).toLocaleString("vi-VN")}
+                          ₫
                         </span>
                       </div>
-                    </label>
-
-                    {/* ROW 3 */}
-                    <label className={labelCls}>
-                      Tồn kho mỗi size *
-                      <input
-                        className={inputCls}
-                        required
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={form.stock === 0 ? "" : form.stock}
-                        onChange={(e) =>
-                          setForm((c) => ({
-                            ...c,
-                            stock: e.target.value === "" ? 0 : e.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+                    )}
                   </div>
-                )}
-
-                {form.price && Number(form.discount) > 0 && (
-                  <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border border-gray-200">
-                    <span className="text-xs text-gray-500 uppercase tracking-widest">
-                      Giá sau giảm
-                    </span>
-
-                    <span className="text-sm font-bold text-black">
-                      {Math.round(
-                        Number(form.price) * (1 - Number(form.discount) / 100),
-                      ).toLocaleString("vi-VN")}
-                      ₫
-                    </span>
-                  </div>
-                )}
+                </>
               </div>
-            </div>
+            )}
             {/* Classification */}
             <div className={cardCls}>
               <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
@@ -789,7 +800,8 @@ export default function AdminProductAddPage() {
             <div className={cardCls}>
               <h2 className={headingCls}>Video sản phẩm</h2>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0">
-                Có thể thêm video ngắn để hiển thị trong trang chi tiết sản phẩm.
+                Có thể thêm video ngắn để hiển thị trong trang chi tiết sản
+                phẩm.
               </p>
               <MultiVideoUpload
                 label=""
@@ -1126,7 +1138,10 @@ export default function AdminProductAddPage() {
                             {v.stock}
                           </td>
                           <td className="py-3 px-3 text-right text-xs font-bold text-black">
-                            {(Number(form.price) + (v.priceAdjustment || 0)).toLocaleString("vi-VN")}₫
+                            {(
+                              Number(form.price) + (v.priceAdjustment || 0)
+                            ).toLocaleString("vi-VN")}
+                            ₫
                           </td>
                           <td className="py-3 px-3">
                             <div className="flex gap-1 justify-end">

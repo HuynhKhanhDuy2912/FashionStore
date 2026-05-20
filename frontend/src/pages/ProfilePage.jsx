@@ -18,27 +18,19 @@ const GENDER_OPTIONS = [
   { value: "other", label: "Khác" }
 ];
 
-const BODY_SHAPE_OPTIONS = [
-  { value: "rectangle", label: "Hình chữ nhật" },
-  { value: "triangle", label: "Hình tam giác" },
-  { value: "inverted_triangle", label: "Hình tam giác ngược" },
-  { value: "hourglass", label: "Hình đồng hồ cát" },
-  { value: "round", label: "Hình tròn" }
-];
-
 const COLOR_OPTIONS = [
-  { value: "white", label: "Trắng", hex: "#F5F5F5" },
+  { value: "white", label: "Trắng", hex: "#ffffff" },
   { value: "black", label: "Đen", hex: "#1A1A1A" },
   { value: "beige", label: "Be", hex: "#E8D5C4" },
   { value: "brown", label: "Nâu", hex: "#A0522D" },
-  { value: "green", label: "Xanh lá", hex: "#4CAF50" },
-  { value: "navy", label: "Xanh navy", hex: "#2C3E50" },
+  { value: "green", label: "Xanh lá", hex: "#14cc1a" },
+  { value: "navy", label: "Xanh navy", hex: "#013162" },
   { value: "gray", label: "Xám", hex: "#9E9E9E" },
-  { value: "blue", label: "Xanh dương", hex: "#2196F3" },
-  { value: "red", label: "Đỏ", hex: "#F44336" },
-  { value: "pink", label: "Hồng", hex: "#FF69B4" },
+  { value: "blue", label: "Xanh dương", hex: "#0a06e8" },
+  { value: "red", label: "Đỏ", hex: "#f22214" },
+  { value: "pink", label: "Hồng", hex: "#f01b94" },
   { value: "yellow", label: "Vàng", hex: "#FFC107" },
-  { value: "orange", label: "Cam", hex: "#FF9800" }
+  { value: "orange", label: "Cam", hex: "#ff6f00" }
 ];
 
 const STYLE_OPTIONS = [
@@ -321,7 +313,7 @@ export default function ProfilePage() {
                         onChange={(e) => {
                           const firstName = e.target.value;
                           const lastName = formData.full_name.split(" ").slice(-1)[0] || "";
-                          setFormData((prev) => ({ ...prev, full_name: `${firstName} ${lastName}`.trim() }));
+                          setFormData((prev) => ({ ...prev, full_name: `${firstName} ${lastName}` }));
                         }}
                         className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
                       />
@@ -336,7 +328,7 @@ export default function ProfilePage() {
                         onChange={(e) => {
                           const firstName = formData.full_name.split(" ").slice(0, -1).join(" ") || "";
                           const lastName = e.target.value;
-                          setFormData((prev) => ({ ...prev, full_name: `${firstName} ${lastName}`.trim() }));
+                          setFormData((prev) => ({ ...prev, full_name: `${firstName} ${lastName}`}));
                         }}
                         className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
                       />

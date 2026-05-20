@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  Edit2,
+  Plus,
+  FolderTree,
+  Image as ImageIcon,
+  Filter,
+  X,
+} from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import ImageUpload from "../../components/ImageUpload.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -21,14 +32,16 @@ function buildCategoryTree(categories) {
   });
 
   const sortByCreatedAt = (items) =>
-    [...items].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    [...items].sort(
+      (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0),
+    );
 
   const walk = (parentId = "root", depth = 0) => {
     const children = sortByCreatedAt(byParent.get(parentId) || []);
     return children.map((child) => ({
       ...child,
       depth,
-      children: walk(child._id, depth + 1)
+      children: walk(child._id, depth + 1),
     }));
   };
 
@@ -49,8 +62,9 @@ function flattenTree(nodes) {
   return result;
 }
 
-function filterTree(nodes, query) {
-  if (!query.trim()) return nodes;
+function filterTree(nodes, query, levelFilter, imageFilter) {
+  if (!query.trim() && levelFilter === "all" && imageFilter === "all")
+    return nodes;
   const normalized = query.trim().toLowerCase();
 
   const walk = (items) => {
@@ -58,7 +72,16 @@ function filterTree(nodes, query) {
 
     items.forEach((item) => {
       const children = walk(item.children || []);
-      const isMatch = (item.name || "").toLowerCase().includes(normalized);
+      const nameMatch =
+        !query.trim() || (item.name || "").toLowerCase().includes(normalized);
+      const levelMatch =
+        levelFilter === "all" || item.depth === parseInt(levelFilter);
+      const imageMatch =
+        imageFilter === "all" ||
+        (imageFilter === "with" && item.imageUrl) ||
+        (imageFilter === "without" && !item.imageUrl);
+
+      const isMatch = nameMatch && levelMatch && imageMatch;
       if (isMatch || children.length > 0) filtered.push({ ...item, children });
     });
 
@@ -79,10 +102,15 @@ export default function AdminCategoriesPage() {
   const [editForm, setEditForm] = useState(initialEditForm);
   const [activeForm, setActiveForm] = useState("root");
   const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [imageFilter, setImageFilter] = useState("all");
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const inputClass =
     "w-full border border-gray-300 bg-white px-4 py-3 text-sm text-black outline-none transition focus:border-black";
-  const labelClass = "flex flex-col gap-2 text-xs font-bold uppercase tracking-widest text-black";
+  const labelClass =
+    "flex flex-col gap-2 text-xs font-bold uppercase tracking-widest text-black";
 
   const loadCategories = async () => {
     try {
@@ -97,9 +125,18 @@ export default function AdminCategoriesPage() {
     loadCategories();
   }, [token]);
 
-  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
-  const filteredTree = useMemo(() => filterTree(categoryTree, search), [categoryTree, search]);
-  const categoryOptions = useMemo(() => flattenTree(categoryTree), [categoryTree]);
+  const categoryTree = useMemo(
+    () => buildCategoryTree(categories),
+    [categories],
+  );
+  const filteredTree = useMemo(
+    () => filterTree(categoryTree, search, levelFilter, imageFilter),
+    [categoryTree, search, levelFilter, imageFilter],
+  );
+  const categoryOptions = useMemo(
+    () => flattenTree(categoryTree),
+    [categoryTree],
+  );
 
   const depthById = useMemo(() => {
     const map = new Map();
@@ -109,28 +146,54 @@ export default function AdminCategoriesPage() {
 
   const level1Options = useMemo(
     () => categoryOptions.filter((item) => item.depth === 0),
-    [categoryOptions]
+    [categoryOptions],
   );
 
   const level2Options = useMemo(
     () => categoryOptions.filter((item) => item.depth === 1),
-    [categoryOptions]
+    [categoryOptions],
   );
 
   const level1Count = useMemo(
     () => categoryOptions.filter((item) => item.depth === 0).length,
-    [categoryOptions]
+    [categoryOptions],
   );
 
   const level2Count = useMemo(
     () => categoryOptions.filter((item) => item.depth === 1).length,
-    [categoryOptions]
+    [categoryOptions],
   );
 
   const level3Count = useMemo(
     () => categoryOptions.filter((item) => item.depth === 2).length,
-    [categoryOptions]
+    [categoryOptions],
   );
+
+  const categoriesWithImages = useMemo(
+    () => categoryOptions.filter((item) => item.imageUrl).length,
+    [categoryOptions],
+  );
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    const allIds = new Set(categoryOptions.map((item) => item._id));
+    setExpandedNodes(allIds);
+  };
+
+  const collapseAll = () => {
+    setExpandedNodes(new Set());
+  };
 
   const handleAddRoot = async (event) => {
     event.preventDefault();
@@ -143,8 +206,8 @@ export default function AdminCategoriesPage() {
         body: {
           name: rootForm.name.trim(),
           parentId: null,
-          imageUrl: rootForm.imageUrl ? rootForm.imageUrl.trim() : ""
-        }
+          imageUrl: rootForm.imageUrl ? rootForm.imageUrl.trim() : "",
+        },
       });
 
       toast.success(`Đã thêm danh mục cấp 1 "${rootForm.name}"`);
@@ -177,8 +240,8 @@ export default function AdminCategoriesPage() {
         body: {
           name: level2Form.name.trim(),
           parentId: level2Form.parentId,
-          imageUrl: level2Form.imageUrl.trim()
-        }
+          imageUrl: level2Form.imageUrl.trim(),
+        },
       });
 
       toast.success(`Đã thêm danh mục cấp 2 "${level2Form.name}"`);
@@ -211,8 +274,8 @@ export default function AdminCategoriesPage() {
         body: {
           name: level3Form.name.trim(),
           parentId: level3Form.parentId,
-          imageUrl: level3Form.imageUrl.trim()
-        }
+          imageUrl: level3Form.imageUrl.trim(),
+        },
       });
 
       toast.success(`Đã thêm danh mục cấp 3 "${level3Form.name}"`);
@@ -228,7 +291,7 @@ export default function AdminCategoriesPage() {
     setEditForm({
       name: category.name || "",
       parentId: category.parentId?._id || "",
-      imageUrl: category.imageUrl || ""
+      imageUrl: category.imageUrl || "",
     });
   };
 
@@ -258,8 +321,8 @@ export default function AdminCategoriesPage() {
         body: {
           name: editForm.name.trim(),
           parentId: nextParentId,
-          imageUrl: editForm.imageUrl.trim()
-        }
+          imageUrl: editForm.imageUrl.trim(),
+        },
       });
 
       toast.success("Đã cập nhật danh mục");
@@ -275,58 +338,17 @@ export default function AdminCategoriesPage() {
     try {
       await apiRequest(`/categories/${categoryId}`, {
         method: "DELETE",
-        token
+        token,
       });
 
       toast.success("Đã xóa danh mục");
+      setDeleteConfirm(null);
       await loadCategories();
     } catch (submitError) {
       toast.error(submitError.message);
     }
   };
 
-  const renderTreeRows = (nodes) =>
-    nodes.map((node) => (
-      <div key={node._id} className="grid gap-2">
-        <div className="flex items-center justify-between gap-3 rounded-sm border border-gray-100 bg-gray-50 px-3 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-300">CẤP {node.depth + 1}</span>
-            <div className="h-10 w-10 shrink-0 overflow-hidden bg-white" style={{ marginLeft: `${node.depth * 10}px` }}>
-              {node.imageUrl ? (
-                <img src={node.imageUrl} alt={node.name} className="h-full w-full object-contain" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-[10px] uppercase tracking-widest text-gray-300 text-center leading-[1]">
-                  NO IMG
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-black">{node.name}</p>
-              <p className="text-[10px] uppercase tracking-widest text-gray-400">{node.children.length} mục con</p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 gap-2">
-            <button
-              className="cursor-pointer border border-black bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black transition hover:bg-gray-100"
-              onClick={() => handleEdit(node)}
-            >
-              Sửa
-            </button>
-            <button
-              className="cursor-pointer border border-red-600 bg-red-600 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white transition hover:bg-red-700"
-              onClick={() => handleDelete(node._id)}
-            >
-              Xóa
-            </button>
-          </div>
-        </div>
-        {node.children.length > 0 ? <div className="grid gap-2">{renderTreeRows(node.children)}</div> : null}
-      </div>
-    ));
-
-  const editingDepth = editingId ? depthById.get(editingId) ?? 0 : 0;
   const editParentOptions = useMemo(() => {
     if (!editingId) return [];
     const editingNode = categoryOptions.find((item) => item._id === editingId);
@@ -356,123 +378,188 @@ export default function AdminCategoriesPage() {
     });
   }, [editingId, categoryOptions]);
 
+  const renderTreeRows = (nodes) =>
+    nodes.map((node) => {
+      const isExpanded = expandedNodes.has(node._id);
+      const hasChildren = node.children && node.children.length > 0;
+
+      return (
+        <div key={node._id} className="grid gap-2">
+          <div className="flex items-center justify-between gap-3 rounded border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              {hasChildren ? (
+                <button
+                  onClick={() => toggleNode(node._id)}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-gray-300 bg-gray-50 transition hover:bg-gray-100"
+                >
+                  {isExpanded ? (
+                    <ChevronDown size={14} className="text-gray-600" />
+                  ) : (
+                    <ChevronRight size={14} className="text-gray-600" />
+                  )}
+                </button>
+              ) : (
+                <div className="h-6 w-6 shrink-0" />
+              )}
+
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50"
+                style={{ marginLeft: `${node.depth * 16}px` }}
+              >
+                {node.imageUrl ? (
+                  <img
+                    src={node.imageUrl}
+                    alt={node.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <ImageIcon size={20} className="text-gray-300" />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {node.name}
+                  </p>
+                  <span className="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                    Cấp {node.depth + 1}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {hasChildren
+                    ? `${node.children.length} mục con`
+                    : "Không có mục con"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 gap-2">
+              <button
+                className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                onClick={() => handleEdit(node)}
+              >
+                <Edit2 size={12} />
+                Sửa
+              </button>
+              <button
+                className="flex items-center gap-1.5 rounded border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+                onClick={() => setDeleteConfirm(node)}
+              >
+                <Trash2 size={12} />
+                Xóa
+              </button>
+            </div>
+          </div>
+          {hasChildren && isExpanded ? (
+            <div className="ml-6 grid gap-2 border-l-2 border-gray-200 pl-4">
+              {renderTreeRows(node.children)}
+            </div>
+          ) : null}
+        </div>
+      );
+    });
+
   return (
     <section className="grid gap-6 p-6">
       <AdminPageHeader
-        title="DANH MỤC"
-        description=""
+        title="QUẢN LÝ DANH MỤC"
+        description="Quản lý cấu trúc danh mục sản phẩm 3 cấp"
       />
 
-      {editingId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={handleUpdate} className="grid w-full max-w-2xl gap-5 border border-gray-300 bg-white p-8">
-            <h3 className="border-b border-gray-200 pb-4 text-sm font-bold uppercase tracking-widest text-black">
-              Sửa danh mục
-            </h3>
-
-            <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
-              <label className={labelClass}>
-                Tên danh mục
-                <input
-                  className={inputClass}
-                  value={editForm.name}
-                  onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
-                />
-              </label>
-              <label className={labelClass}>
-                Danh mục cha
-                <select
-                  className={inputClass}
-                  value={editForm.parentId}
-                  onChange={(event) => setEditForm((current) => ({ ...current, parentId: event.target.value }))}
-                >
-                  <option value="">Không có (Danh mục cấp 1)</option>
-                  {editParentOptions.map((item) => (
-                    <option key={item._id} value={item._id}>
-                      {`${"— ".repeat(item.depth)}${item.name}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[
+          {
+            label: "Tổng cộng",
+            value: categories.length,
+            icon: FolderTree,
+            color: "bg-blue-50 text-blue-600 border-blue-100",
+          },
+          {
+            label: "Cấp 1",
+            value: level1Count,
+            symbol: "1",
+            color: "bg-green-50 text-green-600 border-green-100",
+          },
+          {
+            label: "Cấp 2",
+            value: level2Count,
+            symbol: "2",
+            color: "bg-purple-50 text-purple-600 border-purple-100",
+          },
+          {
+            label: "Cấp 3",
+            value: level3Count,
+            symbol: "3",
+            color: "bg-orange-50 text-orange-600 border-orange-100",
+          },
+        ].map(({ label, value, icon: Icon, symbol, color }) => (
+          <div
+            key={label}
+            className={`flex items-center gap-4 rounded-2xl border p-5 bg-white shadow-sm ${color.split(" ")[2]}`}
+          >
+            <div
+              className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${color.split(" ")[0]} ${color.split(" ")[1]}`}
+            >
+              {Icon ? (
+                <Icon className="h-6 w-6" />
+              ) : (
+                <span className="text-xl font-bold">{symbol}</span>
+              )}
             </div>
-
-            <ImageUpload
-              label="Hình danh mục"
-              value={editForm.imageUrl}
-              onChange={(url) => setEditForm((current) => ({ ...current, imageUrl: url }))}
-            />
-
-            <div className="flex gap-3 border-t border-gray-200 pt-4">
-              <button
-                type="submit"
-                className="cursor-pointer border-none bg-black px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800"
-              >
-                Lưu
-              </button>
-              <button
-                type="button"
-                className="cursor-pointer border border-black bg-white px-6 py-3 text-xs font-bold uppercase tracking-widest text-black transition hover:bg-gray-100"
-                onClick={() => {
-                  setEditingId("");
-                  setEditForm(initialEditForm);
-                }}
-              >
-                Hủy
-              </button>
+            <div>
+              <p className="text-xl font-bold text-gray-900">
+                {value} danh mục
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500">{label}</p>
             </div>
-          </form>
-        </div>
-      ) : null}
+          </div>
+        ))}
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.55fr] lg:items-stretch">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr]">
         <aside className="grid content-start gap-6">
-          <section className="border border-gray-200 bg-white p-6 lg:h-[760px] lg:overflow-y-auto">
-            <div className="mb-5 grid grid-cols-4 gap-3">
-              <div className="border border-gray-200 bg-gray-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Tổng cộng</p>
-                <p className="mt-2 text-xl font-bold text-black">{categories.length}</p>
-              </div>
-              <div className="border border-gray-200 bg-gray-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Cấp 1</p>
-                <p className="mt-2 text-xl font-bold text-black">{level1Count}</p>
-              </div>
-              <div className="border border-gray-200 bg-gray-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Cấp 2</p>
-                <p className="mt-2 text-xl font-bold text-black">{level2Count}</p>
-              </div>
-              <div className="border border-gray-200 bg-gray-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Cấp 3</p>
-                <p className="mt-2 text-xl font-bold text-black">{level3Count}</p>
-              </div>
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between border-b border-gray-200 pb-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-900">
+                <Plus size={18} />
+                Thêm danh mục
+              </h3>
             </div>
 
-            <div className="mb-5 flex items-center gap-2 border-b border-gray-200">
+            <div className="mb-5 flex gap-2 border-b border-gray-100">
               <button
                 type="button"
                 onClick={() => setActiveForm("root")}
-                className={`cursor-pointer border-b-2 px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "root" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "root"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
-                Thêm cấp 1
+                Cấp 1
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level2")}
-                className={`cursor-pointer border-b-2 px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "level2" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "level2"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
-                Thêm cấp 2
+                Cấp 2
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level3")}
-                className={`cursor-pointer border-b-2 px-3 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "level3" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-black"
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "level3"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
-                Thêm cấp 3
+                Cấp 3
               </button>
             </div>
 
@@ -483,20 +570,28 @@ export default function AdminCategoriesPage() {
                   <input
                     className={inputClass}
                     value={rootForm.name}
-                    placeholder="Ví dụ: Nam, Nữ..."
-                    onChange={(event) => setRootForm((current) => ({ ...current, name: event.target.value }))}
+                    placeholder="Ví dụ: Nam, Nữ, Trẻ em..."
+                    onChange={(event) =>
+                      setRootForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
                   />
                 </label>
                 <ImageUpload
-                  label="Hình danh mục cấp 1 (Tùy chọn)"
+                  label="Hình danh mục (Tùy chọn)"
                   value={rootForm.imageUrl}
-                  onChange={(url) => setRootForm((current) => ({ ...current, imageUrl: url }))}
+                  onChange={(url) =>
+                    setRootForm((current) => ({ ...current, imageUrl: url }))
+                  }
                 />
                 <button
                   type="submit"
                   disabled={!rootForm.name.trim()}
-                  className="w-fit cursor-pointer border-none bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <Plus size={16} />
                   Thêm danh mục cấp 1
                 </button>
               </form>
@@ -509,7 +604,12 @@ export default function AdminCategoriesPage() {
                   <select
                     className={inputClass}
                     value={level2Form.parentId}
-                    onChange={(event) => setLevel2Form((current) => ({ ...current, parentId: event.target.value }))}
+                    onChange={(event) =>
+                      setLevel2Form((current) => ({
+                        ...current,
+                        parentId: event.target.value,
+                      }))
+                    }
                     required
                   >
                     <option value="">Chọn danh mục cấp 1...</option>
@@ -526,22 +626,30 @@ export default function AdminCategoriesPage() {
                   <input
                     className={inputClass}
                     value={level2Form.name}
-                    placeholder="Ví dụ: Tất cả áo nam, Tất cả quần nam..."
-                    onChange={(event) => setLevel2Form((current) => ({ ...current, name: event.target.value }))}
+                    placeholder="Ví dụ: Áo nam, Quần nam..."
+                    onChange={(event) =>
+                      setLevel2Form((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
                   />
                 </label>
 
                 <ImageUpload
-                  label="Hình danh mục cấp 2"
+                  label="Hình danh mục (Bắt buộc)"
                   value={level2Form.imageUrl}
-                  onChange={(url) => setLevel2Form((current) => ({ ...current, imageUrl: url }))}
+                  onChange={(url) =>
+                    setLevel2Form((current) => ({ ...current, imageUrl: url }))
+                  }
                 />
 
                 <button
                   type="submit"
                   disabled={!level2Form.name.trim() || !level2Form.parentId}
-                  className="w-fit cursor-pointer border-none bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <Plus size={16} />
                   Thêm danh mục cấp 2
                 </button>
               </form>
@@ -554,7 +662,12 @@ export default function AdminCategoriesPage() {
                   <select
                     className={inputClass}
                     value={level3Form.parentId}
-                    onChange={(event) => setLevel3Form((current) => ({ ...current, parentId: event.target.value }))}
+                    onChange={(event) =>
+                      setLevel3Form((current) => ({
+                        ...current,
+                        parentId: event.target.value,
+                      }))
+                    }
                     required
                   >
                     <option value="">Chọn danh mục cấp 2...</option>
@@ -571,22 +684,30 @@ export default function AdminCategoriesPage() {
                   <input
                     className={inputClass}
                     value={level3Form.name}
-                    placeholder="Ví dụ: Áo thun, Áo polo, Quần jean..."
-                    onChange={(event) => setLevel3Form((current) => ({ ...current, name: event.target.value }))}
+                    placeholder="Ví dụ: Áo thun, Áo polo..."
+                    onChange={(event) =>
+                      setLevel3Form((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
                   />
                 </label>
 
                 <ImageUpload
-                  label="Hình danh mục cấp 3"
+                  label="Hình danh mục (Bắt buộc)"
                   value={level3Form.imageUrl}
-                  onChange={(url) => setLevel3Form((current) => ({ ...current, imageUrl: url }))}
+                  onChange={(url) =>
+                    setLevel3Form((current) => ({ ...current, imageUrl: url }))
+                  }
                 />
 
                 <button
                   type="submit"
                   disabled={!level3Form.name.trim() || !level3Form.parentId}
-                  className="w-fit cursor-pointer border-none bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  <Plus size={16} />
                   Thêm danh mục cấp 3
                 </button>
               </form>
@@ -594,31 +715,249 @@ export default function AdminCategoriesPage() {
           </section>
         </aside>
 
-        <section className="flex flex-col border border-gray-200 bg-white p-7 lg:h-[760px]">
-          <div className="mb-4 flex items-center justify-between border-b border-gray-200 pb-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-black">Cấu trúc danh mục</h3>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{filteredTree.length} nhóm</p>
-          </div>
-
-          <div className="mb-4 flex items-center gap-3 border border-gray-200 px-3 py-2">
-            <Search size={16} className="text-gray-400" />
-            <input
-              className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
-              placeholder="Tìm danh mục..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-
-          {filteredTree.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">Không có danh mục phù hợp.</p>
-          ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-              <div className="grid gap-2">{renderTreeRows(filteredTree)}</div>
+        <section className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-900">
+                <FolderTree size={18} />
+                Cấu trúc danh mục
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={expandAll}
+                  className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Mở tất cả
+                </button>
+                <button
+                  onClick={collapseAll}
+                  className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Thu tất cả
+                </button>
+              </div>
             </div>
-          )}
+
+            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
+              <div className="flex items-center gap-2 rounded border border-gray-300 bg-white px-3 py-2">
+                <Search size={16} className="text-gray-400" />
+                <input
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+                  placeholder="Tìm kiếm danh mục..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+
+              <select
+                className="rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600"
+                value={levelFilter}
+                onChange={(event) => setLevelFilter(event.target.value)}
+              >
+                <option value="all">Tất cả cấp</option>
+                <option value="0">Chỉ cấp 1</option>
+                <option value="1">Chỉ cấp 2</option>
+                <option value="2">Chỉ cấp 3</option>
+              </select>
+
+              <select
+                className="rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600"
+                value={imageFilter}
+                onChange={(event) => setImageFilter(event.target.value)}
+              >
+                <option value="all">Tất cả ảnh</option>
+                <option value="with">Có ảnh</option>
+                <option value="without">Không có ảnh</option>
+              </select>
+            </div>
+
+            {(search || levelFilter !== "all" || imageFilter !== "all") && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+                <Filter size={14} />
+                <span>
+                  Đang lọc: {filteredTree.length} nhóm / {categories.length}{" "}
+                  tổng
+                </span>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setLevelFilter("all");
+                    setImageFilter("all");
+                  }}
+                  className="ml-auto text-blue-600 hover:underline"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            {filteredTree.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FolderTree size={48} className="mb-3 text-gray-300" />
+                <p className="text-sm font-medium text-gray-600">
+                  Không tìm thấy danh mục
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Thử điều chỉnh bộ lọc hoặc thêm danh mục mới
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3">{renderTreeRows(filteredTree)}</div>
+            )}
+          </div>
         </section>
       </div>
+
+      {editingId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form
+            onSubmit={handleUpdate}
+            className="grid w-full max-w-2xl gap-5 rounded-lg border border-gray-300 bg-white p-8 shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-gray-900">
+                <Edit2 size={18} />
+                Sửa danh mục
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId("");
+                  setEditForm(initialEditForm);
+                }}
+                className="text-gray-400 transition hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className={labelClass}>
+                Tên danh mục
+                <input
+                  className={inputClass}
+                  value={editForm.name}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className={labelClass}>
+                Danh mục cha
+                <select
+                  className={inputClass}
+                  value={editForm.parentId}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      parentId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Không có (Cấp 1)</option>
+                  {editParentOptions.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {`${"— ".repeat(item.depth)}${item.name}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <ImageUpload
+              label="Hình danh mục"
+              value={editForm.imageUrl}
+              onChange={(url) =>
+                setEditForm((current) => ({ ...current, imageUrl: url }))
+              }
+            />
+
+            <div className="flex gap-3 border-t border-gray-200 pt-4">
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded bg-blue-600 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700"
+              >
+                <Edit2 size={14} />
+                Lưu thay đổi
+              </button>
+              <button
+                type="button"
+                className="rounded border border-gray-300 bg-white px-6 py-3 text-xs font-bold uppercase tracking-widest text-gray-700 transition hover:bg-gray-50"
+                onClick={() => {
+                  setEditingId("");
+                  setEditForm(initialEditForm);
+                }}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {deleteConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-red-100 p-3">
+                <Trash2 size={24} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Xác nhận xóa
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Hành động này không thể hoàn tác
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded border border-gray-200 bg-gray-50 p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
+                Danh mục sẽ bị xóa:
+              </p>
+              <p className="text-sm font-semibold text-gray-900">
+                {deleteConfirm.name}
+              </p>
+              {deleteConfirm.children && deleteConfirm.children.length > 0 && (
+                <p className="mt-2 text-xs text-red-600">
+                  ⚠️ Cảnh báo: Danh mục này có {deleteConfirm.children.length}{" "}
+                  mục con sẽ bị xóa theo
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleDelete(deleteConfirm._id)}
+                className="flex flex-1 items-center justify-center gap-2 rounded bg-red-600 px-4 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-red-700"
+              >
+                <Trash2 size={14} />
+                Xóa ngay
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 rounded border border-gray-300 bg-white px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-700 transition hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
