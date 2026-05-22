@@ -111,6 +111,10 @@ export default function AdminProductAddPage() {
             setSelectedLevel1Id("");
             setSelectedLevel2Id("");
           }
+          const galleryData = imgRes.data || [];
+          // Fix 1: ưu tiên ảnh gallery có isMain=true thay vì luôn lấy p.images[0]
+          const mainGalleryImg =
+            galleryData.find((i) => i.isMain)?.imageUrl || p.images?.[0] || "";
           setForm({
             name: p.name || "",
             description: p.description || "",
@@ -122,14 +126,14 @@ export default function AdminProductAddPage() {
             style: p.style || "casual",
             season: p.season?.[0] || "all_season",
             occasion: p.occasion?.[0] || "casual",
-            mainImage: p.images?.[0] || "",
+            mainImage: mainGalleryImg,
             gallery: [],
             videos: p.videos || [],
             color: "",
             sizes: "",
             stock: 0,
           });
-          setGalleryImages(imgRes.data || []);
+          setGalleryImages(galleryData);
           setVariants(varRes.data || []);
         }
       } catch (e) {
@@ -282,8 +286,46 @@ export default function AdminProductAddPage() {
       toast.error(e.message);
     }
   };
+
+  // Xóa ảnh trùng URL trong gallery (giữ lại bản ghi đầu tiên mỗi URL)
+  const handleDeduplicateGallery = async () => {
+    const seen = new Map(); // url -> bản ghi giữ lại
+    const toDelete = [];
+    for (const img of galleryImages) {
+      const url = img.imageUrl;
+      if (!seen.has(url)) {
+        seen.set(url, img);
+      } else {
+        // Ưu tiên giữ bản ghi có isMain=true
+        if (img.isMain && !seen.get(url).isMain) {
+          toDelete.push(seen.get(url));
+          seen.set(url, img);
+        } else {
+          toDelete.push(img);
+        }
+      }
+    }
+    if (toDelete.length === 0) {
+      toast("Không có ảnh trùng nào");
+      return;
+    }
+    try {
+      await Promise.all(
+        toDelete.map((img) =>
+          apiRequest(`/product-images/${img._id}/db-only`, { method: "DELETE", token }),
+        ),
+      );
+      setGalleryImages((prev) =>
+        prev.filter((img) => !toDelete.some((d) => d._id === img._id)),
+      );
+      toast.success(`Đã xóa ${toDelete.length} ảnh trùng`);
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
   const handleSetMain = async (id) => {
     try {
+      const targetImg = galleryImages.find((img) => img._id === id);
       await Promise.all(
         galleryImages.map((img) =>
           apiRequest(`/product-images/${img._id}`, {
@@ -293,6 +335,15 @@ export default function AdminProductAddPage() {
           }),
         ),
       );
+      // Fix 2: đồng bộ Product.images[] để ProductCard trang danh sách hiển thị đúng
+      if (targetImg?.imageUrl) {
+        await apiRequest(`/products/${editId}`, {
+          method: "PUT",
+          token,
+          body: { images: [targetImg.imageUrl] },
+        });
+        setForm((c) => ({ ...c, mainImage: targetImg.imageUrl }));
+      }
       setGalleryImages((prev) =>
         prev.map((img) => ({ ...img, isMain: img._id === id })),
       );
@@ -335,6 +386,49 @@ export default function AdminProductAddPage() {
           body: { ...baseBody, size: sizes[0] },
         });
         toast.success("Đã cập nhật biến thể");
+
+        // Fix 3: đồng bộ gallery khi update biến thể có ảnh mới
+        // tránh tạo ảnh trùng lặp trong gallery
+        if (baseBody.image) {
+          const sameColorImgs = galleryImages.filter(
+            (img) => img.color === variantForm.color.trim(),
+          );
+          const existingRecord = sameColorImgs[0]; // lấy bản ghi đầu tiên cùng màu
+          if (existingRecord) {
+            // cập nhật bản ghi đã có thay vì tạo mới
+            const updatedImg = await apiRequest(
+              `/product-images/${existingRecord._id}`,
+              {
+                method: "PUT",
+                token,
+                body: {
+                  ...existingRecord,
+                  imageUrl: baseBody.image,
+                },
+              },
+            );
+            setGalleryImages((prev) =>
+              prev.map((img) =>
+                img._id === existingRecord._id
+                  ? { ...img, imageUrl: baseBody.image }
+                  : img,
+              ),
+            );
+          } else {
+            // chưa có bản ghi nào cùng màu → tạo mới
+            const newImg = await apiRequest("/product-images", {
+              method: "POST",
+              token,
+              body: {
+                productId: editId,
+                imageUrl: baseBody.image,
+                isMain: galleryImages.length === 0,
+                color: variantForm.color.trim(),
+              },
+            });
+            setGalleryImages((prev) => [...prev, newImg.data]);
+          }
+        }
       } else {
         const baseSku = Date.now().toString(36).toUpperCase();
         await Promise.all(
@@ -351,30 +445,51 @@ export default function AdminProductAddPage() {
         toast.success(`Đã thêm ${sizes.length} biến thể`);
 
         // Tự động đẩy ảnh biến thể vào Gallery chung nếu có ảnh mới
+        // Chỉ tạo mới nếu chưa có bản ghi cùng màu để tránh duplicate
         if (variantForm.images.length > 0) {
-          await Promise.all(
-            variantForm.images.map((url, idx) =>
-              apiRequest("/product-images", {
-                method: "POST",
-                token,
-                body: {
-                  productId: editId,
-                  imageUrl: url,
-                  isMain: galleryImages.length === 0 && url === baseBody.image,
-                  color: variantForm.color.trim(),
-                },
-              }),
-            ),
+          const existingColors = new Set(
+            galleryImages.map((img) => img.color || ""),
           );
+          const newColor = variantForm.color.trim();
+          if (!existingColors.has(newColor)) {
+            // Chưa có ảnh nào cho màu này → thêm ảnh đại diện
+            await apiRequest("/product-images", {
+              method: "POST",
+              token,
+              body: {
+                productId: editId,
+                imageUrl: baseBody.image,
+                isMain: galleryImages.length === 0,
+                color: newColor,
+              },
+            });
+          } else {
+            // Đã có ảnh cho màu này → push các ảnh phụ còn lại (bỏ ảnh main đã tồn tại)
+            const otherImages = variantForm.images.filter(
+              (url) => url !== baseBody.image,
+            );
+            await Promise.all(
+              otherImages.map((url) =>
+                apiRequest("/product-images", {
+                  method: "POST",
+                  token,
+                  body: {
+                    productId: editId,
+                    imageUrl: url,
+                    isMain: false,
+                    color: newColor,
+                  },
+                }),
+              ),
+            );
+          }
           // Refresh gallery
           const imgRes = await apiRequest(
             `/product-images?productId=${editId}&limit=50`,
             { token },
           );
           setGalleryImages(imgRes.data || []);
-          toast.success(
-            `Đã tự động thêm ${variantForm.images.length} ảnh vào Gallery chung`,
-          );
+          toast.success(`Đã đồng bộ ảnh vào Gallery`);
         }
       }
       setVariantForm(initialVariantForm);
@@ -821,9 +936,26 @@ export default function AdminProductAddPage() {
 
             {editId && (
               <div className={cardCls}>
-                <h2 className={headingCls}>
-                  Ảnh Gallery ({galleryImages.length})
-                </h2>
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-black m-0">
+                    Ảnh Gallery ({galleryImages.length})
+                  </h2>
+                  {/* Nút dọn ảnh trùng - chỉ hiện khi có duplicate */}
+                  {(() => {
+                    const urls = galleryImages.map((i) => i.imageUrl);
+                    const hasDup = urls.length !== new Set(urls).size;
+                    return hasDup ? (
+                      <button
+                        type="button"
+                        onClick={handleDeduplicateGallery}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 border-none cursor-pointer transition-colors"
+                        title="Xóa các ảnh có URL trùng nhau"
+                      >
+                        ⚠ Dọn ảnh trùng
+                      </button>
+                    ) : null;
+                  })()}
+                </div>
                 <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0">
                   Ảnh hiển thị trong trang chi tiết
                 </p>
@@ -885,44 +1017,41 @@ export default function AdminProductAddPage() {
                               {imgs.map((img) => (
                                 <div
                                   key={img._id}
-                                  className={`relative border-2 ${img.isMain ? "border-black" : "border-gray-200"} group`}
+                                  className={`border-2 ${img.isMain ? "border-black" : "border-gray-200"} bg-white overflow-hidden`}
                                 >
-                                  <img
-                                    src={img.imageUrl}
-                                    alt=""
-                                    className="w-full aspect-square object-cover"
-                                  />
-                                  {img.isMain && (
-                                    <span className="absolute top-1 left-1 bg-black text-white text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5">
-                                      CHÍNH
-                                    </span>
-                                  )}
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <div className="relative">
+                                    <img
+                                      src={img.imageUrl}
+                                      alt=""
+                                      className="w-full aspect-square object-cover"
+                                    />
+                                    {img.isMain && (
+                                      <span className="absolute top-1 left-1 bg-black text-white text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5">
+                                        CHÍNH
+                                      </span>
+                                    )}
+                                  </div>
+                                  {/* Nút action luôn hiển thị — không cần hover */}
+                                  <div className="flex border-t border-gray-200">
                                     {!img.isMain && (
                                       <button
                                         type="button"
                                         title="Đặt làm ảnh chính"
                                         onClick={() => handleSetMain(img._id)}
-                                        className="p-1.5 bg-white hover:bg-yellow-50 cursor-pointer border-none"
+                                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold uppercase tracking-widest text-black bg-white hover:bg-yellow-50 cursor-pointer border-none border-r border-gray-200 transition-colors"
                                       >
-                                        <Star
-                                          size={14}
-                                          className="text-black"
-                                        />
+                                        <Star size={11} />
+                                        Chính
                                       </button>
                                     )}
                                     <button
                                       type="button"
-                                      title="Xóa ảnh"
-                                      onClick={() =>
-                                        handleDeleteGallery(img._id)
-                                      }
-                                      className="p-1.5 bg-white hover:bg-red-50 cursor-pointer border-none"
+                                      title="Xóa ảnh (xóa cả trên Cloudinary)"
+                                      onClick={() => handleDeleteGallery(img._id)}
+                                      className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold uppercase tracking-widest text-red-600 bg-white hover:bg-red-50 cursor-pointer border-none transition-colors"
                                     >
-                                      <Trash2
-                                        size={14}
-                                        className="text-red-600"
-                                      />
+                                      <Trash2 size={11} />
+                                      Xóa
                                     </button>
                                   </div>
                                 </div>

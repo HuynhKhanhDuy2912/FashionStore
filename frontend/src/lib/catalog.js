@@ -1,7 +1,10 @@
 export function attachVariantsToProducts(products, variants) {
   return products.map((product) => ({
     ...product,
-    availableVariants: variants.filter((variant) => variant.productId?._id === product._id)
+    availableVariants: variants.filter(
+      (variant) =>
+        String(variant.productId?._id ?? variant.productId) === String(product._id)
+    )
   }));
 }
 
