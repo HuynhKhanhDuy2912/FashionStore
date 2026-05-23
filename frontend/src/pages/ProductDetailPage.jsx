@@ -618,12 +618,13 @@ export default function ProductDetailPage() {
 
           {/* Tên sản phẩm */}
           <div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">
-              SKU: {product._id.slice(-6).toUpperCase()}
-            </p>
-            <h1 className="text-2xl font-extrabold text-black leading-tight tracking-wide uppercase">
+            <h1 className="text-2xl font-bold text-black leading-tight mb-1">
               {product.name}
             </h1>
+            
+            <p className="text-[12px] text-gray-400 uppercase tracking-widest">
+              SKU: {product._id.slice(-6).toUpperCase()}
+            </p>
           </div>
 
           {/* Giá */}

@@ -21,22 +21,19 @@ const categoryCards = [
     title: "Thời trang nam",
     copy: "Form dáng thoải mái, tone màu nhã nhặn và những món đồ cơ bản linh hoạt.",
     link: "/products?gender=male",
-    image:
-      "https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=1200&auto=format&fit=crop",
+    image: "/images/nam.jpg",
   },
   {
     title: "Thời trang nữ",
     copy: "Đường nét mềm mại, layer thông minh và trang phục dạo phố thanh lịch.",
     link: "/products?gender=female",
-    image:
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
+    image: "/images/nu.jpg",    
   },
   {
     title: "Bộ sưu tập",
     copy: "Khám phá các câu chuyện thời trang được tuyển chọn theo mùa và phong cách.",
     link: "/collections",
-    image:
-      "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop",
+    image: "/images/bst.jpg",
   },
 ];
 

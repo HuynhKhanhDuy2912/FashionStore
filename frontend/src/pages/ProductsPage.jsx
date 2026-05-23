@@ -178,7 +178,7 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState({
     search: searchParams.get("search") || "",
     style: "",
-    gender: "",
+    gender: searchParams.get("gender") || "",
     occasion: "",
     soldOnly: searchParams.get("bestSeller") === "1",
   });
@@ -281,6 +281,7 @@ export default function ProductsPage() {
     setFilters((current) => ({
       ...current,
       search: searchParams.get("search") || "",
+      gender: searchParams.get("gender") || "",
       soldOnly: searchParams.get("bestSeller") === "1",
     }));
 
@@ -982,7 +983,7 @@ export default function ProductsPage() {
                   return (
                     <article
                       key={product._id}
-                      className={`group bg-white ${viewMode === "list" ? "grid grid-cols-[220px_1fr] gap-4 border border-gray-200 p-3" : ""}`}
+                      className={`group bg-white ${viewMode === "list" ? "grid grid-cols-1 gap-4 border border-gray-200 p-4 md:grid-cols-[220px_minmax(0,1fr)_300px] md:items-center" : ""}`}
                     >
                       <div className="relative overflow-hidden bg-gray-100 border-t border-gray-200">
                         <Link
@@ -1007,71 +1008,105 @@ export default function ProductsPage() {
                           className={`${viewMode === "list" ? "aspect-[4/5]" : "aspect-[4/5]"}`}
                         />
 
-                        <div className="absolute inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-3 py-2 backdrop-blur-[1px]">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              {productCollectionMap.get(product._id) ? (
-                                <p className="line-clamp-1 text-[12px] font-bold uppercase text-red-600">
-                                  {productCollectionMap.get(product._id)}
-                                </p>
-                              ) : (
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400"></p>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleQuickAddToggle(product._id, sizes[0])
-                              }
-                              className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-bold uppercase transition ${quickAdd ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black hover:border-black"}`}
-                              aria-label="Thêm nhanh vào giỏ"
-                            >
-                              {quickAdd ? <X size={13} /> : <Plus size={13} />}
-                              {quickAdd ? "Đóng" : "Thêm"}
-                            </button>
-                          </div>
-                        </div>
-
-                        {quickAdd ? (
-                          <div className="absolute bottom-14 right-2 z-10 w-44 border border-gray-200 bg-white p-3 shadow-xl">
-                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                              Chọn size
-                            </p>
-                            <div className="mb-3 flex flex-wrap gap-2">
-                              {(sizes.length ? sizes : ["M"]).map((size) => (
+                        {viewMode !== "list" ? (
+                          <>
+                            <div className="absolute inset-x-0 bottom-0 border-t border-gray-200 bg-white/95 px-3 py-2 backdrop-blur-[1px]">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  {productCollectionMap.get(product._id) ? (
+                                    <p className="line-clamp-1 text-[12px] font-bold uppercase text-red-600">
+                                      {productCollectionMap.get(product._id)}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400"></p>
+                                  )}
+                                </div>
                                 <button
-                                  key={size}
                                   type="button"
                                   onClick={() =>
-                                    handleQuickAddSize(product._id, size)
+                                    handleQuickAddToggle(product._id, sizes[0])
                                   }
-                                  className={`h-8 w-8 border text-xs font-medium transition ${
-                                    selectedSize === size
-                                      ? "border-black bg-black text-white"
-                                      : "border-gray-300 bg-white text-black hover:border-black"
-                                  }`}
+                                  className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] font-bold uppercase transition ${quickAdd ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black hover:border-black"}`}
+                                  aria-label="Thêm nhanh vào giỏ"
                                 >
-                                  {size}
+                                  {quickAdd ? <X size={13} /> : <Plus size={13} />}
+                                  {quickAdd ? "Đóng" : "Thêm"}
                                 </button>
-                              ))}
+                              </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAddToCart(product, selectedVariant)
-                              }
-                              className="w-full bg-black py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800"
-                            >
-                              Thêm giỏ hàng
-                            </button>
-                          </div>
+
+                            {quickAdd ? (
+                              <div className="absolute bottom-14 right-2 z-10 w-44 border border-gray-200 bg-white p-3 shadow-xl">
+                                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
+                                  Chọn size
+                                </p>
+                                <div className="mb-3 flex flex-wrap gap-2">
+                                  {(sizes.length ? sizes : ["M"]).map((size) => {
+                                    const variantForSize =
+                                      (activeColorGroup?.variants || []).find((item) => item.size === size) || null;
+                                    const isOutOfStock = Number(variantForSize?.stock || 0) <= 0;
+
+                                    return (
+                                      <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => !isOutOfStock && handleQuickAddSize(product._id, size)}
+                                        disabled={isOutOfStock}
+                                        className={`relative h-8 w-8 border text-xs font-medium transition ${
+                                          isOutOfStock
+                                            ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                            : selectedSize === size
+                                              ? "border-black bg-black text-white"
+                                              : "border-gray-300 bg-white text-black hover:border-black"
+                                        }`}
+                                      >
+                                        {size}
+                                        {isOutOfStock ? (
+                                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                                            <span className="h-[1px] w-[140%] -rotate-45 bg-gray-400" />
+                                          </span>
+                                        ) : null}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleAddToCart(product, selectedVariant)
+                                  }
+                                  disabled={!selectedVariant || Number(selectedVariant?.stock || 0) <= 0}
+                                  className="w-full bg-black py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {Number(selectedVariant?.stock || 0) <= 0 ? "Hết hàng" : "Thêm giỏ hàng"}
+                                </button>
+                              </div>
+                            ) : null}
+                          </>
                         ) : null}
                       </div>
 
                       <div
-                        className={`${viewMode === "list" ? "pt-2" : "px-3 py-3"} bg-white`}
+                        className={`${viewMode === "list" ? "pt-2 md:pt-0" : "px-3 py-3"} bg-white`}
                       >
-                        <div className="mt-2 flex items-center gap-2">
+                        {viewMode === "list" && productCollectionMap.get(product._id) ? (
+                          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-red-600">
+                            {productCollectionMap.get(product._id)}
+                          </p>
+                        ) : null}
+
+                        <h2 className="text-[16px] font-semibold leading-tight text-black md:text-[19px]">
+                          <Link
+                            to={getProductPath(product, {
+                              color: activeColorName,
+                            })}
+                            className="hover:text-red-600"
+                          >
+                            {product.name}
+                          </Link>
+                        </h2>
+
+                        <div className="mt-3 flex items-center gap-2">
                           {colorGroups.slice(0, 6).map((group) => (
                             <button
                               key={`${product._id}-${group.color}`}
@@ -1110,40 +1145,105 @@ export default function ProductsPage() {
                           ))}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between">
-                          <p className="text-[16px] font-semibold text-black">
-                            {formatPrice(
-                              product.price +
-                                (selectedVariant?.priceAdjustment || 0),
-                            )}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => toggleWishlist(product)}
-                            className={`inline-flex items-center gap-1.5 text-xs font-medium transition ${wishlistProductIds.has(product._id) ? "text-red-600" : "text-gray-500 hover:text-red-600"}`}
-                          >
-                            <Heart
-                              size={13}
-                              className={
-                                wishlistProductIds.has(product._id)
-                                  ? "fill-red-600 text-red-600"
-                                  : "text-current"
-                              }
-                            />
-                            Yêu thích
-                          </button>
-                        </div>
-                        <h2 className="line-clamp-1 text-s text-black font-bold">
-                          <Link
-                            to={getProductPath(product, {
-                              color: activeColorName,
-                            })}
-                            className="hover:text-red-600"
-                          >
-                            {product.name}
-                          </Link>
-                        </h2>
+                        {viewMode !== "list" ? (
+                          <div className="mt-3 flex items-center justify-between">
+                            <p className="text-[16px] font-semibold text-black">
+                              {formatPrice(
+                                product.price +
+                                  (selectedVariant?.priceAdjustment || 0),
+                              )}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => toggleWishlist(product)}
+                              className={`inline-flex items-center gap-1.5 text-xs font-medium transition ${wishlistProductIds.has(product._id) ? "text-red-600" : "text-gray-500 hover:text-red-600"}`}
+                            >
+                              <Heart
+                                size={13}
+                                className={
+                                  wishlistProductIds.has(product._id)
+                                    ? "fill-red-600 text-red-600"
+                                    : "text-current"
+                                }
+                              />
+                              Yêu thích
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-3 text-sm text-gray-500">
+                            {activeColorName} {selectedVariant?.size ? `• Size ${selectedVariant.size}` : ""}
+                          </div>
+                        )}
                       </div>
+
+                      {viewMode === "list" ? (
+                        <div className="border-t border-gray-200 pt-3 md:border-t-0 md:border-l md:border-gray-200 md:pl-4 md:pt-0">
+                          <p className="text-right text-xl font-bold text-black md:text-2xl">
+                            {formatPrice(product.price + (selectedVariant?.priceAdjustment || 0))}
+                          </p>
+
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => toggleWishlist(product)}
+                              className={`inline-flex items-center gap-1.5 text-xs font-medium transition ${wishlistProductIds.has(product._id) ? "text-red-600" : "text-gray-500 hover:text-red-600"}`}
+                            >
+                              <Heart
+                                size={13}
+                                className={
+                                  wishlistProductIds.has(product._id)
+                                    ? "fill-red-600 text-red-600"
+                                    : "text-current"
+                                }
+                              />
+                              Yêu thích
+                            </button>
+                          </div>
+
+                          <div className="mt-4">
+                            <p className="mb-2 text-right text-[11px] font-semibold uppercase text-gray-500">Chọn size nhanh</p>
+                            <div className="mb-3 flex flex-wrap justify-end gap-2">
+                              {(sizes.length ? sizes : ["M"]).map((size) => {
+                                const variantForSize =
+                                  (activeColorGroup?.variants || []).find((item) => item.size === size) || null;
+                                const isOutOfStock = Number(variantForSize?.stock || 0) <= 0;
+
+                                return (
+                                  <button
+                                    key={size}
+                                    type="button"
+                                    onClick={() => !isOutOfStock && handleQuickAddSize(product._id, size)}
+                                    disabled={isOutOfStock}
+                                    className={`relative h-8 min-w-[36px] border px-2 text-xs font-medium transition ${
+                                      isOutOfStock
+                                        ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                        : selectedSize === size
+                                          ? "border-black bg-black text-white"
+                                          : "border-gray-300 bg-white text-black hover:border-black"
+                                    }`}
+                                  >
+                                    {size}
+                                    {isOutOfStock ? (
+                                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                                        <span className="h-[1px] w-[140%] -rotate-45 bg-gray-400" />
+                                      </span>
+                                    ) : null}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAddToCart(product, selectedVariant)}
+                              disabled={!selectedVariant || Number(selectedVariant?.stock || 0) <= 0}
+                              className="w-full border border-black bg-black py-2.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {Number(selectedVariant?.stock || 0) <= 0 ? "Hết hàng" : "Thêm vào giỏ"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </article>
                   );
                 })}
