@@ -5,6 +5,7 @@ import OrderItem from "../models/OrderItem.js";
 import Payment from "../models/Payment.js";
 import ProductVariant from "../models/ProductVariant.js";
 import Review from "../models/Review.js";
+import { createNotificationForAdmins } from "./notification.service.js";
 
 const ORDER_POPULATE = [
   { path: "userId", select: "username email fullname" }
@@ -39,7 +40,7 @@ export const createOrderFromCart = async (user, body) => {
 
   const cartItems = await CartItem.find(cartItemQuery)
     .populate("productId", "name price discount")
-    .populate("variantId", "size color sku stock priceAdjustment isActive");
+    .populate("variantId", "size color sku stock priceAdjustment discount isActive");
 
   if (cartItems.length === 0) throw new Error("Cart is empty");
   if (selectedItemIds.length && cartItems.length !== selectedItemIds.length) {
@@ -56,7 +57,11 @@ export const createOrderFromCart = async (user, body) => {
   let subTotal = 0;
   const orderItemsData = cartItems.map((item) => {
     const basePrice = item.productId?.price || 0;
-    const discount = item.productId?.discount || 0;
+    const productDiscount = item.productId?.discount || 0;
+    const variantDiscount = item.variantId?.discount;
+    const discount = (variantDiscount !== null && variantDiscount !== undefined)
+      ? variantDiscount
+      : productDiscount;
     const discounted = basePrice - (basePrice * discount) / 100;
     const adj = item.variantId?.priceAdjustment || 0;
     const unitPrice = Math.round(Math.max(discounted + adj, 0));
@@ -108,6 +113,14 @@ export const createOrderFromCart = async (user, body) => {
       : { cartId: cart._id }
   );
 
+  await createNotificationForAdmins("order", {
+    orderId: order._id,
+    orderNumber: order._id.toString().slice(-8).toUpperCase(),
+    customerName: user.fullname || user.username || "Khách hàng",
+    totalPrice,
+    userName: user.fullname || user.username || "Khách hàng"
+  });
+
   return populateOrder(Order.findById(order._id));
 };
 
@@ -118,7 +131,7 @@ export const getMyOrders = async (userId) => {
     orders.map(async (order) => {
       const items = await OrderItem.find({ orderId: order._id })
         .populate("productId", "name price discount images")
-        .populate("variantId", "size color sku image priceAdjustment");
+        .populate("variantId", "size color sku image priceAdjustment discount");
 
       if (order.status !== "completed") {
         const itemsWithReviewFlag = items.map((item) => ({
@@ -131,6 +144,7 @@ export const getMyOrders = async (userId) => {
       const productIds = [...new Set(items.map((item) => item.productId?._id?.toString()).filter(Boolean))];
       const reviewedRecords = await Review.find({
         userId,
+        orderId: order._id,
         productId: { $in: productIds }
       }).select("productId");
 
@@ -153,7 +167,7 @@ export const getOrderDetail = async (userId, orderId) => {
 
   const items = await OrderItem.find({ orderId })
     .populate("productId", "name price discount images")
-    .populate("variantId", "size color sku image stock priceAdjustment");
+    .populate("variantId", "size color sku image stock priceAdjustment discount");
 
   return { ...order.toObject(), items };
 };

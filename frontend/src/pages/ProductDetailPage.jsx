@@ -37,6 +37,7 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [isZoomed, setIsZoomed] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewOrderId, setReviewOrderId] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -253,6 +254,14 @@ export default function ProductDetailPage() {
     }
 
     try {
+      const orderIdFromQuery = searchParams.get("orderId") || "";
+
+      if (orderIdFromQuery) {
+        setReviewOrderId(orderIdFromQuery);
+        setShowReviewForm(true);
+        return;
+      }
+
       const response = await apiRequest(`/reviews/eligibility/${product._id}`, { token });
 
       if (!response.data?.eligible) {
@@ -260,6 +269,7 @@ export default function ProductDetailPage() {
         return;
       }
 
+      setReviewOrderId(response.data?.orderId || "");
       setShowReviewForm(true);
     } catch (e) {
       toast.error(e.message);
@@ -300,11 +310,16 @@ export default function ProductDetailPage() {
         videoUrls.push(uploadResponse.imageUrl || uploadResponse.mediaUrl);
       }
 
+      if (!reviewOrderId) {
+        throw new Error("Không xác định được đơn hàng để đánh giá");
+      }
+
       await apiRequest("/reviews", {
         method: "POST",
         token,
         body: {
           productId: product._id,
+          orderId: reviewOrderId,
           rating: reviewRating,
           comment: reviewComment,
           imageUrls,
@@ -320,6 +335,7 @@ export default function ProductDetailPage() {
       setProduct(refreshedProduct.data);
       setReviews(reviewsResponse.data || []);
       setShowReviewForm(false);
+      setReviewOrderId("");
       setReviewRating(5);
       setReviewComment("");
       setReviewImageFiles([]);
@@ -615,8 +631,13 @@ export default function ProductDetailPage() {
             const basePrice = product.price;
             const adjustment = selectedVariant?.priceAdjustment || 0;
             const variantPrice = basePrice + adjustment;
-            const discounted = product.discount > 0
-              ? Math.round(variantPrice * (1 - product.discount / 100))
+            const productDiscount = product.discount || 0;
+            const variantDiscount = selectedVariant?.discount;
+            const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
+              ? variantDiscount
+              : productDiscount;
+            const discounted = effectiveDiscount > 0
+              ? Math.round(variantPrice * (1 - effectiveDiscount / 100))
               : null;
             const displayPrice = discounted || variantPrice;
 
@@ -632,7 +653,7 @@ export default function ProductDetailPage() {
                         {variantPrice.toLocaleString("vi-VN")}₫
                       </span>
                       <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">
-                        -{product.discount}%
+                        -{effectiveDiscount}%
                       </span>
                     </>
                   )}
@@ -677,19 +698,28 @@ export default function ProductDetailPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableColors.map(color => {
-                  const v = variants.find(v => v.color === color && v.image) || variants.find(v => v.color === color);
+                  const colorVariants = variants.filter(v => v.color === color);
+                  const isColorOutOfStock = colorVariants.length > 0 && colorVariants.every(v => Number(v.stock || 0) === 0);
+                  const v = colorVariants.find(v => v.image) || colorVariants[0];
+
                   return (
                     <button
                       key={color}
-                      title={color}
+                      title={isColorOutOfStock ? `${color} - Hết hàng` : color}
                       onClick={() => handleColorChange(color)}
-                      className={`w-14 h-[60px] border-2 overflow-hidden transition-all cursor-pointer p-0 bg-transparent ${color === selectedColor ? "border-black" : "border-gray-200 hover:border-gray-400"
-                        }`}
+                      className={`w-14 h-[60px] border-2 overflow-hidden transition-all cursor-pointer p-0 bg-transparent relative ${color === selectedColor ? "border-black" : "border-gray-200 hover:border-gray-400"
+                        } ${isColorOutOfStock ? "opacity-45" : "opacity-100"}`}
                     >
                       {v?.image
                         ? <img src={v.image} alt={color} className="w-full h-full object-cover" />
                         : <span className="text-[9px] uppercase tracking-wider flex items-center justify-center w-full h-full bg-gray-100 px-1 text-center leading-tight">{color}</span>
                       }
+
+                      {isColorOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+                          <div className="w-[150%] h-[1.5px] bg-gray-700 transform -rotate-45"></div>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -764,13 +794,14 @@ export default function ProductDetailPage() {
               >
                 {!selectedVariant || selectedVariant.stock === 0 ? "HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG"}
               </button>
-              <button
-                onClick={handleBuyNow}
-                disabled={!selectedVariant || selectedVariant.stock === 0}
-                className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                MUA NGAY
-              </button>
+              {selectedVariant?.stock > 0 && (
+                <button
+                  onClick={handleBuyNow}
+                  className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center"
+                >
+                  MUA NGAY
+                </button>
+              )}
             </div>
           ) : (
             <Link
@@ -830,7 +861,10 @@ export default function ProductDetailPage() {
 
       <ReviewModal
         open={showReviewForm}
-        onClose={() => setShowReviewForm(false)}
+        onClose={() => {
+          setShowReviewForm(false);
+          setReviewOrderId("");
+        }}
         onSubmit={handleSubmitReview}
         submitting={reviewSubmitting}
         productName={product.name}

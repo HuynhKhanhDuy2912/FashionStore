@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Headphones,
@@ -18,7 +19,7 @@ import { attachVariantsToProducts } from "../lib/catalog.js";
 const categoryCards = [
   {
     title: "Thời trang nam",
-    copy: "Phom dáng thoải mái, tông màu nhã nhặn và những món đồ cơ bản linh hoạt.",
+    copy: "Form dáng thoải mái, tone màu nhã nhặn và những món đồ cơ bản linh hoạt.",
     link: "/products?gender=male",
     image:
       "https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=1200&auto=format&fit=crop",
@@ -142,6 +143,8 @@ export default function HomePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
+  const [newArrivalsPage, setNewArrivalsPage] = useState(0);
+  const [bestSellersPage, setBestSellersPage] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -206,21 +209,55 @@ export default function HomePage() {
         .sort(
           (left, right) => new Date(right.createdAt) - new Date(left.createdAt),
         )
-        .slice(0, 4),
+        .slice(0, 12),
     [productsWithVariants],
   );
+
+  const newArrivalsPageCount = Math.max(1, newArrivals.length - 3);
+  const visibleNewArrivals = useMemo(() => {
+    const start = newArrivalsPage;
+    return newArrivals.slice(start, start + 4);
+  }, [newArrivals, newArrivalsPage]);
 
   const bestSellers = useMemo(
     () =>
       [...productsWithVariants]
-        .sort(
-          (left, right) => (right.totalReviews || 0) - (left.totalReviews || 0),
-        )
-        .slice(0, 4),
+        .filter((product) => Number(product.soldCount || 0) > 0)
+        .sort((left, right) => {
+          const soldDiff = Number(right.soldCount || 0) - Number(left.soldCount || 0);
+          if (soldDiff !== 0) return soldDiff;
+          return Number(right.totalReviews || 0) - Number(left.totalReviews || 0);
+        })
+        .slice(0, 12),
     [productsWithVariants],
   );
 
+  const bestSellersPageCount = Math.max(1, bestSellers.length - 3);
+  const visibleBestSellers = useMemo(() => {
+    const start = bestSellersPage;
+    return bestSellers.slice(start, start + 4);
+  }, [bestSellers, bestSellersPage]);
+
   const featuredCollections = useMemo(() => collections.slice(0, 3), [collections]);
+
+  const productCollectionMap = useMemo(() => {
+    const map = new Map();
+    collections.forEach((collection) => {
+      if (!collection?.isActive) return;
+      (collection.products || []).forEach((item) => {
+        const productId = item?._id || item;
+        if (productId && !map.has(productId)) {
+          map.set(productId, collection.name);
+        }
+      });
+    });
+    return map;
+  }, [collections]);
+
+  const withCollectionName = (product) => ({
+    ...product,
+    collectionName: productCollectionMap.get(product._id) || product.collectionName,
+  });
 
   const handleWishlist = async (product, addedFrom = "home") => {
     if (!token) {
@@ -315,6 +352,18 @@ export default function HomePage() {
 
     return () => clearInterval(timer);
   }, [banners, isHeroPaused]);
+
+  useEffect(() => {
+    if (newArrivalsPage >= newArrivalsPageCount) {
+      setNewArrivalsPage(0);
+    }
+  }, [newArrivalsPage, newArrivalsPageCount]);
+
+  useEffect(() => {
+    if (bestSellersPage >= bestSellersPageCount) {
+      setBestSellersPage(0);
+    }
+  }, [bestSellersPage, bestSellersPageCount]);
 
   useEffect(() => {
     if (activeBannerIndex >= banners.length && banners.length > 0) {
@@ -522,21 +571,52 @@ export default function HomePage() {
             eyebrow="Mới về"
             title="Sản phẩm mới"
             description="Những thiết kế mới nhất vừa được bổ sung - cập nhật tủ đồ của bạn."
-            linkTo="/products"
+            linkTo="/products?newArrivals=1"
           />
           {loading ? (
             <ProductGridSkeleton />
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {newArrivals.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  onAddToWishlist={(item) => handleWishlist(item, "home")}
-                  isWishlisted={wishlistProductIds.has(product._id)}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
+            <div className="group relative">
+              {newArrivals.length > 4 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewArrivalsPage((prev) =>
+                        prev === 0 ? newArrivalsPageCount - 1 : prev - 1,
+                      )
+                    }
+                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-left-5"
+                    aria-label="Xem sản phẩm mới trước"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewArrivalsPage((prev) =>
+                        prev === newArrivalsPageCount - 1 ? 0 : prev + 1,
+                      )
+                    }
+                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-right-5"
+                    aria-label="Xem sản phẩm mới tiếp theo"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </>
+              ) : null}
+
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+                {visibleNewArrivals.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={withCollectionName(product)}
+                    onAddToWishlist={(item) => handleWishlist(item, "home")}
+                    isWishlisted={wishlistProductIds.has(product._id)}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -594,21 +674,52 @@ export default function HomePage() {
             eyebrow="Yêu thích"
             title="Bán chạy nhất"
             description="Những sản phẩm được khách hàng đánh giá và mua nhiều nhất."
-            linkTo="/products"
+            linkTo="/products?bestSeller=1"
           />
           {loading ? (
             <ProductGridSkeleton />
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {bestSellers.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  onAddToWishlist={(item) => handleWishlist(item, "home")}
-                  isWishlisted={wishlistProductIds.has(product._id)}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
+            <div className="group relative">
+              {bestSellers.length > 4 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBestSellersPage((prev) =>
+                        prev === 0 ? bestSellersPageCount - 1 : prev - 1,
+                      )
+                    }
+                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-left-5"
+                    aria-label="Xem sản phẩm bán chạy trước"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBestSellersPage((prev) =>
+                        prev === bestSellersPageCount - 1 ? 0 : prev + 1,
+                      )
+                    }
+                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-right-5"
+                    aria-label="Xem sản phẩm bán chạy tiếp theo"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </>
+              ) : null}
+
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+                {visibleBestSellers.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={withCollectionName(product)}
+                    onAddToWishlist={(item) => handleWishlist(item, "home")}
+                    isWishlisted={wishlistProductIds.has(product._id)}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </section>

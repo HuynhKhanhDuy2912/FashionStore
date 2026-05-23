@@ -70,15 +70,27 @@ export default function ProductCard({
     (activeColorGroup?.variants || []).find((item) => item.size === selectedSize) ||
     activeColorGroup?.variants?.[0] ||
     null;
+  const selectedVariantOutOfStock = Number(selectedVariant?.stock || 0) <= 0;
   const productPath = getProductPath(product, { color: activeColorGroup?.color });
-  const price = Number(product.price || 0) + Number(selectedVariant?.priceAdjustment || 0);
+
+  const basePrice = Number(product.price || 0);
+  const adjustment = Number(selectedVariant?.priceAdjustment || 0);
+  const priceBeforeDiscount = basePrice + adjustment;
+  const productDiscount = product.discount || 0;
+  const variantDiscount = selectedVariant?.discount;
+  const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
+    ? variantDiscount
+    : productDiscount;
+  const price = effectiveDiscount > 0
+    ? Math.round(priceBeforeDiscount * (1 - effectiveDiscount / 100))
+    : priceBeforeDiscount;
 
   const handleQuickAddToggle = () => {
     setQuickAdd((current) => (current ? null : { size: sizes[0] || "" }));
   };
 
   const handleAddToCart = () => {
-    if (!selectedVariant || !onAddToCart) return;
+    if (!selectedVariant || selectedVariantOutOfStock || !onAddToCart) return;
     onAddToCart(product, selectedVariant);
     setQuickAdd(null);
   };
@@ -110,7 +122,7 @@ export default function ProductCard({
         >
           <div className="flex h-full items-center justify-center gap-3">
             {product.collectionName || product.collectionId?.name || product.tags?.[0] ? (
-              <p className="mr-auto text-[11px] font-semibold leading-4 text-red-600">
+              <p className="mr-auto text-[15px] font-semibold leading-4 text-red-600">
                 {product.collectionName || product.collectionId?.name || product.tags?.[0]}
               </p>
             ) : null}
@@ -131,27 +143,41 @@ export default function ProductCard({
           <div className="absolute bottom-14 right-2 z-10 w-44 border border-gray-200 bg-white p-3 shadow-xl">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Chọn size</p>
             <div className="mb-3 flex flex-wrap gap-2">
-              {(sizes.length ? sizes : ["M"]).map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => setQuickAdd({ size })}
-                  className={`h-8 w-8 border text-xs font-medium transition ${selectedSize === size
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
-                >
-                  {size}
-                </button>
-              ))}
+              {(sizes.length ? sizes : ["M"]).map((size) => {
+                const variantForSize =
+                  (activeColorGroup?.variants || []).find((item) => item.size === size) || null;
+                const isOutOfStock = Number(variantForSize?.stock || 0) <= 0;
+
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => !isOutOfStock && setQuickAdd({ size })}
+                    disabled={isOutOfStock}
+                    className={`relative h-8 w-8 border text-xs font-medium transition ${isOutOfStock
+                      ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                      : selectedSize === size
+                        ? "border-black bg-black text-white"
+                        : "border-gray-300 bg-white text-black hover:border-black"
+                      }`}
+                  >
+                    {size}
+                    {isOutOfStock ? (
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                        <span className="h-[1px] w-[140%] -rotate-45 bg-gray-400" />
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={!selectedVariant}
+              disabled={!selectedVariant || selectedVariantOutOfStock}
               className="w-full bg-black py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {actionLabel}
+              {selectedVariantOutOfStock ? "HẾT HÀNG" : actionLabel}
             </button>
           </div>
         ) : null}

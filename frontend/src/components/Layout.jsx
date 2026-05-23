@@ -440,11 +440,11 @@ export default function Layout() {
                     onClick={() => {
                       if (item.key === "stores") navigate("/products");
                       if (item.key === "sale") navigate("/products?tag=uu-dai");
-                      if (item.key === "new") navigate("/products?sort=newest");
+                      if (item.key === "new") navigate("/products?newArrivals=1");
                       if (item.key === "easy-buy")
                         navigate("/products?tag=easy-buy");
                       if (item.key === "best-seller")
-                        navigate("/products?tag=ban-chay");
+                        navigate("/products?bestSeller=1");
                       setActiveMegaMenu(null);
                     }}
                   >

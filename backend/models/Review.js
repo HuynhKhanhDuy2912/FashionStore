@@ -15,6 +15,13 @@ const reviewSchema = new mongoose.Schema({
     index: true
   },
 
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Order",
+    required: true,
+    index: true
+  },
+
   rating: {
     type: Number,
     required: true,
@@ -37,10 +44,17 @@ const reviewSchema = new mongoose.Schema({
   videoUrls: {
     type: [String],
     default: []
+  },
+
+  isHidden: {
+    type: Boolean,
+    default: false,
+    index: true
   }
 
 }, { timestamps: true });
 
-reviewSchema.index({ userId: 1, productId: 1 });
+reviewSchema.index({ userId: 1, productId: 1, orderId: 1 });
+reviewSchema.index({ orderId: 1, productId: 1 });
 
 export default mongoose.model("Review", reviewSchema);

@@ -7,12 +7,16 @@ const populateCartItems = (query) =>
   query
     .populate("cartId", "userId")
     .populate("productId", "name price discount images style")
-    .populate("variantId", "size color sku stock priceAdjustment image");
+    .populate("variantId", "size color sku stock priceAdjustment discount image");
 
 const calculateCartTotals = (items) => {
   const normalizedItems = items.map((item) => {
     const productPrice = item.productId?.price || 0;
-    const discountPercent = item.productId?.discount || 0;
+    const productDiscount = item.productId?.discount || 0;
+    const variantDiscount = item.variantId?.discount;
+    const discountPercent = (variantDiscount !== null && variantDiscount !== undefined)
+      ? variantDiscount
+      : productDiscount;
     const discountedBasePrice = productPrice - (productPrice * discountPercent) / 100;
     const variantAdjustment = item.variantId?.priceAdjustment || 0;
     const unitPrice = Math.max(discountedBasePrice + variantAdjustment, 0);

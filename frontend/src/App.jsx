@@ -17,6 +17,7 @@ import AdminProductListPage from "./pages/admin/AdminProductListPage.jsx";
 import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 import AdminBannersPage from "./pages/admin/AdminBannersPage.jsx";
+import AdminReviewsPage from "./pages/admin/AdminReviewsPage.jsx";
 
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -105,6 +106,7 @@ export default function App() {
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="banners" element={<AdminBannersPage />} />
+            <Route path="reviews" element={<AdminReviewsPage />} />
           </Route>
           </Route>
         </Routes>

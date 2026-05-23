@@ -33,7 +33,8 @@ export function filterProducts(products, filters) {
     const matchesGender = !filters.gender || product.gender === filters.gender;
     const matchesOccasion =
       !filters.occasion || (product.occasion || []).includes(filters.occasion);
+    const matchesSoldOnly = !filters.soldOnly || Number(product.soldCount || 0) > 0;
 
-    return matchesSearch && matchesStyle && matchesGender && matchesOccasion;
+    return matchesSearch && matchesStyle && matchesGender && matchesOccasion && matchesSoldOnly;
   });
 }

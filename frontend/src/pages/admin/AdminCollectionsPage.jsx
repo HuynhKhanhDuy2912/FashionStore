@@ -3,7 +3,15 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import ImageUpload from "../../components/ImageUpload.jsx";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
-import { Pencil, Trash2, Eye, EyeOff, GripVertical, X, Search } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  GripVertical,
+  X,
+  Search,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 const initialForm = {
@@ -112,7 +120,10 @@ export default function AdminCollectionsPage() {
   const handleDelete = async (collection) => {
     if (!window.confirm(`Xóa bộ sưu tập "${collection.name}"?`)) return;
     try {
-      await apiRequest(`/collections/${collection._id}`, { method: "DELETE", token });
+      await apiRequest(`/collections/${collection._id}`, {
+        method: "DELETE",
+        token,
+      });
       toast.success(`Đã xóa "${collection.name}"`);
       loadCollections();
     } catch (e) {
@@ -127,7 +138,9 @@ export default function AdminCollectionsPage() {
         token,
         body: { isActive: !collection.isActive },
       });
-      toast.success(collection.isActive ? "Đã ẩn bộ sưu tập" : "Đã hiển thị bộ sưu tập");
+      toast.success(
+        collection.isActive ? "Đã ẩn bộ sưu tập" : "Đã hiển thị bộ sưu tập",
+      );
       loadCollections();
     } catch (e) {
       toast.error(e.message);
@@ -154,7 +167,9 @@ export default function AdminCollectionsPage() {
   };
 
   const filteredPickerProducts = allProducts.filter((p) => {
-    const alreadySelected = form.products.some((sp) => (sp._id || sp) === p._id);
+    const alreadySelected = form.products.some(
+      (sp) => (sp._id || sp) === p._id,
+    );
     if (alreadySelected) return false;
     if (!productSearch.trim()) return true;
     return p.name.toLowerCase().includes(productSearch.toLowerCase());
@@ -163,7 +178,8 @@ export default function AdminCollectionsPage() {
   // ── Styles ──
   const inputCls =
     "border border-gray-200 px-4 py-3 bg-white text-black text-sm focus:border-black focus:outline-none w-full transition-colors";
-  const labelCls = "text-[10px] font-bold uppercase tracking-widest text-gray-500 flex flex-col gap-1.5";
+  const labelCls =
+    "text-[10px] font-bold uppercase tracking-widest text-gray-500 flex flex-col gap-1.5";
   const btnPrimary =
     "px-6 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none";
   const btnSecondary =
@@ -192,7 +208,9 @@ export default function AdminCollectionsPage() {
                   className={inputCls}
                   placeholder="Ví dụ: Xuân Hạ 2026"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
                 />
               </label>
 
@@ -202,7 +220,9 @@ export default function AdminCollectionsPage() {
                   className={inputCls + " min-h-[80px] resize-y"}
                   placeholder="Mô tả ngắn gọn về bộ sưu tập..."
                   value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
                 />
               </label>
 
@@ -214,7 +234,9 @@ export default function AdminCollectionsPage() {
                     type="number"
                     min="0"
                     value={form.order}
-                    onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, order: e.target.value }))
+                    }
                   />
                 </label>
 
@@ -223,7 +245,12 @@ export default function AdminCollectionsPage() {
                   <select
                     className={inputCls}
                     value={form.isActive ? "true" : "false"}
-                    onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.value === "true" }))}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        isActive: e.target.value === "true",
+                      }))
+                    }
                   >
                     <option value="true">Hiển thị</option>
                     <option value="false">Ẩn</option>
@@ -266,7 +293,10 @@ export default function AdminCollectionsPage() {
             {form.products.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {form.products.map((p) => {
-                  const product = typeof p === "string" ? allProducts.find((ap) => ap._id === p) : p;
+                  const product =
+                    typeof p === "string"
+                      ? allProducts.find((ap) => ap._id === p)
+                      : p;
                   const name = product?.name || "Sản phẩm";
                   const img = product?.images?.[0];
                   const id = product?._id || p;
@@ -277,9 +307,15 @@ export default function AdminCollectionsPage() {
                       className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-2 group"
                     >
                       {img && (
-                        <img src={img} alt="" className="w-8 h-8 object-cover border border-gray-100" />
+                        <img
+                          src={img}
+                          alt=""
+                          className="w-8 h-8 object-cover border border-gray-100"
+                        />
                       )}
-                      <span className="text-xs font-medium text-black max-w-[150px] truncate">{name}</span>
+                      <span className="text-xs font-medium text-black max-w-[150px] truncate">
+                        {name}
+                      </span>
                       <button
                         type="button"
                         onClick={() => removeProduct(id)}
@@ -308,7 +344,9 @@ export default function AdminCollectionsPage() {
 
                 <div className="max-h-[300px] overflow-y-auto grid gap-1">
                   {filteredPickerProducts.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4 m-0">Không tìm thấy sản phẩm</p>
+                    <p className="text-xs text-gray-400 text-center py-4 m-0">
+                      Không tìm thấy sản phẩm
+                    </p>
                   ) : (
                     filteredPickerProducts.slice(0, 20).map((product) => (
                       <button
@@ -319,7 +357,11 @@ export default function AdminCollectionsPage() {
                       >
                         <div className="w-10 h-10 bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                           {product.images?.[0] ? (
-                            <img src={product.images[0]} className="w-full h-full object-cover" alt="" />
+                            <img
+                              src={product.images[0]}
+                              className="w-full h-full object-cover"
+                              alt=""
+                            />
                           ) : (
                             <div className="w-full h-full grid place-items-center text-[8px] text-gray-300">
                               N/A
@@ -327,7 +369,9 @@ export default function AdminCollectionsPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-black m-0 truncate">{product.name}</p>
+                          <p className="text-xs font-medium text-black m-0 truncate">
+                            {product.name}
+                          </p>
                           <p className="text-[10px] text-gray-400 m-0">
                             {product.price?.toLocaleString("vi-VN")}₫
                           </p>
@@ -346,7 +390,11 @@ export default function AdminCollectionsPage() {
               {editingId ? "CẬP NHẬT" : "TẠO BỘ SƯU TẬP"}
             </button>
             {editingId && (
-              <button type="button" className={btnSecondary} onClick={handleCancel}>
+              <button
+                type="button"
+                className={btnSecondary}
+                onClick={handleCancel}
+              >
                 HỦY
               </button>
             )}
@@ -357,12 +405,24 @@ export default function AdminCollectionsPage() {
       {/* ── LIST ── */}
       <div className="overflow-x-auto bg-white border border-gray-200">
         <div className="grid min-w-[940px] grid-cols-[80px_140px_1fr_100px_100px_80px_120px] gap-4 px-5 py-3 border-b border-gray-200 bg-gray-50">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ảnh bìa</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Banner</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Tên</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">Sản phẩm</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">Thứ tự</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">Trạng thái</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            Ảnh bìa
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            Banner
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            Tên
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">
+            Sản phẩm
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">
+            Thứ tự
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">
+            Trạng thái
+          </span>
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 text-center">
             Thao tác
           </span>
@@ -384,7 +444,11 @@ export default function AdminCollectionsPage() {
               {/* Cover */}
               <div className="w-16 h-16 bg-gray-100 border border-gray-200 overflow-hidden">
                 {col.coverImage ? (
-                  <img src={col.coverImage} className="w-full h-full object-cover" alt="" />
+                  <img
+                    src={col.coverImage}
+                    className="w-full h-full object-cover"
+                    alt=""
+                  />
                 ) : (
                   <div className="w-full h-full grid place-items-center text-[8px] text-gray-300 uppercase">
                     N/A
@@ -395,7 +459,11 @@ export default function AdminCollectionsPage() {
               {/* Banner */}
               <div className="h-16 w-32 overflow-hidden border border-gray-200 bg-gray-100">
                 {col.bannerImage ? (
-                  <img src={col.bannerImage} className="h-full w-full object-cover" alt="" />
+                  <img
+                    src={col.bannerImage}
+                    className="h-full w-full object-cover"
+                    alt=""
+                  />
                 ) : (
                   <div className="grid h-full w-full place-items-center text-[8px] uppercase text-gray-300">
                     N/A
@@ -405,9 +473,13 @@ export default function AdminCollectionsPage() {
 
               {/* Name + description */}
               <div className="min-w-0">
-                <p className="text-sm font-bold text-black m-0 truncate">{col.name}</p>
+                <p className="text-sm font-bold text-black m-0 truncate">
+                  {col.name}
+                </p>
                 {col.description && (
-                  <p className="text-[11px] text-gray-400 m-0 mt-0.5 truncate">{col.description}</p>
+                  <p className="text-[11px] text-gray-400 m-0 mt-0.5 truncate">
+                    {col.description}
+                  </p>
                 )}
               </div>
 
@@ -417,14 +489,17 @@ export default function AdminCollectionsPage() {
               </span>
 
               {/* Order */}
-              <span className="text-xs text-gray-500 font-mono text-center">{col.order}</span>
+              <span className="text-xs text-gray-500 font-mono text-center">
+                {col.order}
+              </span>
 
               {/* Status */}
               <button
                 type="button"
                 onClick={() => handleToggleActive(col)}
-                className={`flex items-center justify-center text-xs font-bold uppercase tracking-widest cursor-pointer bg-transparent border-none p-0 ${col.isActive ? "text-green-600" : "text-gray-400"
-                  }`}
+                className={`flex items-center justify-center text-xs font-bold uppercase tracking-widest cursor-pointer bg-transparent border-none p-0 ${
+                  col.isActive ? "text-green-600" : "text-gray-400"
+                }`}
                 title={col.isActive ? "Bấm để ẩn" : "Bấm để hiện"}
               >
                 {col.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -435,18 +510,18 @@ export default function AdminCollectionsPage() {
                 <button
                   type="button"
                   onClick={() => handleEdit(col)}
-                  className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 cursor-pointer border-none bg-transparent transition-colors"
+                  className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                   title="Sửa"
                 >
-                  <Pencil size={14} />
+                  <Pencil size={12} /> Sửa
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(col)}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 cursor-pointer border-none bg-transparent transition-colors"
+                  className="flex items-center gap-1.5 rounded border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
                   title="Xóa"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} /> Xóa
                 </button>
               </div>
             </div>

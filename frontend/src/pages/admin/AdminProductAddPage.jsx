@@ -40,6 +40,7 @@ const initialVariantForm = {
   color: "",
   stock: 0,
   price: "",
+  discount: null,
   images: [],
   mainImage: "",
 };
@@ -371,6 +372,7 @@ export default function AdminProductAddPage() {
         color: variantForm.color.trim(),
         stock: Number(variantForm.stock),
         priceAdjustment: calculatedAdjustment,
+        discount: variantForm.discount,
         image: variantForm.mainImage || variantForm.images[0] || "",
         productId: editId,
       };
@@ -510,6 +512,7 @@ export default function AdminProductAddPage() {
       color: v.color,
       stock: v.stock || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
+      discount: v.discount ?? null,
       images: v.image ? [v.image] : [],
       mainImage: v.image || "",
     });
@@ -530,6 +533,7 @@ export default function AdminProductAddPage() {
       color: v.color,
       stock: v.stock || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
+      discount: v.discount ?? null,
       images: v.image ? [v.image] : [],
       mainImage: v.image || "",
     });
@@ -1154,6 +1158,28 @@ export default function AdminProductAddPage() {
                       />
                     </label>
                   </div>
+
+                  {/* ROW 3 - Discount */}
+                  <label className={labelCls}>
+                    Giảm giá (%)
+                    <input
+                      className={inputCls}
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder={`Mặc định: ${form.discount}%`}
+                      value={variantForm.discount === null ? "" : variantForm.discount}
+                      onChange={(e) =>
+                        setVariantForm((c) => ({
+                          ...c,
+                          discount: e.target.value === "" ? null : Number(e.target.value),
+                        }))
+                      }
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Để trống để kế thừa giảm giá sản phẩm ({form.discount}%)
+                    </span>
+                  </label>
                 </div>
 
                 {/* RIGHT */}
@@ -1207,26 +1233,29 @@ export default function AdminProductAddPage() {
               <div className="overflow-x-auto mt-2">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="text-left py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 w-16">
+                    <tr className="border-b-2 border-gray-200 text-center">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 w-16">
                         Ảnh
                       </th>
-                      <th className="text-left py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         Màu sắc
                       </th>
-                      <th className="text-left py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         Kích cỡ
                       </th>
-                      <th className="text-left py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         SKU
                       </th>
-                      <th className="text-right py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         Tồn kho
                       </th>
-                      <th className="text-right py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                        Giảm giá
+                      </th>
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         Giá tiền
                       </th>
-                      <th className="text-right py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">
                         Thao tác
                       </th>
                     </tr>
@@ -1236,7 +1265,7 @@ export default function AdminProductAddPage() {
                       items.map((v, idx) => (
                         <tr
                           key={v._id}
-                          className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === 0 ? "border-t-2 border-t-gray-200" : ""}`}
+                          className={`text-center border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === 0 ? "border-t-2 border-t-gray-200" : ""}`}
                         >
                           <td className="py-3 px-3">
                             <div className="w-12 h-12 bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
@@ -1271,18 +1300,47 @@ export default function AdminProductAddPage() {
                             {v.sku}
                           </td>
                           <td
-                            className={`py-3 px-3 text-right font-bold ${v.stock <= 10 ? "text-red-600" : "text-black"}`}
+                            className={`py-3 px-3 font-bold ${v.stock <= 10 ? "text-red-600" : "text-black"}`}
                           >
                             {v.stock}
                           </td>
-                          <td className="py-3 px-3 text-right text-xs font-bold text-black">
-                            {(
-                              Number(form.price) + (v.priceAdjustment || 0)
-                            ).toLocaleString("vi-VN")}
+                          <td className="py-3 px-3 text-xs font-bold">
+                            {(() => {
+                              const productDiscount = Number(form.discount || 0);
+                              const variantDiscount = v.discount;
+                              const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
+                                ? Number(variantDiscount)
+                                : productDiscount;
+
+                              if (effectiveDiscount === 0) {
+                                return <span className="text-gray-400">0%</span>;
+                              }
+
+                              const isInherited = variantDiscount === null || variantDiscount === undefined;
+                              return (
+                                <span className={isInherited ? "text-blue-600" : "text-green-600"}>
+                                  {effectiveDiscount}%
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="py-3 px-3 text-xs font-bold text-black">
+                            {(() => {
+                              const base = Number(form.price) + (v.priceAdjustment || 0);
+                              const productDiscount = Number(form.discount || 0);
+                              const variantDiscount = v.discount;
+                              const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
+                                ? Number(variantDiscount)
+                                : productDiscount;
+                              const final = effectiveDiscount > 0
+                                ? Math.round(base * (1 - effectiveDiscount / 100))
+                                : base;
+                              return final.toLocaleString("vi-VN");
+                            })()}
                             ₫
                           </td>
                           <td className="py-3 px-3">
-                            <div className="flex gap-1 justify-end">
+                            <div className="flex gap-1 justify-center">
                               <button
                                 type="button"
                                 title="Nhân bản"
@@ -1319,9 +1377,6 @@ export default function AdminProductAddPage() {
               <div className="py-8 text-center">
                 <p className="text-sm text-gray-400 m-0">
                   Chưa có biến thể nào
-                </p>
-                <p className="text-[10px] text-gray-300 uppercase tracking-widest mt-1 m-0">
-                  Thêm biến thể đầu tiên bằng form phía trên
                 </p>
               </div>
             )}

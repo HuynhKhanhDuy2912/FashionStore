@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api.js";
 import {
   Search,
@@ -15,9 +15,12 @@ import {
   Truck,
   XCircle,
   X,
+  Star,
+  Eye,
 } from "lucide-react";
 
 export default function OrdersTab({ token }) {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -449,21 +452,11 @@ export default function OrdersTab({ token }) {
           )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div
+          className={`space-y-4 ${filteredOrders.length > 3 ? "max-h-[920px] overflow-y-auto pr-1" : ""}`}
+        >
           {filteredOrders.map((order) => {
             const isExpanded = expandedOrderId === order._id;
-
-            const reviewItem = order.items?.find(
-              (item) =>
-                order.status === "completed" &&
-                item.productId?._id &&
-                !item.isReviewed,
-            );
-
-            const reviewedAll =
-              order.status === "completed" &&
-              order.items?.length > 0 &&
-              order.items.every((item) => item.isReviewed);
 
             return (
               <div
@@ -539,11 +532,38 @@ export default function OrdersTab({ token }) {
                               <span>•</span>
                               <span>x{item.quantity}</span>
                             </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {(item.price * item.quantity)?.toLocaleString(
-                                "vi-VN",
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-semibold text-gray-900">
+                                {(item.price * item.quantity)?.toLocaleString(
+                                  "vi-VN",
+                                )}
+                                ₫
+                              </div>
+                              {order.status === "completed" && item.productId?._id && (
+                                <div>
+                                  {item.isReviewed ? (
+                                    <Link
+                                      to={`/products/${item.productId._id}?color=${encodeURIComponent(
+                                        item.variantId?.color || "",
+                                      )}#reviews`}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
+                                    >
+                                      <Eye size={14} />
+                                      Xem đánh giá
+                                    </Link>
+                                  ) : (
+                                    <Link
+                                      to={`/products/${item.productId._id}?color=${encodeURIComponent(
+                                        item.variantId?.color || "",
+                                      )}&review=true&orderId=${order._id}`}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors"
+                                    >
+                                      <Star size={14} />
+                                      Đánh giá
+                                    </Link>
+                                  )}
+                                </div>
                               )}
-                              ₫
                             </div>
                           </div>
                         </div>
@@ -709,24 +729,54 @@ export default function OrdersTab({ token }) {
                   </div>
 
                   <div className="ml-auto flex items-center gap-3">
-                    {order.status === "completed" && reviewItem && (
-                      <Link
-                        to={`/products/${reviewItem.productId._id}?color=${encodeURIComponent(
-                          reviewItem.variantId?.color || "",
-                        )}&review=true`}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue rounded-lg hover:bg-blue-800 transition-colors"
-                      >
-                        Đánh giá sản phẩm
-                      </Link>
-                    )}
+                    {order.status === "completed" && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const addedItemIds = [];
 
-                    {order.status === "completed" &&
-                      !reviewItem &&
-                      reviewedAll && (
-                        <span className="px-4 py-2 text-sm text-green-600 border border-green-300 rounded-lg">
-                          Đã đánh giá
-                        </span>
-                      )}
+                            for (const item of order.items || []) {
+                              if (item.variantId?._id && item.productId?._id) {
+                                try {
+                                  const response = await apiRequest("/carts/me/items", {
+                                    method: "POST",
+                                    token,
+                                    body: {
+                                      productId: item.productId._id,
+                                      variantId: item.variantId._id,
+                                      quantity: item.quantity,
+                                      source: "reorder"
+                                    }
+                                  });
+
+                                  if (response.data?._id) {
+                                    addedItemIds.push(response.data._id);
+                                  }
+                                } catch (err) {
+                                  console.error("Failed to add item:", err);
+                                }
+                              }
+                            }
+
+                            if (addedItemIds.length > 0) {
+                              // Lưu danh sách item IDs đã chọn vào sessionStorage
+                              sessionStorage.setItem("fashionstore_checkout_cart_item_ids", JSON.stringify(addedItemIds));
+                              localStorage.removeItem("fashionstore_checkout_cart_item_ids");
+
+                              // Chuyển đến trang giỏ hàng
+                              navigate("/cart");
+                            } else {
+                              setError("Không thể thêm sản phẩm vào giỏ hàng");
+                            }
+                          } catch (err) {
+                            setError(err.message);
+                          }
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+                      >
+                        Mua lại
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

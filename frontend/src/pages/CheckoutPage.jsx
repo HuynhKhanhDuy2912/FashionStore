@@ -76,8 +76,14 @@ export default function CheckoutPage() {
 
   const calculateTotal = () => {
     return cartItems.reduce((sum, item) => {
-      const price = item.variantId?.price || item.productId?.price || 0;
-      const discount = item.productId?.discount || 0;
+      const basePrice = item.productId?.price || 0;
+      const adjustment = item.variantId?.priceAdjustment || 0;
+      const price = basePrice + adjustment;
+      const productDiscount = item.productId?.discount || 0;
+      const variantDiscount = item.variantId?.discount;
+      const discount = (variantDiscount !== null && variantDiscount !== undefined)
+        ? variantDiscount
+        : productDiscount;
       const finalPrice = price - (price * discount) / 100;
       return sum + finalPrice * item.quantity;
     }, 0);
@@ -220,8 +226,14 @@ export default function CheckoutPage() {
             {cartItems.map((item) => {
               const product = item.productId;
               const variant = item.variantId;
-              const price = variant?.price || product?.price || 0;
-              const discount = product?.discount || 0;
+              const basePrice = product?.price || 0;
+              const adjustment = variant?.priceAdjustment || 0;
+              const price = basePrice + adjustment;
+              const productDiscount = product?.discount || 0;
+              const variantDiscount = variant?.discount;
+              const discount = (variantDiscount !== null && variantDiscount !== undefined)
+                ? variantDiscount
+                : productDiscount;
               const finalPrice = price - (price * discount) / 100;
               const image = variant?.image || product?.images?.[0] || "";
 

@@ -20,6 +20,7 @@ import reviewRoutes from "./review.routes.js";
 import uploadRoutes from "./upload.route.js";
 import addressRoutes from "./address.routes.js";
 import bannerRoutes from "./banner.routes.js";
+import notificationRoutes from "./notification.routes.js";
 
 const router = express.Router();
 
@@ -51,5 +52,6 @@ router.use("/reviews", reviewRoutes);
 router.use("/upload", uploadRoutes);
 router.use("/addresses", addressRoutes);
 router.use("/banners", bannerRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

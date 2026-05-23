@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
+  Bell,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -11,12 +12,17 @@ import {
   LayoutDashboard,
   List,
   LogOut,
+  Mail,
+  MessageSquare,
   Plus,
-  ShoppingBag,
+  Search,
+  ShoppingCart,
   Shirt,
   Users,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { NotificationProvider } from "../context/NotificationContext.jsx";
+import AdminNotificationBell from "./AdminNotificationBell.jsx";
 
 const SIDEBAR_EXPANDED = 260;
 const SIDEBAR_COLLAPSED = 76;
@@ -36,8 +42,9 @@ const adminNavItems = [
     ],
   },
   { to: "/admin/users", label: "Người dùng", icon: Users },
-  { to: "/admin/orders", label: "Đơn hàng", icon: ShoppingBag },
+  { to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
   { to: "/admin/banners", label: "Banner", icon: Image },
+  { to: "/admin/reviews", label: "Bình luận", icon: MessageSquare },
 ];
 
 const utilityNavItems = [
@@ -102,7 +109,8 @@ export default function AdminLayout() {
     } ${collapsed ? "justify-center px-2" : ""}`;
 
   return (
-    <section className="min-h-screen bg-gray-50 font-sans">
+    <NotificationProvider>
+      <section className="min-h-screen bg-gray-50 font-sans">
       <aside
         style={{ width: sidebarWidth }}
         className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-gray-200 bg-white text-black transition-[width] duration-300 ease-in-out"
@@ -267,8 +275,53 @@ export default function AdminLayout() {
         style={{ marginLeft: sidebarWidth }}
         className="min-h-screen bg-gray-50 transition-[margin-left] duration-300 ease-in-out"
       >
+        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
+          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                className="h-10 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm outline-none transition focus:border-black focus:bg-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="relative grid h-10 w-10 place-items-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:border-black hover:text-black"
+                aria-label="Tin nhắn"
+                title="Tin nhắn"
+              >
+                <Mail className="h-4 w-4" />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+              </button>
+
+              <AdminNotificationBell />
+
+              <button
+                type="button"
+                className="ml-1 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1.5 transition hover:border-black"
+                aria-label="Hồ sơ"
+                title="Hồ sơ"
+              >
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-black text-xs font-bold text-white uppercase">
+                  {(user?.fullname || user?.username || "A").slice(0, 1)}
+                </div>
+                <div className="hidden min-w-0 pr-1 text-left sm:block">
+                  <div className="truncate text-xs font-bold text-black">
+                    {user?.fullname || user?.username || "Admin"}
+                  </div>
+                  <div className="truncate text-[11px] text-gray-500">Quản trị viên</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </header>
+
         <Outlet />
       </main>
     </section>
+    </NotificationProvider>
   );
 }

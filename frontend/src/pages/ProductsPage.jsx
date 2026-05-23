@@ -153,6 +153,8 @@ const sortLabelMap = {
   name_asc: "Tên A-Z",
 };
 
+const PAGE_SIZE = 12;
+
 export default function ProductsPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -168,6 +170,7 @@ export default function ProductsPage() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showMobileCategoryPanel, setShowMobileCategoryPanel] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
+  const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("grid");
   const [activeSwatchByProduct, setActiveSwatchByProduct] = useState({});
   const [quickAddByProduct, setQuickAddByProduct] = useState({});
@@ -177,9 +180,12 @@ export default function ProductsPage() {
     style: "",
     gender: "",
     occasion: "",
+    soldOnly: searchParams.get("bestSeller") === "1",
   });
 
   const selectedCategoryId = searchParams.get("categoryId") || "";
+  const isBestSellerContext = searchParams.get("bestSeller") === "1";
+  const isNewArrivalsContext = searchParams.get("newArrivals") === "1";
   const isCategoryContext = Boolean(selectedCategoryId);
   const useNewAllProductsLayout = !isCategoryContext;
 
@@ -275,7 +281,12 @@ export default function ProductsPage() {
     setFilters((current) => ({
       ...current,
       search: searchParams.get("search") || "",
+      soldOnly: searchParams.get("bestSeller") === "1",
     }));
+
+    if (searchParams.get("newArrivals") === "1") {
+      setSortBy("newest");
+    }
   }, [searchParams]);
 
   const productsWithVariants = useMemo(
@@ -315,6 +326,13 @@ export default function ProductsPage() {
       );
     return data;
   }, [baseFilteredProducts, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const normalizedCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (normalizedCurrentPage - 1) * PAGE_SIZE;
+    return filteredProducts.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredProducts, normalizedCurrentPage]);
 
   const selectedRootCategoryId = useMemo(
     () => getRootCategoryId(categories, selectedCategoryId),
@@ -417,7 +435,7 @@ export default function ProductsPage() {
   }
 
   const clearFiltersKeepCategory = () => {
-    setFilters({ search: "", style: "", gender: "", occasion: "" });
+    setFilters({ search: "", style: "", gender: "", occasion: "", soldOnly: isBestSellerContext });
     setSortBy("newest");
   };
 
@@ -533,6 +551,10 @@ export default function ProductsPage() {
     setSortBy(nextValue);
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sortBy, selectedCategoryId, isBestSellerContext, isNewArrivalsContext]);
+
   const inputClass =
     "w-full appearance-none border border-gray-200 bg-white px-4 py-2.5 text-sm text-black transition-colors focus:border-black focus:outline-none";
   const labelClass =
@@ -577,6 +599,18 @@ export default function ProductsPage() {
               ) : (
                 <>
                   <span className="text-gray-600">Tất cả sản phẩm</span>
+                  {isNewArrivalsContext ? (
+                    <>
+                      <span className="text-gray-400">&gt;</span>
+                      <span className="font-semibold text-black">Sản phẩm mới</span>
+                    </>
+                  ) : null}
+                  {isBestSellerContext ? (
+                    <>
+                      <span className="text-gray-400">&gt;</span>
+                      <span className="font-semibold text-black">Sản phẩm bán chạy nhất</span>
+                    </>
+                  ) : null}
                 </>
               )}
             </div>
@@ -893,7 +927,7 @@ export default function ProductsPage() {
               </div>
             )}
 
-            {filteredProducts.length === 0 ? (
+            {paginatedProducts.length === 0 ? (
               <div className="border border-gray-200 bg-white py-24 text-center">
                 <h3 className="mb-2 text-lg font-semibold text-black">
                   Không tìm thấy sản phẩm
@@ -910,7 +944,7 @@ export default function ProductsPage() {
                     : "grid grid-cols-2 gap-[1px] bg-gray-200 md:grid-cols-3 xl:grid-cols-4"
                 }
               >
-                {filteredProducts.map((product) => {
+                {paginatedProducts.map((product) => {
                   const colorGroups = getColorGroups(product);
                   const activeColorName =
                     activeSwatchByProduct[product._id] || colorGroups[0]?.color;
@@ -1115,6 +1149,55 @@ export default function ProductsPage() {
                 })}
               </div>
             )}
+
+            {filteredProducts.length > PAGE_SIZE ? (
+              <div className="mt-6 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={normalizedCurrentPage === 1}
+                  className="grid h-9 w-9 place-items-center border border-gray-300 bg-white text-sm font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  &lt;
+                </button>
+
+                {Array.from({ length: totalPages }, (_, index) => index + 1)
+                  .filter((page) => {
+                    if (totalPages <= 7) return true;
+                    if (page === 1 || page === totalPages) return true;
+                    return Math.abs(page - normalizedCurrentPage) <= 1;
+                  })
+                  .map((page, index, pages) => {
+                    const prevPage = pages[index - 1];
+                    const showEllipsis = prevPage && page - prevPage > 1;
+                    return (
+                      <span key={`page-wrap-${page}`} className="inline-flex items-center gap-2">
+                        {showEllipsis ? <span className="px-1 text-gray-500">...</span> : null}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`grid h-9 min-w-9 place-items-center border px-2 text-sm font-medium transition ${
+                            page === normalizedCurrentPage
+                              ? "border-black bg-black text-white"
+                              : "border-gray-300 bg-white text-black hover:border-black"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </span>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={normalizedCurrentPage === totalPages}
+                  className="grid h-9 w-9 place-items-center border border-gray-300 bg-white text-sm font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  &gt;
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
