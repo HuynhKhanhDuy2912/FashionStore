@@ -500,30 +500,46 @@ export default function AdminCategoriesPage() {
             iconColor: "text-orange-600",
             valueClass: "text-orange-600",
           },
-        ].map(({ label, value, icon: Icon, symbol, iconBg, iconColor, valueClass }) => (
-          <div
-            key={label}
-            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
-                  {label}
-                </p>
-                <p className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}>
-                  {value}
-                </p>
-              </div>
-              <div className={`grid h-12 w-12 place-items-center rounded-xl ${iconBg}`}>
-                {Icon ? (
-                  <Icon className={`h-6 w-6 ${iconColor}`} />
-                ) : (
-                  <span className={`text-xl font-bold ${iconColor}`}>{symbol}</span>
-                )}
+        ].map(
+          ({
+            label,
+            value,
+            icon: Icon,
+            symbol,
+            iconBg,
+            iconColor,
+            valueClass,
+          }) => (
+            <div
+              key={label}
+              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+                    {label}
+                  </p>
+                  <p
+                    className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}
+                  >
+                    {value}
+                  </p>
+                </div>
+                <div
+                  className={`grid h-12 w-12 place-items-center rounded-xl ${iconBg}`}
+                >
+                  {Icon ? (
+                    <Icon className={`h-6 w-6 ${iconColor}`} />
+                  ) : (
+                    <span className={`text-xl font-bold ${iconColor}`}>
+                      {symbol}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr]">
@@ -542,7 +558,7 @@ export default function AdminCategoriesPage() {
                 onClick={() => setActiveForm("root")}
                 className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
                   activeForm === "root"
-                    ? "border-blue-600 text-blue-600"
+                    ? "border-black text-black font-bold"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -553,7 +569,7 @@ export default function AdminCategoriesPage() {
                 onClick={() => setActiveForm("level2")}
                 className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
                   activeForm === "level2"
-                    ? "border-blue-600 text-blue-600"
+                    ? "border-black text-black font-bold"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >
@@ -564,7 +580,7 @@ export default function AdminCategoriesPage() {
                 onClick={() => setActiveForm("level3")}
                 className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
                   activeForm === "level3"
-                    ? "border-blue-600 text-blue-600"
+                    ? "border-black text-black font-bold"
                     : "border-transparent text-gray-400 hover:text-gray-600"
                 }`}
               >

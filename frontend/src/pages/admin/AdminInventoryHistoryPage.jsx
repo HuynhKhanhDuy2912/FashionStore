@@ -17,7 +17,7 @@ export default function AdminInventoryHistoryPage() {
     search: "",
     type: "",
     startDate: "",
-    endDate: ""
+    endDate: "",
   });
 
   useEffect(() => {
@@ -33,7 +33,10 @@ export default function AdminInventoryHistoryPage() {
       if (filters.endDate) params.append("endDate", filters.endDate);
       params.append("limit", "100");
 
-      const res = await apiRequest(`/inventory/transactions?${params.toString()}`, { token });
+      const res = await apiRequest(
+        `/inventory/transactions?${params.toString()}`,
+        { token },
+      );
       setTransactions(res.data || []);
     } catch (e) {
       toast.error(e.message);
@@ -54,9 +57,9 @@ export default function AdminInventoryHistoryPage() {
         `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/inventory/transactions/export?${params.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       if (!response.ok) {
@@ -96,7 +99,7 @@ export default function AdminInventoryHistoryPage() {
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // Reset to page 1 when filters change
@@ -108,21 +111,21 @@ export default function AdminInventoryHistoryPage() {
     import: "text-green-600 bg-green-50",
     export: "text-red-600 bg-red-50",
     adjustment: "text-blue-600 bg-blue-50",
-    return: "text-green-600 bg-green-50"
+    return: "text-green-600 bg-green-50",
   };
 
   const typeLabels = {
     import: "Nhập hàng",
     export: "Xuất kho",
     adjustment: "Điều chỉnh",
-    return: "Hoàn trả"
+    return: "Hoàn trả",
   };
 
   const typeIcons = {
     import: "↑",
     export: "↓",
     adjustment: "⟳",
-    return: "↩"
+    return: "↩",
   };
 
   if (loading) {
@@ -166,7 +169,9 @@ export default function AdminInventoryHistoryPage() {
                 type="text"
                 placeholder="Sản phẩm, SKU..."
                 value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                onChange={(e) =>
+                  setFilters({ ...filters, search: e.target.value })
+                }
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
@@ -236,20 +241,39 @@ export default function AdminInventoryHistoryPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">Thời gian</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">Sản phẩm</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">Màu/Size</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">SKU</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">Loại</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">Số lượng</th>
-                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">Tồn kho</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">Lý do</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">Người thực hiện</th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Thời gian
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Sản phẩm
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Màu/Size
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  SKU
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Loại
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Số lượng
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Tồn kho
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Lý do
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                  Người thực hiện
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedTransactions.map((tx) => {
-                const image = tx.variantId?.image || tx.productId?.images?.[0] || "";
+                const image =
+                  tx.variantId?.image || tx.productId?.images?.[0] || "";
 
                 return (
                   <tr key={tx._id} className="hover:bg-gray-50">
@@ -259,33 +283,46 @@ export default function AdminInventoryHistoryPage() {
                         month: "2-digit",
                         day: "2-digit",
                         hour: "2-digit",
-                        minute: "2-digit"
+                        minute: "2-digit",
                       })}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {image ? (
-                          <img src={image} alt="" className="w-10 h-10 object-cover rounded-lg" />
+                          <img
+                            src={image}
+                            alt=""
+                            className="w-10 h-10 object-cover rounded-lg"
+                          />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                             <Package className="w-5 h-5 text-gray-400" />
                           </div>
                         )}
-                        <span className="text-sm font-medium">{tx.productId?.name || "N/A"}</span>
+                        <span className="text-sm font-medium">
+                          {tx.productId?.name || "N/A"}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {tx.variantId?.color} / {tx.variantId?.size}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono">{tx.variantId?.sku || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm font-mono">
+                      {tx.variantId?.sku || "N/A"}
+                    </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${typeColors[tx.type]}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${typeColors[tx.type]}`}
+                      >
                         <span>{typeIcons[tx.type]}</span>
                         {typeLabels[tx.type]}
                       </span>
                     </td>
-                    <td className={`px-4 py-3 text-center text-sm font-bold ${tx.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                      {tx.quantity > 0 ? "+" : ""}{tx.quantity}
+                    <td
+                      className={`px-4 py-3 text-center text-sm font-bold ${tx.quantity > 0 ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {tx.quantity > 0 ? "+" : ""}
+                      {tx.quantity}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
                       <span className="text-gray-500">{tx.previousStock}</span>
@@ -295,7 +332,11 @@ export default function AdminInventoryHistoryPage() {
                     <td className="px-4 py-3 text-sm">
                       <div>
                         <p className="font-medium">{tx.reason}</p>
-                        {tx.note && <p className="text-gray-500 text-xs mt-1">{tx.note}</p>}
+                        {tx.note && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {tx.note}
+                          </p>
+                        )}
                         {tx.orderId && (
                           <p className="text-blue-600 text-xs mt-1">
                             Đơn hàng: {tx.orderId._id}
@@ -304,7 +345,9 @@ export default function AdminInventoryHistoryPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {tx.createdBy?.fullname || tx.createdBy?.username || "N/A"}
+                      {tx.createdBy?.fullname ||
+                        tx.createdBy?.username ||
+                        "N/A"}
                     </td>
                   </tr>
                 );
@@ -324,11 +367,16 @@ export default function AdminInventoryHistoryPage() {
         {filteredTransactions.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Hiển thị {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} trong tổng số {filteredTransactions.length} giao dịch
+              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
+              {Math.min(
+                currentPage * itemsPerPage,
+                filteredTransactions.length,
+              )}{" "}
+              trong tổng số {filteredTransactions.length} giao dịch
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
@@ -345,7 +393,7 @@ export default function AdminInventoryHistoryPage() {
                     pages.push(1);
 
                     if (currentPage > 3) {
-                      pages.push('...');
+                      pages.push("...");
                     }
 
                     const start = Math.max(2, currentPage - 1);
@@ -358,7 +406,7 @@ export default function AdminInventoryHistoryPage() {
                     }
 
                     if (currentPage < totalPages - 2) {
-                      pages.push('...');
+                      pages.push("...");
                     }
 
                     if (!pages.includes(totalPages)) {
@@ -367,9 +415,12 @@ export default function AdminInventoryHistoryPage() {
                   }
 
                   return pages.map((page, index) => {
-                    if (page === '...') {
+                    if (page === "...") {
                       return (
-                        <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 text-gray-400"
+                        >
                           ...
                         </span>
                       );
@@ -391,7 +442,9 @@ export default function AdminInventoryHistoryPage() {
                 })()}
               </div>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >

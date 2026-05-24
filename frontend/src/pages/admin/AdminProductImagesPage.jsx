@@ -7,7 +7,7 @@ import ImageUpload from "../../components/ImageUpload.jsx";
 const initialForm = {
   productId: "",
   imageUrl: "",
-  isMain: false
+  isMain: false,
 };
 
 export default function AdminProductImagesPage() {
@@ -23,7 +23,7 @@ export default function AdminProductImagesPage() {
     try {
       const [productResponse, imageResponse] = await Promise.all([
         apiRequest("/products", { token }),
-        apiRequest("/product-images", { token })
+        apiRequest("/product-images", { token }),
       ]);
       setProducts(productResponse.data);
       setImages(imageResponse.data);
@@ -50,14 +50,14 @@ export default function AdminProductImagesPage() {
         await apiRequest(`/product-images/${editingId}`, {
           method: "PUT",
           token,
-          body: form
+          body: form,
         });
         setMessage("Đã cập nhật ảnh sản phẩm");
       } else {
         await apiRequest("/product-images", {
           method: "POST",
           token,
-          body: form
+          body: form,
         });
         setMessage("Đã thêm ảnh sản phẩm");
       }
@@ -75,7 +75,7 @@ export default function AdminProductImagesPage() {
     setForm({
       productId: image.productId?._id || "",
       imageUrl: image.imageUrl || "",
-      isMain: Boolean(image.isMain)
+      isMain: Boolean(image.isMain),
     });
   };
 
@@ -83,7 +83,7 @@ export default function AdminProductImagesPage() {
     try {
       await apiRequest(`/product-images/${imageId}`, {
         method: "DELETE",
-        token
+        token,
       });
       setMessage("Đã xóa ảnh sản phẩm");
       loadData();
@@ -92,8 +92,10 @@ export default function AdminProductImagesPage() {
     }
   };
 
-  const inputClass = "border border-gray-300 px-4 py-3 bg-white text-black text-sm focus:border-black focus:outline-none w-full";
-  const labelClass = "text-xs font-bold uppercase tracking-widest text-black flex flex-col gap-2";
+  const inputClass =
+    "border border-gray-300 px-4 py-3 bg-white text-black text-sm focus:border-black focus:outline-none w-full";
+  const labelClass =
+    "text-xs font-bold uppercase tracking-widest text-black flex flex-col gap-2";
 
   return (
     <section className="grid gap-6">
@@ -102,15 +104,23 @@ export default function AdminProductImagesPage() {
         description="Quản lý danh sách hình ảnh của sản phẩm."
       />
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
-        <form className="bg-white border border-gray-200 p-7 grid gap-5 sticky top-6" onSubmit={handleSubmit}>
-          <h3 className="text-black text-sm m-0 mb-2 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">{editingId ? "SỬA ẢNH" : "THÊM ẢNH MỚI"}</h3>
+        <form
+          className="bg-white border border-gray-200 p-7 grid gap-5 sticky top-6"
+          onSubmit={handleSubmit}
+        >
+          <h3 className="text-black text-sm m-0 mb-2 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">
+            {editingId ? "SỬA ẢNH" : "THÊM ẢNH MỚI"}
+          </h3>
           <label className={labelClass}>
             Sản phẩm
             <select
               className={inputClass}
               value={form.productId}
               onChange={(event) =>
-                setForm((current) => ({ ...current, productId: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  productId: event.target.value,
+                }))
               }
             >
               <option value="">Chọn sản phẩm</option>
@@ -121,11 +131,13 @@ export default function AdminProductImagesPage() {
               ))}
             </select>
           </label>
-          
-          <ImageUpload 
+
+          <ImageUpload
             label="ẢNH SẢN PHẨM"
             value={form.imageUrl}
-            onChange={(url) => setForm(current => ({ ...current, imageUrl: url }))}
+            onChange={(url) =>
+              setForm((current) => ({ ...current, imageUrl: url }))
+            }
           />
 
           <label className="flex items-center gap-3 cursor-pointer py-2 text-black font-bold uppercase tracking-widest text-xs">
@@ -134,15 +146,31 @@ export default function AdminProductImagesPage() {
               className="w-5 h-5 text-black rounded-none focus:ring-black border-gray-300"
               checked={form.isMain}
               onChange={(event) =>
-                setForm((current) => ({ ...current, isMain: event.target.checked }))
+                setForm((current) => ({
+                  ...current,
+                  isMain: event.target.checked,
+                }))
               }
             />
             <span>ĐẶT LÀM ẢNH CHÍNH</span>
           </label>
-          {message ? <p className="text-black bg-gray-100 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-black m-0">{message}</p> : null}
-          {error ? <p className="text-red-600 bg-red-50 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-red-600 m-0">{error}</p> : null}
+          {message ? (
+            <p className="text-black bg-gray-100 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-black m-0">
+              {message}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="text-red-600 bg-red-50 px-4 py-3 font-bold text-xs uppercase tracking-widest border-l-4 border-red-600 m-0">
+              {error}
+            </p>
+          ) : null}
           <div className="flex gap-3 pt-4 border-t border-gray-200 mt-2">
-            <button className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none" type="submit">{editingId ? "CẬP NHẬT" : "THÊM MỚI"}</button>
+            <button
+              className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none"
+              type="submit"
+            >
+              {editingId ? "CẬP NHẬT" : "THÊM MỚI"}
+            </button>
             {editingId ? (
               <button
                 type="button"
@@ -159,24 +187,46 @@ export default function AdminProductImagesPage() {
         </form>
 
         <section className="bg-white border border-gray-200 p-7">
-          <h3 className="text-black text-sm m-0 mb-6 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">DANH SÁCH ẢNH</h3>
+          <h3 className="text-black text-sm m-0 mb-6 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">
+            DANH SÁCH ẢNH
+          </h3>
           <div className="grid gap-0 divide-y divide-gray-100">
             {images.map((image) => (
-              <div key={image._id} className="flex justify-between gap-4 py-4 items-center hover:bg-gray-50 transition-colors px-2">
+              <div
+                key={image._id}
+                className="flex justify-between gap-4 py-4 items-center hover:bg-gray-50 transition-colors px-2"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-gray-100 overflow-hidden shrink-0 border border-gray-200">
-                    {image.imageUrl ? <img src={image.imageUrl} className="w-full h-full object-cover" /> : null}
+                    {image.imageUrl ? (
+                      <img
+                        src={image.imageUrl}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
                   </div>
                   <div>
-                    <strong className="block text-black mb-1 text-sm">{image.productId?.name}</strong>
-                    <p className="m-0 text-xs font-bold mt-1 text-black uppercase tracking-widest">{image.isMain ? "★ ẢNH CHÍNH" : "ẢNH PHỤ"}</p>
+                    <strong className="block text-black mb-1 text-sm">
+                      {image.productId?.name}
+                    </strong>
+                    <p className="m-0 text-xs font-bold mt-1 text-black uppercase tracking-widest">
+                      {image.isMain ? "★ ẢNH CHÍNH" : "ẢNH PHỤ"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => handleEdit(image)}>
+                  <button
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 cursor-pointer transition-colors"
+                    onClick={() => handleEdit(image)}
+                  >
                     SỬA
                   </button>
-                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 border border-red-600 cursor-pointer transition-colors" onClick={() => handleDelete(image._id)}>XÓA</button>
+                  <button
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 border border-red-600 cursor-pointer transition-colors"
+                    onClick={() => handleDelete(image._id)}
+                  >
+                    XÓA
+                  </button>
                 </div>
               </div>
             ))}

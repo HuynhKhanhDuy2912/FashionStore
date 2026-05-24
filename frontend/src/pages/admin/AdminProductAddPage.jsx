@@ -21,6 +21,7 @@ const initialForm = {
   name: "",
   description: "",
   price: "",
+  costPrice: "",
   discount: 0,
   categoryId: "",
   gender: "male",
@@ -40,6 +41,7 @@ const initialVariantForm = {
   size: "",
   color: "",
   stock: 0,
+  costPrice: "",
   price: "",
   discount: null,
   images: [],
@@ -121,6 +123,7 @@ export default function AdminProductAddPage() {
             name: p.name || "",
             description: p.description || "",
             price: p.price || "",
+            costPrice: p.costPrice || "",
             discount: p.discount || 0,
             categoryId: catId,
             gender: p.gender || "male",
@@ -233,6 +236,7 @@ export default function AdminProductAddPage() {
                 size: size,
                 sku: finalSku,
                 stock: Number(form.stock),
+                costPrice: Number(form.costPrice) || 0,
                 priceAdjustment: 0,
                 image: initialImage,
               },
@@ -314,7 +318,10 @@ export default function AdminProductAddPage() {
     try {
       await Promise.all(
         toDelete.map((img) =>
-          apiRequest(`/product-images/${img._id}/db-only`, { method: "DELETE", token }),
+          apiRequest(`/product-images/${img._id}/db-only`, {
+            method: "DELETE",
+            token,
+          }),
         ),
       );
       setGalleryImages((prev) =>
@@ -372,6 +379,7 @@ export default function AdminProductAddPage() {
       const baseBody = {
         color: variantForm.color.trim(),
         stock: Number(variantForm.stock),
+        costPrice: Number(variantForm.costPrice) || 0,
         priceAdjustment: calculatedAdjustment,
         discount: variantForm.discount,
         image: variantForm.mainImage || variantForm.images[0] || "",
@@ -512,6 +520,7 @@ export default function AdminProductAddPage() {
       size: v.size,
       color: v.color,
       stock: v.stock || 0,
+      costPrice: v.costPrice || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
       discount: v.discount ?? null,
       images: v.image ? [v.image] : [],
@@ -763,7 +772,7 @@ export default function AdminProductAddPage() {
                       </label>
 
                       <label className={labelCls}>
-                        Giá gốc (VND) *
+                        Giá bán (VND) *
                         <div className="relative">
                           <input
                             className={inputCls + " pr-10"}
@@ -772,6 +781,22 @@ export default function AdminProductAddPage() {
                             required
                             placeholder="0"
                             {...field("price")}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                            ₫
+                          </span>
+                        </div>
+                      </label>
+
+                      <label className={labelCls}>
+                        Giá nhập (VND)
+                        <div className="relative">
+                          <input
+                            className={inputCls + " pr-10"}
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            {...field("costPrice")}
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
                             ₫
@@ -1050,7 +1075,9 @@ export default function AdminProductAddPage() {
                                     <button
                                       type="button"
                                       title="Xóa ảnh (xóa cả trên Cloudinary)"
-                                      onClick={() => handleDeleteGallery(img._id)}
+                                      onClick={() =>
+                                        handleDeleteGallery(img._id)
+                                      }
                                       className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold uppercase tracking-widest text-red-600 bg-white hover:bg-red-50 cursor-pointer border-none transition-colors"
                                     >
                                       <Trash2 size={11} />
@@ -1154,7 +1181,7 @@ export default function AdminProductAddPage() {
                         type="number"
                         min="0"
                         step="1000"
-                        placeholder="Giá nhập sản phẩm"
+                        placeholder={form.costPrice || "Giá nhập sản phẩm"}
                         {...vField("costPrice")}
                       />
                     </label>
@@ -1313,23 +1340,39 @@ export default function AdminProductAddPage() {
                             {v.stock}
                           </td>
                           <td className="py-3 px-3 text-xs">
-                            {v.costPrice ? `${Number(v.costPrice).toLocaleString()}đ` : "0đ"}
+                            {v.costPrice
+                              ? `${Number(v.costPrice).toLocaleString()}đ`
+                              : "0đ"}
                           </td>
                           <td className="py-3 px-3 text-xs font-bold">
                             {(() => {
-                              const productDiscount = Number(form.discount || 0);
+                              const productDiscount = Number(
+                                form.discount || 0,
+                              );
                               const variantDiscount = v.discount;
-                              const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
-                                ? Number(variantDiscount)
-                                : productDiscount;
+                              const effectiveDiscount =
+                                variantDiscount !== null &&
+                                variantDiscount !== undefined
+                                  ? Number(variantDiscount)
+                                  : productDiscount;
 
                               if (effectiveDiscount === 0) {
-                                return <span className="text-gray-400">0%</span>;
+                                return (
+                                  <span className="text-gray-400">0%</span>
+                                );
                               }
 
-                              const isInherited = variantDiscount === null || variantDiscount === undefined;
+                              const isInherited =
+                                variantDiscount === null ||
+                                variantDiscount === undefined;
                               return (
-                                <span className={isInherited ? "text-blue-600" : "text-green-600"}>
+                                <span
+                                  className={
+                                    isInherited
+                                      ? "text-blue-600"
+                                      : "text-green-600"
+                                  }
+                                >
                                   {effectiveDiscount}%
                                 </span>
                               );
@@ -1337,15 +1380,23 @@ export default function AdminProductAddPage() {
                           </td>
                           <td className="py-3 px-3 text-xs font-bold text-black">
                             {(() => {
-                              const base = Number(form.price) + (v.priceAdjustment || 0);
-                              const productDiscount = Number(form.discount || 0);
+                              const base =
+                                Number(form.price) + (v.priceAdjustment || 0);
+                              const productDiscount = Number(
+                                form.discount || 0,
+                              );
                               const variantDiscount = v.discount;
-                              const effectiveDiscount = (variantDiscount !== null && variantDiscount !== undefined)
-                                ? Number(variantDiscount)
-                                : productDiscount;
-                              const final = effectiveDiscount > 0
-                                ? Math.round(base * (1 - effectiveDiscount / 100))
-                                : base;
+                              const effectiveDiscount =
+                                variantDiscount !== null &&
+                                variantDiscount !== undefined
+                                  ? Number(variantDiscount)
+                                  : productDiscount;
+                              const final =
+                                effectiveDiscount > 0
+                                  ? Math.round(
+                                      base * (1 - effectiveDiscount / 100),
+                                    )
+                                  : base;
                               return final.toLocaleString("vi-VN");
                             })()}
                             ₫

@@ -260,7 +260,7 @@ export default function AdminBannersPage() {
                   <input
                     type="number"
                     defaultValue={banner.order}
-                    className="w-20 border border-gray-300 px-2 py-2 text-xs"
+                    className="w-12 border border-gray-300 px-2 py-2 text-xs"
                     onBlur={(event) => handleOrderUpdate(banner._id, event.target.value)}
                   />
                   <button

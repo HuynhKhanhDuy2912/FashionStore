@@ -265,9 +265,7 @@ export default function AdminOrderDetailPage() {
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center gap-3 text-slate-500">
                   <Calendar className="h-5 w-5" />
-                  <span className="text-xs font-bold uppercase">
-                    Ngày tạo
-                  </span>
+                  <span className="text-xs font-bold uppercase">Ngày tạo</span>
                 </div>
                 <p className="mt-3 text-sm font-semibold text-slate-900">
                   {formatDateTime(order.createdAt)}
@@ -444,7 +442,8 @@ export default function AdminOrderDetailPage() {
                             {formatCurrency(item.price)} x {item.quantity}
                           </p>
                           <p className="mt-1 text-base font-bold text-slate-900">
-                            Thành tiền: {formatCurrency(item.price * item.quantity)}
+                            Thành tiền:{" "}
+                            {formatCurrency(item.price * item.quantity)}
                           </p>
                         </div>
                       </div>

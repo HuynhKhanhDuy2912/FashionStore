@@ -17,6 +17,12 @@ const storage = new CloudinaryStorage({
     folder: 'fashionstore',
     resource_type: 'auto',
     allowedFormats: ['jpg', 'png', 'jpeg', 'webp', 'mp4', 'mov', 'webm'],
+    public_id: (req, file) => {
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 8);
+      const originalName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+      return `${originalName}_${timestamp}_${randomString}`;
+    },
   },
 });
 

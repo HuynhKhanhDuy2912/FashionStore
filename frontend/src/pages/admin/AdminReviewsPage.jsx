@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
-import { Eye, EyeOff, Search, Star, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Search,
+  Star,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function AdminReviewsPage() {
@@ -75,7 +82,9 @@ export default function AdminReviewsPage() {
         token,
       });
 
-      toast.success(currentIsHidden ? "Đã hiển thị đánh giá" : "Đã ẩn đánh giá");
+      toast.success(
+        currentIsHidden ? "Đã hiển thị đánh giá" : "Đã ẩn đánh giá",
+      );
       loadReviews();
     } catch (e) {
       toast.error(e.message);
@@ -200,7 +209,10 @@ export default function AdminReviewsPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {reviews.map((review) => (
-              <div key={review._id} className="p-5 hover:bg-gray-50 transition-colors">
+              <div
+                key={review._id}
+                className="p-5 hover:bg-gray-50 transition-colors"
+              >
                 <div className="grid grid-cols-[80px_1fr_120px_100px_120px] gap-4 items-start">
                   <div className="w-16 h-16 bg-gray-100 border border-gray-200 overflow-hidden">
                     {review.productId?.images?.[0] ? (
@@ -230,19 +242,29 @@ export default function AdminReviewsPage() {
                           />
                         ) : (
                           <div className="w-full h-full grid place-items-center text-[10px] font-bold text-gray-500">
-                            {(review.userId?.username || "U").charAt(0).toUpperCase()}
+                            {(review.userId?.username || "U")
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                         )}
                       </div>
                       <span className="text-sm font-medium text-black">
-                        {review.userId?.fullname || review.userId?.username || "Người dùng"}
+                        {review.userId?.fullname ||
+                          review.userId?.username ||
+                          "Người dùng"}
                       </span>
                     </div>
                     {renderStars(review.rating)}
                     <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                      {review.comment || <span className="text-gray-400 italic">Không có nội dung</span>}
+                      {review.comment || (
+                        <span className="text-gray-400 italic">
+                          Không có nội dung
+                        </span>
+                      )}
                     </p>
-                    {(review.imageUrls?.length > 0 || review.videoUrls?.length > 0 || review.comment?.length > 100) && (
+                    {(review.imageUrls?.length > 0 ||
+                      review.videoUrls?.length > 0 ||
+                      review.comment?.length > 100) && (
                       <button
                         type="button"
                         onClick={() => toggleReviewDetail(review._id)}
@@ -262,7 +284,9 @@ export default function AdminReviewsPage() {
                   </div>
 
                   <div className="text-center">
-                    <p className="text-[13px] text-gray-500">{formatDate(review.createdAt)}</p>
+                    <p className="text-[13px] text-gray-500">
+                      {formatDate(review.createdAt)}
+                    </p>
                   </div>
 
                   <div className="text-center">
@@ -280,13 +304,17 @@ export default function AdminReviewsPage() {
                   <div className="flex justify-center">
                     <button
                       type="button"
-                      onClick={() => handleToggleVisibility(review._id, review.isHidden)}
+                      onClick={() =>
+                        handleToggleVisibility(review._id, review.isHidden)
+                      }
                       className={`px-3 py-2 text-xs font-bold uppercase tracking-widest border cursor-pointer transition-colors ${
                         review.isHidden
                           ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white rounded-lg"
                           : "text-red-600 border-red-400 hover:bg-red-600 hover:text-white rounded-lg"
                       }`}
-                      title={review.isHidden ? "Hiển thị đánh giá" : "Ẩn đánh giá"}
+                      title={
+                        review.isHidden ? "Hiển thị đánh giá" : "Ẩn đánh giá"
+                      }
                     >
                       {review.isHidden ? (
                         <>
@@ -314,10 +342,14 @@ export default function AdminReviewsPage() {
                       </div>
                     )}
 
-                    {(review.imageUrls?.length > 0 || review.videoUrls?.length > 0) && (
+                    {(review.imageUrls?.length > 0 ||
+                      review.videoUrls?.length > 0) && (
                       <div>
                         <p className="text-[13px] font-bold text-gray-500 mb-2">
-                          Hình ảnh & Video ({(review.imageUrls?.length || 0) + (review.videoUrls?.length || 0)})
+                          Hình ảnh & Video (
+                          {(review.imageUrls?.length || 0) +
+                            (review.videoUrls?.length || 0)}
+                          )
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {(review.imageUrls || []).map((url, idx) => (

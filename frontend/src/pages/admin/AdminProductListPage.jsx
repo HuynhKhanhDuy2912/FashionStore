@@ -60,12 +60,19 @@ export default function AdminProductListPage() {
     loadProducts();
   }, [token]);
 
+  useEffect(() => {
+    const handleProductsChanged = () => {
+      loadProducts();
+    };
+    window.addEventListener("products:changed", handleProductsChanged);
+    return () => window.removeEventListener("products:changed", handleProductsChanged);
+  }, [token]);
+
   const handleDelete = async (product) => {
     try {
       await apiRequest(`/products/${product._id}`, { method: "DELETE", token });
-      toast.success(`Đã xóa sản phẩm "${product.name}"`);
+      toast.success(`Đã xóa sản phẩm "${product.name}" thành công!`);
       setDeleteConfirm(null);
-      loadProducts();
     } catch (e) {
       toast.error(e.message);
     }
@@ -219,11 +226,15 @@ export default function AdminProductListPage() {
                 <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
                   {label}
                 </p>
-                <p className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}>
+                <p
+                  className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}
+                >
                   {value}
                 </p>
               </div>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}
+              >
                 <Icon className={`h-6 w-6 ${iconColor}`} />
               </div>
             </div>

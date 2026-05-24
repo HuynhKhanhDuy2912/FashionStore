@@ -29,6 +29,8 @@ export async function apiRequest(path, { method = "GET", body, token, isFormData
     (path === "/orders/checkout" && normalizedMethod === "POST");
   const changesCategories =
     path.startsWith("/categories") && ["POST", "PUT", "PATCH", "DELETE"].includes(normalizedMethod);
+  const changesProducts =
+    path.startsWith("/products") && ["POST", "PUT", "PATCH", "DELETE"].includes(normalizedMethod);
 
   if (changesCart && typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("cart:changed"));
@@ -36,6 +38,10 @@ export async function apiRequest(path, { method = "GET", body, token, isFormData
 
   if (changesCategories && typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("categories:changed"));
+  }
+
+  if (changesProducts && typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("products:changed"));
   }
 
   return data;
