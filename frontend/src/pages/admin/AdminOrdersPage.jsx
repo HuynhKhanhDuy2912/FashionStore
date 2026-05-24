@@ -9,7 +9,8 @@ import {
   Wallet,
   X,
   XCircle,
-  Filter,
+  ShoppingCart,
+  SlidersHorizontal,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -61,7 +62,7 @@ const statusMap = {
   },
   cancelled: {
     label: "Đã hủy",
-    className: "border-gray-200 bg-gray-100 text-gray-700",
+    className: "border-red-200 bg-red-100 text-red-600",
     icon: XCircle,
   },
 };
@@ -105,6 +106,7 @@ export default function AdminOrdersPage() {
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -126,6 +128,19 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     loadOrders();
   }, [token]);
+
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const pending = orders.filter((order) => order.status === "pending").length;
+    const completed = orders.filter(
+      (order) => order.status === "completed",
+    ).length;
+    const cancelled = orders.filter(
+      (order) => order.status === "cancelled",
+    ).length;
+
+    return { total, pending, completed, cancelled };
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
@@ -239,111 +254,182 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <section className="grid gap-6 p-6">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
-        title="Quản lý đơn hàng"
+        title="QUẢN LÝ ĐƠN HÀNG"
         description="Theo dõi, tìm kiếm và xử lý đơn hàng với đầy đủ thông tin thanh toán, vận chuyển."
       />
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <label className="mb-2 block text-xs font-semibold text-gray-500">
-              Tìm kiếm đơn hàng
-            </label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Mã đơn, tên khách, số điện thoại người nhận"
-                className="w-full rounded-xl border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-black"
-              />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[
+          {
+            label: "Tổng đơn hàng",
+            value: stats.total,
+            icon: ShoppingCart,
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-600",
+          },
+          {
+            label: "Đơn chờ xác nhận",
+            value: stats.pending,
+            icon: Clock3,
+            iconBg: "bg-amber-50",
+            iconColor: "text-amber-600",
+            valueClass: "text-amber-600",
+          },
+          {
+            label: "Đơn hoàn thành",
+            value: stats.completed,
+            icon: CheckCircle2,
+            iconBg: "bg-emerald-50",
+            iconColor: "text-emerald-600",
+            valueClass: "text-emerald-600",
+          },
+          {
+            label: "Đơn đã hủy",
+            value: stats.cancelled,
+            icon: XCircle,
+            iconBg: "bg-red-50",
+            iconColor: "text-red-600",
+            valueClass: "text-red-600",
+          },
+        ].map(({ label, value, icon: Icon, iconBg, iconColor, valueClass }) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+                  {label}
+                </p>
+                <p
+                  className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}
+                >
+                  {value}
+                </p>
+              </div>
+              <div
+                className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}
+              >
+                <Icon className={`h-6 w-6 ${iconColor}`} />
+              </div>
             </div>
           </div>
+        ))}
+      </div>
 
-          <div className="lg:col-span-2">
-            <label className=" flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
-              <Filter className="h-4 w-4" />Trạng thái đơn
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-black"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              {orderStatuses.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[280px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Mã đơn, tên khách, số điện thoại người nhận"
+              className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-black"
+            />
           </div>
 
-          <div className="lg:col-span-2">
-            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
-              <Filter className="h-4 w-4" /> Phương thức thanh toán
-            </label>
-            <select
-              value={paymentMethodFilter}
-              onChange={(event) => setPaymentMethodFilter(event.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-black"
-            >
-              {paymentMethods.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
-              <Filter className="h-4 w-4" /> Ngày tạo đơn
-            </label>
-            <label className="flex items-center gap-2 rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
-              <Calendar className="h-4 w-4 text-gray-400" />
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(event) => setDateFrom(event.target.value)}
-                className="w-full outline-none"
-              />
-            </label>
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="flex mb-2 block gap-2 text-xs font-semibold text-gray-500">
-              <Filter className="h-4 w-4" /> Ngày hoàn thành
-            </label>
-            <label className="flex items-center gap-2 rounded-xl border border-gray-300 px-3 py-2.5 text-sm">
-              <Calendar className="h-4 w-4 text-gray-400" />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(event) => setDateTo(event.target.value)}
-                className="w-full outline-none"
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3">
-          <div className="text-sm text-gray-600">
-            Có{" "}
-            <span className="font-semibold text-black">
-              {filteredOrders.length}
-            </span>{" "}
-            đơn hàng phù hợp bộ lọc
-          </div>
           <button
             type="button"
-            onClick={resetFilters}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            onClick={() => setShowFilters((prev) => !prev)}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${
+              showFilters
+                ? "border-black bg-gray-100 text-black"
+                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            Xóa bộ lọc
+            <SlidersHorizontal className="h-4 w-4" />
+            Bộ lọc
           </button>
         </div>
+
+        {showFilters && (
+          <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+                Trạng thái đơn hàng
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-black"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                {orderStatuses.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+                Phương thức thanh toán
+              </label>
+              <select
+                value={paymentMethodFilter}
+                onChange={(event) => setPaymentMethodFilter(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-black"
+              >
+                {paymentMethods.map((method) => (
+                  <option key={method.value} value={method.value}>
+                    {method.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+                Ngày tạo từ
+              </label>
+              <label className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                  className="w-full outline-none"
+                />
+              </label>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+                Ngày tạo đến
+              </label>
+              <label className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(event) => setDateTo(event.target.value)}
+                  className="w-full outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="md:col-span-2 lg:col-span-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 border border-gray-200">
+              <div className="text-sm text-gray-600">
+                Có{" "}
+                <span className="font-semibold text-black">
+                  {filteredOrders.length}
+                </span>{" "}
+                đơn hàng phù hợp bộ lọc
+              </div>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              >
+                Xóa bộ lọc
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -361,8 +447,8 @@ export default function AdminOrdersPage() {
                 <th className="px-6 py-4">Khách hàng</th>
                 <th className="px-6 py-4">Người nhận</th>
                 <th className="px-6 py-4">Thanh toán</th>
-                <th className="px-6 py-4">Trạng thái đơn</th>
-                <th className="px-6 py-4">Tổng tiền</th>
+                <th className="px-6 py-4">Trạng thái</th>
+                <th className="px-4 py-4">Tổng tiền</th>
                 <th className="px-6 py-4">Cập nhật</th>
                 <th className="px-6 py-4">Hành động</th>
               </tr>
@@ -388,7 +474,9 @@ export default function AdminOrdersPage() {
                   const StatusIcon = statusConfig.icon;
 
                   const allowedStatuses = getAllowedStatuses(order.status);
-                  const isFinalStatus = ["completed", "cancelled"].includes(order.status);
+                  const isFinalStatus = ["completed", "cancelled"].includes(
+                    order.status,
+                  );
 
                   return (
                     <tr
@@ -449,7 +537,7 @@ export default function AdminOrdersPage() {
                           )}
                       </td>
 
-                      <td className="px-6 py-4 text-sm font-semibold text-black">
+                      <td className="px-2 py-4 text-sm font-semibold text-black">
                         {formatCurrency(order.totalPrice)}
                       </td>
 
@@ -479,7 +567,7 @@ export default function AdminOrdersPage() {
                       <td className="px-3 py-4 text-right">
                         <Link
                           to={`/admin/orders/${order._id}`}
-                          className="inline-flex rounded-lg border border-black px-3 py-2 text-xs font-semibold text-black transition hover:bg-black hover:text-white"
+                          className="inline-flex rounded-lg bg-blue-600 border px-2 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"
                         >
                           Xem chi tiết
                         </Link>

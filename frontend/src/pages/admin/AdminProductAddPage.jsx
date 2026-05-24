@@ -5,6 +5,7 @@ import { apiRequest } from "../../lib/api.js";
 import { sortVariantsBySize } from "../../lib/sizes.js";
 import MultiImageUpload from "../../components/MultiImageUpload.jsx";
 import MultiVideoUpload from "../../components/MultiVideoUpload.jsx";
+import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import {
   Star,
   Trash2,
@@ -581,27 +582,25 @@ export default function AdminProductAddPage() {
   return (
     <section className="grid gap-0">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-8 py-6 sticky top-0 z-10 flex items-center justify-between">
-        <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0 mb-1">
-            Sản phẩm / {editId ? "Chỉnh sửa" : "Thêm mới"}
-          </p>
-          <h1 className="text-xl font-bold uppercase tracking-widest m-0 text-black">
-            {editId ? "SỬA SẢN PHẨM" : "THÊM SẢN PHẨM MỚI"}
-          </h1>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/admin/products/list")}
-          className="px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-black bg-white border border-gray-300 hover:border-black hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Quay lại
-        </button>
+      <div className="p-6">
+        <AdminPageHeader
+          title={editId ? "SỬA SẢN PHẨM" : "THÊM SẢN PHẨM MỚI"}
+          description={`Sản phẩm / ${editId ? "Chỉnh sửa" : "Thêm mới"}`}
+          aside={
+            <button
+              type="button"
+              onClick={() => navigate("/admin/products/list")}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-black bg-white border border-gray-300 hover:border-black hover:bg-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-lg"
+            >
+              <ArrowLeft size={16} />
+              Quay lại
+            </button>
+          }
+        />
       </div>
 
       <form id="product-form" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-6 p-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-6 px-6 pb-6">
           {/* LEFT COL */}
           <div className="grid gap-6 content-start">
             {/* Basic info */}

@@ -20,6 +20,7 @@ import {
   Shirt,
   Users,
   Package,
+  Warehouse,
   History,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -48,14 +49,14 @@ const adminNavItems = [
     icon: Package,
     basePath: "/admin/inventory",
     children: [
-      { to: "/admin/inventory", label: "Quản lý", icon: Package },
+      { to: "/admin/inventory", label: "Quản lý tồn kho", icon: Warehouse, end: true },
       { to: "/admin/inventory/history", label: "Lịch sử", icon: History },
     ],
   },
-  { to: "/admin/users", label: "Người dùng", icon: Users },
   { to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
+  { to: "/admin/users", label: "Người dùng", icon: Users },
+  { to: "/admin/reviews", label: "Đánh giá", icon: MessageSquare },
   { to: "/admin/banners", label: "Banner", icon: Image },
-  { to: "/admin/reviews", label: "Bình luận", icon: MessageSquare },
 ];
 
 const utilityNavItems = [
@@ -224,6 +225,7 @@ export default function AdminLayout() {
                         <NavLink
                           key={child.to}
                           to={child.to}
+                          end={child.end}
                           title={child.label}
                           className={({ isActive }) =>
                             `flex items-center gap-2 py-3 pl-10 pr-4 text-xs font-bold uppercase transition-colors ${isActive

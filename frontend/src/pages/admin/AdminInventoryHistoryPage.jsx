@@ -137,9 +137,9 @@ export default function AdminInventoryHistoryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
-        title="Lịch sử tồn kho"
+        title="QUẢN LÝ LỊCH SỬ NHẬP XUẤT"
         description="Xem lịch sử nhập xuất và điều chỉnh tồn kho"
         aside={
           <button
@@ -157,7 +157,7 @@ export default function AdminInventoryHistoryPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+            <label className="block text-[13px] font-bold text-gray-500 mb-2">
               Tìm kiếm
             </label>
             <div className="relative">
@@ -173,7 +173,7 @@ export default function AdminInventoryHistoryPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+            <label className="block text-[13px] font-bold text-gray-500 mb-2">
               Loại giao dịch
             </label>
             <select
@@ -193,7 +193,7 @@ export default function AdminInventoryHistoryPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+            <label className="block text-[13px] font-bold text-gray-500 mb-2">
               Từ ngày
             </label>
             <div className="relative">
@@ -211,7 +211,7 @@ export default function AdminInventoryHistoryPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+            <label className="block text-[13px] font-bold text-gray-500 mb-2">
               Đến ngày
             </label>
             <div className="relative">
@@ -401,6 +401,6 @@ export default function AdminInventoryHistoryPage() {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

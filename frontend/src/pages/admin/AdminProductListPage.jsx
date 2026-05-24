@@ -31,7 +31,6 @@ export default function AdminProductListPage() {
   const [styleFilter, setStyleFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [discountFilter, setDiscountFilter] = useState("all");
-  const [stockFilter, setStockFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -93,22 +92,12 @@ export default function AdminProductListPage() {
         (discountFilter === "yes" && p.discount > 0) ||
         (discountFilter === "no" && (!p.discount || p.discount === 0));
 
-      const totalStock = (p.variants || []).reduce(
-        (sum, v) => sum + (v.stock || 0),
-        0,
-      );
-      const stockMatch =
-        stockFilter === "all" ||
-        (stockFilter === "in" && totalStock > 0) ||
-        (stockFilter === "out" && totalStock === 0);
-
       return (
         searchMatch &&
         categoryMatch &&
         styleMatch &&
         genderMatch &&
-        discountMatch &&
-        stockMatch
+        discountMatch
       );
     });
 
@@ -141,7 +130,6 @@ export default function AdminProductListPage() {
     styleFilter,
     genderFilter,
     discountFilter,
-    stockFilter,
     sortBy,
   ]);
 
@@ -166,9 +154,8 @@ export default function AdminProductListPage() {
     if (styleFilter !== "all") count++;
     if (genderFilter !== "all") count++;
     if (discountFilter !== "all") count++;
-    if (stockFilter !== "all") count++;
     return count;
-  }, [search, categoryFilter, styleFilter, genderFilter, discountFilter, stockFilter]);
+  }, [search, categoryFilter, styleFilter, genderFilter, discountFilter]);
 
   const clearAllFilters = () => {
     setSearch("");
@@ -176,7 +163,6 @@ export default function AdminProductListPage() {
     setStyleFilter("all");
     setGenderFilter("all");
     setDiscountFilter("all");
-    setStockFilter("all");
   };
 
   const inputClass =
@@ -185,7 +171,7 @@ export default function AdminProductListPage() {
     "rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600";
 
   return (
-    <section className="grid gap-6 p-6">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
         title="DANH SÁCH SẢN PHẨM"
         description="Quản lý toàn bộ sản phẩm trong hệ thống"
@@ -197,54 +183,64 @@ export default function AdminProductListPage() {
             label: "Tổng sản phẩm",
             value: products.length,
             icon: Package,
-            color: "bg-blue-50 text-blue-600 border-blue-100",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-600",
           },
           {
             label: "Tổng biến thể",
             value: stats.totalVariants,
             icon: Grid3x3,
-            color: "bg-purple-50 text-purple-600 border-purple-100",
+            iconBg: "bg-purple-50",
+            iconColor: "text-purple-600",
           },
           {
             label: "Có giảm giá",
             value: stats.withDiscount,
             icon: Tag,
-            color: "bg-orange-50 text-orange-600 border-orange-100",
+            iconBg: "bg-orange-50",
+            iconColor: "text-orange-600",
+            valueClass: "text-orange-600",
           },
           {
             label: "Tồn kho",
             value: stats.totalStock,
             icon: TrendingUp,
-            color: "bg-green-50 text-green-600 border-green-100",
+            iconBg: "bg-green-50",
+            iconColor: "text-green-600",
+            valueClass: "text-green-600",
           },
-        ].map(({ label, value, icon: Icon, color }) => (
+        ].map(({ label, value, icon: Icon, iconBg, iconColor, valueClass }) => (
           <div
             key={label}
-            className={`flex items-center gap-4 rounded-2xl border p-5 bg-white shadow-sm ${color.split(" ")[2]}`}
+            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
           >
-            <div
-              className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${color.split(" ")[0]} ${color.split(" ")[1]}`}
-            >
-              <Icon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+                  {label}
+                </p>
+                <p className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}>
+                  {value}
+                </p>
+              </div>
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}>
+                <Icon className={`h-6 w-6 ${iconColor}`} />
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[300px]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[300px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Tìm kiếm theo tên, danh mục, thương hiệu..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-blue-600"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-black"
             />
             {search && (
               <button
@@ -258,16 +254,16 @@ export default function AdminProductListPage() {
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded border px-4 py-2.5 text-sm font-semibold transition ${
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${
               showFilters
-                ? "border-blue-600 bg-blue-50 text-blue-600"
+                ? "border-black bg-gray-100 text-black"
                 : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
             <SlidersHorizontal size={16} />
             Bộ lọc
             {activeFiltersCount > 0 && (
-              <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
+              <span className="rounded-full bg-black px-2 py-0.5 text-xs text-white">
                 {activeFiltersCount}
               </span>
             )}
@@ -276,7 +272,7 @@ export default function AdminProductListPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="rounded border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition focus:border-blue-600"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition focus:border-black"
           >
             <option value="newest">Mới nhất</option>
             <option value="oldest">Cũ nhất</option>
@@ -289,7 +285,7 @@ export default function AdminProductListPage() {
 
           <button
             onClick={() => navigate("/admin/products/add")}
-            className="flex items-center gap-2 rounded bg-blue-600 px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-blue-700"
+            className="flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-gray-800"
           >
             <Plus size={16} />
             Thêm sản phẩm
@@ -297,9 +293,9 @@ export default function AdminProductListPage() {
         </div>
 
         {showFilters && (
-          <div className="mb-4 grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-4 grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-gray-500">
                 Danh mục
               </label>
               <select
@@ -317,7 +313,7 @@ export default function AdminProductListPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-gray-500">
                 Phong cách
               </label>
               <select
@@ -335,7 +331,7 @@ export default function AdminProductListPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-gray-500">
                 Giới tính
               </label>
               <select
@@ -350,7 +346,7 @@ export default function AdminProductListPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-gray-500">
                 Giảm giá
               </label>
               <select
@@ -364,26 +360,11 @@ export default function AdminProductListPage() {
               </select>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
-                Tồn kho
-              </label>
-              <select
-                value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value)}
-                className={selectClass}
-              >
-                <option value="all">Tất cả</option>
-                <option value="in">Còn hàng</option>
-                <option value="out">Hết hàng</option>
-              </select>
-            </div>
-
             {activeFiltersCount > 0 && (
-              <div className="flex items-end md:col-span-2 lg:col-span-4">
+              <div className="flex items-end md:col-span-2 lg:col-span-3">
                 <button
                   onClick={clearAllFilters}
-                  className="flex items-center gap-2 rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                 >
                   <X size={16} />
                   Xóa tất cả bộ lọc ({activeFiltersCount})
@@ -392,8 +373,10 @@ export default function AdminProductListPage() {
             )}
           </div>
         )}
+      </div>
 
-        <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-3">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
           <p className="text-sm text-gray-600">
             Hiển thị{" "}
             <span className="font-bold text-gray-900">
@@ -405,7 +388,7 @@ export default function AdminProductListPage() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[1200px]">
-            <div className="grid grid-cols-[80px_1fr_200px_140px_120px_100px_140px] gap-4 rounded-t-lg border-b-2 border-gray-300 bg-gray-100 px-5 py-3">
+            <div className="grid grid-cols-[80px_1fr_200px_140px_120px_100px_140px] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Ảnh
               </span>
@@ -415,21 +398,21 @@ export default function AdminProductListPage() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Biến thể
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
+              <span className="text-center text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Danh mục
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
+              <span className="text-center text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Giá bán
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
+              <span className="text-center text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Giảm giá
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
+              <span className="text-center text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Thao tác
               </span>
             </div>
 
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-200">
               {filteredAndSorted.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Package size={48} className="mb-3 text-gray-300" />

@@ -181,14 +181,14 @@ export default function AdminCollectionsPage() {
   const labelCls =
     "text-[10px] font-bold uppercase tracking-widest text-gray-500 flex flex-col gap-1.5";
   const btnPrimary =
-    "px-6 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none";
+    "flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-gray-800";
   const btnSecondary =
     "px-6 py-3 text-xs font-bold uppercase tracking-widest text-black bg-white hover:bg-gray-100 transition-colors cursor-pointer border border-gray-300";
 
   return (
-    <section className="grid gap-6 p-8">
+    <section className="grid gap-6 p-6">
       <AdminPageHeader
-        title="BỘ SƯU TẬP"
+        title="QUẢN LÝ BỘ SƯU TẬP"
         description={`Tổng cộng ${collections.length} bộ sưu tập`}
       />
 

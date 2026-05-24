@@ -461,7 +461,7 @@ export default function AdminCategoriesPage() {
     });
 
   return (
-    <section className="grid gap-6 p-6">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
         title="QUẢN LÝ DANH MỤC"
         description="Quản lý cấu trúc danh mục sản phẩm 3 cấp"
@@ -473,45 +473,54 @@ export default function AdminCategoriesPage() {
             label: "Tổng cộng",
             value: categories.length,
             icon: FolderTree,
-            color: "bg-blue-50 text-blue-600 border-blue-100",
+            iconBg: "bg-blue-50",
+            iconColor: "text-blue-600",
           },
           {
             label: "Cấp 1",
             value: level1Count,
             symbol: "1",
-            color: "bg-green-50 text-green-600 border-green-100",
+            iconBg: "bg-green-50",
+            iconColor: "text-green-600",
+            valueClass: "text-green-600",
           },
           {
             label: "Cấp 2",
             value: level2Count,
             symbol: "2",
-            color: "bg-purple-50 text-purple-600 border-purple-100",
+            iconBg: "bg-purple-50",
+            iconColor: "text-purple-600",
+            valueClass: "text-purple-600",
           },
           {
             label: "Cấp 3",
             value: level3Count,
             symbol: "3",
-            color: "bg-orange-50 text-orange-600 border-orange-100",
+            iconBg: "bg-orange-50",
+            iconColor: "text-orange-600",
+            valueClass: "text-orange-600",
           },
-        ].map(({ label, value, icon: Icon, symbol, color }) => (
+        ].map(({ label, value, icon: Icon, symbol, iconBg, iconColor, valueClass }) => (
           <div
             key={label}
-            className={`flex items-center gap-4 rounded-2xl border p-5 bg-white shadow-sm ${color.split(" ")[2]}`}
+            className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
           >
-            <div
-              className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${color.split(" ")[0]} ${color.split(" ")[1]}`}
-            >
-              {Icon ? (
-                <Icon className="h-6 w-6" />
-              ) : (
-                <span className="text-xl font-bold">{symbol}</span>
-              )}
-            </div>
-            <div>
-              <p className="text-xl font-bold text-gray-900">
-                {value} danh mục
-              </p>
-              <p className="mt-0.5 text-xs text-gray-500">{label}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+                  {label}
+                </p>
+                <p className={`text-3xl font-bold ${valueClass || "text-gray-900"}`}>
+                  {value}
+                </p>
+              </div>
+              <div className={`grid h-12 w-12 place-items-center rounded-xl ${iconBg}`}>
+                {Icon ? (
+                  <Icon className={`h-6 w-6 ${iconColor}`} />
+                ) : (
+                  <span className={`text-xl font-bold ${iconColor}`}>{symbol}</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -589,7 +598,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="submit"
                   disabled={!rootForm.name.trim()}
-                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} />
                   Thêm danh mục cấp 1
@@ -647,7 +656,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="submit"
                   disabled={!level2Form.name.trim() || !level2Form.parentId}
-                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} />
                   Thêm danh mục cấp 2
@@ -705,7 +714,7 @@ export default function AdminCategoriesPage() {
                 <button
                   type="submit"
                   disabled={!level3Form.name.trim() || !level3Form.parentId}
-                  className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded bg-black px-5 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} />
                   Thêm danh mục cấp 3

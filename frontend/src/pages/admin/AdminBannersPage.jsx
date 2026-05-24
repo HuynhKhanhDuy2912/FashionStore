@@ -144,9 +144,9 @@ export default function AdminBannersPage() {
   const labelClass = "text-xs font-bold uppercase tracking-widest text-black flex flex-col gap-2";
 
   return (
-    <section className="grid gap-6">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
-        title="BANNER"
+        title="QUẢN LÝ BANNER"
         description="Quản lý banner trang chủ: upload ảnh, chọn bộ sưu tập, ẩn/hiện và sắp xếp thứ tự hiển thị."
       />
 
@@ -264,7 +264,7 @@ export default function AdminBannersPage() {
                     onBlur={(event) => handleOrderUpdate(banner._id, event.target.value)}
                   />
                   <button
-                    className={`px-3 py-2 text-xs font-bold uppercase tracking-widest border cursor-pointer transition-colors ${
+                    className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-blue-700 ${
                       banner.isActive
                         ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
                         : "text-gray-600 border-gray-400 hover:bg-gray-600 hover:text-white"
@@ -274,13 +274,13 @@ export default function AdminBannersPage() {
                     {banner.isActive ? "HIỆN" : "ẨN"}
                   </button>
                   <button
-                    className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                     onClick={() => handleEdit(banner)}
                   >
                     SỬA
                   </button>
                   <button
-                    className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 border border-red-600 cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 rounded border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
                     onClick={() => handleDelete(banner._id)}
                   >
                     XÓA

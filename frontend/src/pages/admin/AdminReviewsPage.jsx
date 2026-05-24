@@ -116,10 +116,10 @@ export default function AdminReviewsPage() {
   };
 
   const inputCls =
-    "border border-gray-200 px-4 py-2.5 bg-white text-black text-sm focus:border-black focus:outline-none transition-colors";
+    "border border-gray-200 rounded-lg px-4 py-2.5 bg-white text-black text-sm focus:border-black focus:outline-none transition-colors";
 
   return (
-    <section className="grid gap-6 p-8">
+    <section className="grid gap-4 p-6">
       <AdminPageHeader
         title="QUẢN LÝ BÌNH LUẬN"
         description={`Tổng cộng ${total} đánh giá`}
@@ -128,7 +128,7 @@ export default function AdminReviewsPage() {
       <div className="bg-white border border-gray-200 p-6">
         <div className="grid gap-4">
           <form onSubmit={handleSearch} className="flex gap-3">
-            <div className="flex-1 flex items-center border border-gray-200 px-3 py-2 bg-white">
+            <div className="flex-1 flex items-center border border-gray-200 px-3 py-2 bg-white rounded-lg">
               <Search size={18} className="text-gray-400 shrink-0" />
               <input
                 className="ml-2 flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
@@ -139,7 +139,7 @@ export default function AdminReviewsPage() {
             </div>
             <button
               type="submit"
-              className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors"
+              className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors rounded-md"
             >
               Tìm kiếm
             </button>
@@ -267,7 +267,7 @@ export default function AdminReviewsPage() {
 
                   <div className="text-center">
                     <span
-                      className={`inline-block px-3 py-1 text-[13px] font-bold ${
+                      className={`inline-block px-3 py-1 text-[13px] font-bold rounded-lg ${
                         review.isHidden
                           ? "bg-red-100 text-red-600"
                           : "bg-green-100 text-green-600"
@@ -283,8 +283,8 @@ export default function AdminReviewsPage() {
                       onClick={() => handleToggleVisibility(review._id, review.isHidden)}
                       className={`px-3 py-2 text-xs font-bold uppercase tracking-widest border cursor-pointer transition-colors ${
                         review.isHidden
-                          ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-                          : "text-red-600 border-red-400 hover:bg-red-600 hover:text-white"
+                          ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white rounded-lg"
+                          : "text-red-600 border-red-400 hover:bg-red-600 hover:text-white rounded-lg"
                       }`}
                       title={review.isHidden ? "Hiển thị đánh giá" : "Ẩn đánh giá"}
                     >
