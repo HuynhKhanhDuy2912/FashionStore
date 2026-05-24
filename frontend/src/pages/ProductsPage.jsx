@@ -839,7 +839,6 @@ export default function ProductsPage() {
                   onClick={() => handleSelectCategory("")}
                   className="text-xs text-gray-500 hover:text-black"
                 >
-                  Tất cả
                 </button>
               </div>
 

@@ -1149,6 +1149,21 @@ export default function AdminProductAddPage() {
                     </label>
 
                     <label className={labelCls}>
+                      Giá nhập
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min="0"
+                        step="1000"
+                        placeholder="Giá nhập sản phẩm"
+                        {...vField("costPrice")}
+                      />
+                    </label>
+                  </div>
+
+                  {/* ROW 3 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className={labelCls}>
                       Giá sản phẩm
                       <input
                         className={inputCls}
@@ -1157,29 +1172,20 @@ export default function AdminProductAddPage() {
                         placeholder={form.price ? `${form.price}` : "0"}
                       />
                     </label>
+
+                    <label className={labelCls}>
+                      Giảm giá (%)
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min="0"
+                        max="100"
+                        {...vField("discount")}
+                      />
+                    </label>
                   </div>
 
-                  {/* ROW 3 - Discount */}
-                  <label className={labelCls}>
-                    Giảm giá (%)
-                    <input
-                      className={inputCls}
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder={`Mặc định: ${form.discount}%`}
-                      value={variantForm.discount === null ? "" : variantForm.discount}
-                      onChange={(e) =>
-                        setVariantForm((c) => ({
-                          ...c,
-                          discount: e.target.value === "" ? null : Number(e.target.value),
-                        }))
-                      }
-                    />
-                    <span className="text-xs text-gray-500 mt-1 block">
-                      Để trống để kế thừa giảm giá sản phẩm ({form.discount}%)
-                    </span>
-                  </label>
+                  {/* LEFT COLUMN END */}
                 </div>
 
                 {/* RIGHT */}
@@ -1250,6 +1256,9 @@ export default function AdminProductAddPage() {
                         Tồn kho
                       </th>
                       <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                        Giá nhập
+                      </th>
+                      <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
                         Giảm giá
                       </th>
                       <th className="py-3 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">
@@ -1303,6 +1312,9 @@ export default function AdminProductAddPage() {
                             className={`py-3 px-3 font-bold ${v.stock <= 10 ? "text-red-600" : "text-black"}`}
                           >
                             {v.stock}
+                          </td>
+                          <td className="py-3 px-3 text-xs">
+                            {v.costPrice ? `${Number(v.costPrice).toLocaleString()}đ` : "0đ"}
                           </td>
                           <td className="py-3 px-3 text-xs font-bold">
                             {(() => {

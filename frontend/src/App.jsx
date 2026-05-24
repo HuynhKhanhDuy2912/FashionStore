@@ -18,6 +18,8 @@ import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 import AdminBannersPage from "./pages/admin/AdminBannersPage.jsx";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage.jsx";
+import AdminInventoryPage from "./pages/admin/AdminInventoryPage.jsx";
+import AdminInventoryHistoryPage from "./pages/admin/AdminInventoryHistoryPage.jsx";
 
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -101,6 +103,9 @@ export default function App() {
             <Route path="products/list" element={<AdminProductListPage />} />
             <Route path="products/add" element={<AdminProductAddPage />} />
             <Route path="collections" element={<AdminCollectionsPage />} />
+
+            <Route path="inventory" element={<AdminInventoryPage />} />
+            <Route path="inventory/history" element={<AdminInventoryHistoryPage />} />
 
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />

@@ -19,6 +19,8 @@ import {
   ShoppingCart,
   Shirt,
   Users,
+  Package,
+  History,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { NotificationProvider } from "../context/NotificationContext.jsx";
@@ -39,6 +41,15 @@ const adminNavItems = [
     children: [
       { to: "/admin/products/list", label: "Danh sách", icon: List },
       { to: "/admin/products/add", label: "Thêm mới", icon: Plus },
+    ],
+  },
+  {
+    label: "Tồn kho",
+    icon: Package,
+    basePath: "/admin/inventory",
+    children: [
+      { to: "/admin/inventory", label: "Quản lý", icon: Package },
+      { to: "/admin/inventory/history", label: "Lịch sử", icon: History },
     ],
   },
   { to: "/admin/users", label: "Người dùng", icon: Users },
@@ -82,6 +93,7 @@ export default function AdminLayout() {
   const [openMenus, setOpenMenus] = useState(() => {
     const autoOpen = [];
     if (location.pathname.startsWith("/admin/products")) autoOpen.push("Sản phẩm");
+    if (location.pathname.startsWith("/admin/inventory")) autoOpen.push("Tồn kho");
     return autoOpen;
   });
 
@@ -275,8 +287,11 @@ export default function AdminLayout() {
         style={{ marginLeft: sidebarWidth }}
         className="min-h-screen bg-gray-50 transition-[margin-left] duration-300 ease-in-out"
       >
-        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
-          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6">
+        <header
+          style={{ left: sidebarWidth }}
+          className="fixed top-0 right-0 z-20 border-b border-gray-200 bg-white shadow-sm transition-[left] duration-300 ease-in-out"
+        >
+          <div className="flex h-[80px] items-center justify-between gap-4 px-4 sm:px-6">
             <div className="relative w-full max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -319,7 +334,9 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <Outlet />
+        <div className="pt-[73px]">
+          <Outlet />
+        </div>
       </main>
     </section>
     </NotificationProvider>

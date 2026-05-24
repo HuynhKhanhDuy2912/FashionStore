@@ -97,6 +97,7 @@ export async function getAdminDashboardStats() {
     lowStockVariants,
     lowStockCount,
     outOfStockCount,
+    inventoryValueAgg
   ] = await Promise.all([
     Order.countDocuments(),
     Order.aggregate([
@@ -248,6 +249,17 @@ export async function getAdminDashboardStats() {
       .lean(),
     ProductVariant.countDocuments({ stock: { $lte: 10, $gt: 0 } }),
     ProductVariant.countDocuments({ stock: 0 }),
+    ProductVariant.aggregate([
+      { $match: { isActive: true, stock: { $gt: 0 } } },
+      {
+        $group: {
+          _id: null,
+          totalInventoryValue: {
+            $sum: { $multiply: ["$stock", "$costPrice"] }
+          }
+        }
+      }
+    ])
   ]);
 
   const recognizedRevenue = revenueOrders[0]?.revenue || 0;
@@ -293,6 +305,7 @@ export async function getAdminDashboardStats() {
       totalProducts,
       lowStockCount,
       outOfStockCount,
+      totalInventoryValue: inventoryValueAgg[0]?.totalInventoryValue || 0
     },
     revenueChart: fillDailySeries(revenueByDayRaw, 30),
     orderStatusChart: ordersByStatus.map((item) => ({

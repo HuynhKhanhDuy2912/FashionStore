@@ -40,6 +40,13 @@ const variantSchema = new mongoose.Schema(
       default: 0
     },
 
+    costPrice: {
+      type: Number,
+      min: 0,
+      default: 0,
+      required: true
+    },
+
     discount: {
       type: Number,
       default: null,

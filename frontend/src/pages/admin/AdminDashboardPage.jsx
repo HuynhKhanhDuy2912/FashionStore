@@ -314,9 +314,17 @@ export default function AdminDashboardPage() {
           {/* Low stock + recent orders */}
           <div className="grid gap-6 xl:grid-cols-3">
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm xl:col-span-1">
-              <div className="mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                <h3 className="text-sm font-bold text-slate-900">Tồn kho cần chú ý</h3>
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <h3 className="text-sm font-bold text-slate-900">Tồn kho cần chú ý</h3>
+                </div>
+                <Link
+                  to="/admin/inventory?filter=low-stock"
+                  className="text-xs font-semibold text-[#3874ff] hover:underline"
+                >
+                  Xem tất cả →
+                </Link>
               </div>
               <div className="divide-y divide-slate-100">
                 {stats.lowStockVariants.length === 0 ? (

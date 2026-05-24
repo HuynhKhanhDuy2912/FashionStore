@@ -6,6 +6,7 @@ import Payment from "../models/Payment.js";
 import ProductVariant from "../models/ProductVariant.js";
 import Review from "../models/Review.js";
 import { createNotificationForAdmins } from "./notification.service.js";
+import { createTransaction } from "./inventory.service.js";
 
 const ORDER_POPULATE = [
   { path: "userId", select: "username email fullname" }
@@ -186,6 +187,21 @@ export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
   if (order.status === "confirmed") {
     const items = await OrderItem.find({ orderId });
     for (const item of items) {
+      const variant = await ProductVariant.findById(item.variantId);
+
+      // Create return transaction
+      await createTransaction({
+        variantId: item.variantId,
+        productId: item.productId,
+        type: "return",
+        quantity: item.quantity,
+        previousStock: variant.stock,
+        newStock: variant.stock + item.quantity,
+        reason: "Hoàn trả từ đơn hàng bị hủy bởi khách hàng",
+        orderId: orderId,
+        createdBy: userId
+      });
+
       await ProductVariant.findByIdAndUpdate(item.variantId, {
         $inc: { stock: item.quantity }
       });
@@ -271,6 +287,20 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
       if (variant.stock < item.quantity) {
         throw new Error(`Not enough stock for variant ${variant.sku}`);
       }
+
+      // Create export transaction
+      await createTransaction({
+        variantId: item.variantId,
+        productId: item.productId,
+        type: "export",
+        quantity: -item.quantity,
+        previousStock: variant.stock,
+        newStock: variant.stock - item.quantity,
+        reason: "Xuất kho cho đơn hàng",
+        orderId: orderId,
+        createdBy: order.userId
+      });
+
       await ProductVariant.findByIdAndUpdate(item.variantId, {
         $inc: { stock: -item.quantity }
       });
@@ -281,6 +311,21 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
   if (previousStatus === "confirmed" && status === "cancelled") {
     const items = await OrderItem.find({ orderId });
     for (const item of items) {
+      const variant = await ProductVariant.findById(item.variantId);
+
+      // Create return transaction
+      await createTransaction({
+        variantId: item.variantId,
+        productId: item.productId,
+        type: "return",
+        quantity: item.quantity,
+        previousStock: variant.stock,
+        newStock: variant.stock + item.quantity,
+        reason: "Hoàn trả từ đơn hàng bị hủy",
+        orderId: orderId,
+        createdBy: order.userId
+      });
+
       await ProductVariant.findByIdAndUpdate(item.variantId, {
         $inc: { stock: item.quantity }
       });

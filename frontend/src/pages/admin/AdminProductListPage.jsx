@@ -419,7 +419,7 @@ export default function AdminProductListPage() {
                 Danh mục
               </span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
-                Giá
+                Giá bán
               </span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-center text-gray-600">
                 Giảm giá

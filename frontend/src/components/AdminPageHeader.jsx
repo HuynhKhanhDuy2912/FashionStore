@@ -1,11 +1,13 @@
 export default function AdminPageHeader({ title, description, aside }) {
   return (
-    <div className="bg-white p-7 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/5 flex justify-between gap-4 items-center mb-6">
+    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h2 className="text-[1.8rem] text-slate-900 m-0 font-bold leading-tight">{title}</h2>
-        {description ? <p className="text-slate-500 m-0 mt-2 text-[0.95rem]">{description}</p> : null}
+        <h2 className="m-0 text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl">
+          {title}
+        </h2>
+        {description ? <p className="m-0 mt-1.5 text-sm text-slate-500">{description}</p> : null}
       </div>
-      {aside && <div className="flex gap-2 items-center flex-wrap">{aside}</div>}
+      {aside ? <div className="flex flex-wrap items-center gap-2">{aside}</div> : null}
     </div>
   );
 }
