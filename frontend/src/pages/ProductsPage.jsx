@@ -452,9 +452,9 @@ export default function ProductsPage() {
       : null,
     filters.gender
       ? {
-          key: "gender",
-          label: `Giới tính: ${filters.gender === "male" ? "Nam" : "Nữ"}`,
-        }
+        key: "gender",
+        label: `Giới tính: ${filters.gender === "male" ? "Nam" : "Nữ"}`,
+      }
       : null,
     filters.occasion
       ? { key: "occasion", label: `Dịp sử dụng: ${getOccasionLabel(filters.occasion)}` }
@@ -619,11 +619,10 @@ export default function ProductsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  showFilterPanel
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${showFilterPanel
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300 bg-white text-black"
+                  }`}
                 onClick={() => setShowFilterPanel((current) => !current)}
                 aria-label="Bộ lọc"
               >
@@ -643,11 +642,10 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  viewMode === "grid"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${viewMode === "grid"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300 bg-white text-black"
+                  }`}
                 aria-label="Chế độ lưới"
               >
                 <LayoutGrid size={16} />
@@ -656,11 +654,10 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`grid h-9 w-9 place-items-center border transition ${
-                  viewMode === "list"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300 bg-white text-black"
-                }`}
+                className={`grid h-9 w-9 place-items-center border transition ${viewMode === "list"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300 bg-white text-black"
+                  }`}
                 aria-label="Chế độ danh sách"
               >
                 <List size={16} />
@@ -680,26 +677,24 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={() => handleSelectQuickTag(quickTagBaseId)}
-                    className={`border px-5 py-3 text-[15px] font-medium transition ${
-                      selectedScopeForTag === quickTagBaseId
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
+                    className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === quickTagBaseId
+                      ? "border-black bg-black text-white"
+                      : "border-gray-300 bg-white text-black hover:border-black"
+                      }`}
                   >
                     Tất cả
                   </button>
                 ) : null}
-                
+
                 {quickTagCategories.map((tag) => (
                   <button
                     key={tag._id}
                     type="button"
                     onClick={() => handleSelectQuickTag(tag._id)}
-                    className={`border px-5 py-3 text-[15px] font-medium transition ${
-                      selectedScopeForTag === tag._id
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-black hover:border-black"
-                    }`}
+                    className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === tag._id
+                      ? "border-black bg-black text-white"
+                      : "border-gray-300 bg-white text-black hover:border-black"
+                      }`}
                   >
                     {tag.name}
                   </button>
@@ -826,7 +821,7 @@ export default function ProductsPage() {
         ) : null}
 
         <div
-          className={`mt-6 ${useNewAllProductsLayout ? "grid gap-4 lg:grid-cols-[280px_1fr]" : ""}`}
+          className={`mt-6 ${useNewAllProductsLayout ? "grid gap-4 lg:grid-cols-[210px_1fr]" : ""}`}
         >
           {useNewAllProductsLayout ? (
             <aside className="hidden lg:block border border-gray-200 bg-white p-4 h-fit sticky top-6">
@@ -1051,13 +1046,12 @@ export default function ProductsPage() {
                                         type="button"
                                         onClick={() => !isOutOfStock && handleQuickAddSize(product._id, size)}
                                         disabled={isOutOfStock}
-                                        className={`relative h-8 w-8 border text-xs font-medium transition ${
-                                          isOutOfStock
-                                            ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-                                            : selectedSize === size
-                                              ? "border-black bg-black text-white"
-                                              : "border-gray-300 bg-white text-black hover:border-black"
-                                        }`}
+                                        className={`relative h-8 w-8 border text-xs font-medium transition ${isOutOfStock
+                                          ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                          : selectedSize === size
+                                            ? "border-black bg-black text-white"
+                                            : "border-gray-300 bg-white text-black hover:border-black"
+                                          }`}
                                       >
                                         {size}
                                         {isOutOfStock ? (
@@ -1094,7 +1088,7 @@ export default function ProductsPage() {
                           </p>
                         ) : null}
 
-                        <h2 className="text-[16px] font-semibold leading-tight text-black md:text-[19px]">
+                        <h2 className="text-[16px] font-semibold leading-tight text-black md:text-[17px]">
                           <Link
                             to={getProductPath(product, {
                               color: activeColorName,
@@ -1123,11 +1117,10 @@ export default function ProductsPage() {
                                   [product._id]: group.color,
                                 }))
                               }
-                              className={`relative overflow-hidden w-8 h-10 border transition-all p-0 m-0 bg-white ${
-                                activeColorName === group.color
-                                  ? "border-black"
-                                  : "border-gray-200 opacity-70 hover:opacity-100"
-                              }`}
+                              className={`relative overflow-hidden w-8 h-10 border transition-all p-0 m-0 bg-white ${activeColorName === group.color
+                                ? "border-black"
+                                : "border-gray-200 opacity-70 hover:opacity-100"
+                                }`}
                             >
                               {group.previewImage ? (
                                 <img
@@ -1149,7 +1142,7 @@ export default function ProductsPage() {
                             <p className="text-[16px] font-semibold text-black">
                               {formatPrice(
                                 product.price +
-                                  (selectedVariant?.priceAdjustment || 0),
+                                (selectedVariant?.priceAdjustment || 0),
                               )}
                             </p>
                             <button
@@ -1213,13 +1206,12 @@ export default function ProductsPage() {
                                     type="button"
                                     onClick={() => !isOutOfStock && handleQuickAddSize(product._id, size)}
                                     disabled={isOutOfStock}
-                                    className={`relative h-8 min-w-[36px] border px-2 text-xs font-medium transition ${
-                                      isOutOfStock
-                                        ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-                                        : selectedSize === size
-                                          ? "border-black bg-black text-white"
-                                          : "border-gray-300 bg-white text-black hover:border-black"
-                                    }`}
+                                    className={`relative h-8 min-w-[36px] border px-2 text-xs font-medium transition ${isOutOfStock
+                                      ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                      : selectedSize === size
+                                        ? "border-black bg-black text-white"
+                                        : "border-gray-300 bg-white text-black hover:border-black"
+                                      }`}
                                   >
                                     {size}
                                     {isOutOfStock ? (
@@ -1275,11 +1267,10 @@ export default function ProductsPage() {
                         <button
                           type="button"
                           onClick={() => setCurrentPage(page)}
-                          className={`grid h-9 min-w-9 place-items-center border px-2 text-sm font-medium transition ${
-                            page === normalizedCurrentPage
-                              ? "border-black bg-black text-white"
-                              : "border-gray-300 bg-white text-black hover:border-black"
-                          }`}
+                          className={`grid h-9 min-w-9 place-items-center border px-2 text-sm font-medium transition ${page === normalizedCurrentPage
+                            ? "border-black bg-black text-white"
+                            : "border-gray-300 bg-white text-black hover:border-black"
+                            }`}
                         >
                           {page}
                         </button>

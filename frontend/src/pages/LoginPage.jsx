@@ -137,29 +137,40 @@ export default function LoginPage() {
   return (
     <section className="min-h-[70vh] bg-white px-4 py-12">
       <div className="mx-auto grid max-w-5xl overflow-hidden border border-gray-200 bg-white lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="border-b border-gray-200 bg-black px-8 py-10 text-white lg:border-b-0 lg:border-r">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-white/70">
-            FashionStore
-          </p>
-          <h1 className="text-3xl font-extrabold uppercase tracking-wider">
-            Chào mừng bạn quay lại
-          </h1>
-          <p className="mt-4 max-w-md text-sm leading-7 text-white/75">
-            Tiếp tục hành trình mua sắm với trải nghiệm thời trang cá nhân hóa dành riêng cho bạn.
-          </p>
+        <div className="relative flex flex-col justify-between overflow-hidden border-b border-gray-200 bg-black px-8 py-12 text-white lg:border-b-0 lg:border-r">
+          <div className="absolute inset-0">
+            <img
+              src="/images/login.jpg"
+              alt="Fashion Login"
+              className="h-full w-full object-cover opacity-50 transition-transform duration-1000 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
+          </div>
 
-          <div className="mt-10 space-y-4 text-sm text-white/75">
-            <div className="border border-white/15 px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-white">Gợi ý phù hợp</p>
-              <p className="mt-2">Hệ thống ưu tiên các sản phẩm theo hành vi, sở thích và lịch sử mua sắm của bạn.</p>
+          <div className="relative z-10">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.35em] text-white/70">
+              FashionStore
+            </p>
+            <h1 className="text-3xl font-extrabold uppercase tracking-wider text-white">
+              Chào mừng quay lại
+            </h1>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
+              Tiếp tục hành trình mua sắm với trải nghiệm thời trang cá nhân hóa dành riêng cho bạn.
+            </p>
+          </div>
+
+          <div className="relative z-10 mt-12 space-y-4">
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Gợi ý phù hợp</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Hệ thống ưu tiên các sản phẩm theo hành vi, sở thích và lịch sử mua sắm của bạn.</p>
             </div>
-            <div className="border border-white/15 px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-white">Mua sắm liền mạch</p>
-              <p className="mt-2">Theo dõi đơn hàng, danh sách yêu thích và giỏ hàng của bạn trên cùng một tài khoản.</p>
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Mua sắm liền mạch</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Theo dõi đơn hàng, danh sách yêu thích và giỏ hàng của bạn trên cùng một tài khoản.</p>
             </div>
-            <div className="border border-white/15 px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-white">Thời trang hiện đại</p>
-              <p className="mt-2">Khám phá bộ sưu tập được tuyển chọn theo phong cách tối giản và dễ ứng dụng hằng ngày.</p>
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Thời trang hiện đại</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Khám phá bộ sưu tập được tuyển chọn theo phong cách tối giản và dễ ứng dụng hằng ngày.</p>
             </div>
           </div>
         </div>
@@ -174,19 +185,21 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mb-8 grid grid-cols-3 border border-gray-200 p-1">
+          <div className="mb-10 flex gap-2 border-b border-gray-200 pb-px">
             {loginModes.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => handleModeChange(item.key)}
-                className={`px-3 py-3 text-xs font-bold uppercase tracking-widest transition ${
-                  mode === item.key
-                    ? "bg-black text-white"
-                    : "bg-white text-gray-500 hover:text-black"
-                }`}
+                className={`relative px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors ${mode === item.key
+                  ? "text-black"
+                  : "text-gray-400 hover:text-black"
+                  }`}
               >
                 {item.label}
+                {mode === item.key && (
+                  <span className="absolute bottom-0 left-0 h-[2px] w-full bg-black" />
+                )}
               </button>
             ))}
           </div>
@@ -210,7 +223,7 @@ export default function LoginPage() {
                   Email
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   value={emailForm.email}
                   onChange={(event) =>
                     setEmailForm((current) => ({ ...current, email: event.target.value }))
@@ -224,7 +237,7 @@ export default function LoginPage() {
                   Mật khẩu
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   type="password"
                   value={emailForm.password}
                   onChange={(event) =>
@@ -234,13 +247,15 @@ export default function LoginPage() {
                 />
               </div>
 
-              <button
-                className="w-full border border-black bg-black px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Đang đăng nhập..." : "Đăng nhập bằng email"}
-              </button>
+              <div className="pt-2">
+                <button
+                  className="w-full border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Đang đăng nhập..." : "Đăng nhập bằng email"}
+                </button>
+              </div>
             </form>
           ) : null}
 
@@ -279,7 +294,7 @@ export default function LoginPage() {
                   Số điện thoại
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   value={phoneForm.phone_number}
                   onChange={(event) =>
                     setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
@@ -294,7 +309,7 @@ export default function LoginPage() {
                     Mã OTP
                   </label>
                   <input
-                    className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                    className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                     value={phoneForm.otp}
                     onChange={(event) =>
                       setPhoneForm((current) => ({ ...current, otp: event.target.value }))
@@ -328,9 +343,9 @@ export default function LoginPage() {
                 </div>
               ) : null}
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <button
-                  className="flex-1 border border-black bg-black px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading || (phoneStep === "request" && resendCountdown > 0)}
                 >
@@ -347,7 +362,7 @@ export default function LoginPage() {
 
                 {phoneStep === "verify" ? (
                   <button
-                    className="border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-widest text-black transition hover:border-black"
+                    className="border border-gray-300 bg-white px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-black transition hover:border-black"
                     type="button"
                     onClick={() => {
                       setPhoneStep("request");

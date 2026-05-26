@@ -147,29 +147,40 @@ export default function RegisterPage() {
   return (
     <section className="min-h-[70vh] bg-white px-4 py-12">
       <div className="mx-auto grid max-w-5xl overflow-hidden border border-gray-200 bg-white lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="border-b border-gray-200 bg-gray-50 px-8 py-10 lg:border-b-0 lg:border-r">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-gray-500">
-            FashionStore
-          </p>
-          <h1 className="text-3xl font-extrabold uppercase tracking-wider text-black">
-            Tạo tài khoản mới
-          </h1>
-          <p className="mt-4 max-w-md text-sm leading-7 text-gray-600">
-            Bắt đầu hành trình mua sắm với một tài khoản gọn gàng, dễ dùng và đồng bộ trên toàn bộ hệ thống.
-          </p>
+        <div className="relative flex flex-col justify-between overflow-hidden border-b border-gray-200 bg-gray-50 px-8 py-12 lg:border-b-0 lg:border-r">
+          <div className="absolute inset-0">
+            <img
+              src="/images/register.jpg"
+              alt="Fashion Register"
+              className="h-full w-full object-cover opacity-60 transition-transform duration-1000 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
+          </div>
 
-          <div className="mt-10 space-y-4 text-sm text-gray-600">
-            <div className="border border-gray-200 bg-white px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-black">Cá nhân hóa tốt hơn</p>
-              <p className="mt-2">Lưu lại hành vi, sở thích và sản phẩm yêu thích để hệ thống gợi ý chính xác hơn.</p>
+          <div className="relative z-10 mt-auto">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.35em] text-white/70">
+              FashionStore
+            </p>
+            <h1 className="text-3xl font-extrabold uppercase tracking-wider text-white">
+              Tạo tài khoản mới
+            </h1>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
+              Bắt đầu hành trình mua sắm với một tài khoản gọn gàng, dễ dùng và đồng bộ trên toàn bộ hệ thống.
+            </p>
+          </div>
+
+          <div className="relative z-10 mt-12 space-y-4">
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Cá nhân hóa tốt hơn</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Lưu lại hành vi, sở thích và sản phẩm yêu thích để hệ thống gợi ý chính xác hơn.</p>
             </div>
-            <div className="border border-gray-200 bg-white px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-black">Quản lý mua sắm dễ dàng</p>
-              <p className="mt-2">Theo dõi đơn hàng, wishlist và lịch sử tương tác của bạn trong cùng một nơi.</p>
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Quản lý mua sắm dễ dàng</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Theo dõi đơn hàng, sản phẩm yêu thích và lịch sử tương tác của bạn trong cùng một nơi.</p>
             </div>
-            <div className="border border-gray-200 bg-white px-4 py-4">
-              <p className="font-bold uppercase tracking-widest text-black">Trải nghiệm liền mạch</p>
-              <p className="mt-2">Đăng nhập nhanh bằng nhiều phương thức nhưng vẫn dùng chung một hệ thống tài khoản.</p>
+            <div className="border border-white/20 bg-black/40 p-5 backdrop-blur-md transition-colors hover:bg-black/60">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-white">Trải nghiệm liền mạch</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/70">Đăng nhập nhanh bằng nhiều phương thức nhưng vẫn dùng chung một hệ thống tài khoản.</p>
             </div>
           </div>
         </div>
@@ -184,19 +195,21 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <div className="mb-8 grid grid-cols-3 border border-gray-200 p-1">
+          <div className="mb-10 flex gap-2 border-b border-gray-200 pb-px">
             {registerModes.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 onClick={() => handleModeChange(item.key)}
-                className={`px-3 py-3 text-xs font-bold uppercase tracking-widest transition ${
-                  mode === item.key
-                    ? "bg-black text-white"
-                    : "bg-white text-gray-500 hover:text-black"
-                }`}
+                className={`relative px-4 py-3 text-xs font-bold uppercase tracking-widest transition-colors ${mode === item.key
+                  ? "text-black"
+                  : "text-gray-400 hover:text-black"
+                  }`}
               >
                 {item.label}
+                {mode === item.key && (
+                  <span className="absolute bottom-0 left-0 h-[2px] w-full bg-black" />
+                )}
               </button>
             ))}
           </div>
@@ -220,7 +233,7 @@ export default function RegisterPage() {
                   Email
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   value={emailForm.email}
                   onChange={(event) =>
                     setEmailForm((current) => ({ ...current, email: event.target.value }))
@@ -234,7 +247,7 @@ export default function RegisterPage() {
                   Mật khẩu
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   type="password"
                   value={emailForm.password}
                   onChange={(event) =>
@@ -249,7 +262,7 @@ export default function RegisterPage() {
                   Xác nhận mật khẩu
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   type="password"
                   value={emailForm.confirmPassword}
                   onChange={(event) =>
@@ -262,13 +275,15 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <button
-                className="w-full border border-black bg-black px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Đang tạo tài khoản..." : "Đăng ký bằng email"}
-              </button>
+              <div className="pt-2">
+                <button
+                  className="w-full border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Đang tạo tài khoản..." : "Đăng ký bằng email"}
+                </button>
+              </div>
             </form>
           ) : null}
 
@@ -307,7 +322,7 @@ export default function RegisterPage() {
                   Họ và tên
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   value={phoneForm.fullname}
                   onChange={(event) =>
                     setPhoneForm((current) => ({ ...current, fullname: event.target.value }))
@@ -321,7 +336,7 @@ export default function RegisterPage() {
                   Số điện thoại
                 </label>
                 <input
-                  className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                   value={phoneForm.phone_number}
                   onChange={(event) =>
                     setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
@@ -336,7 +351,7 @@ export default function RegisterPage() {
                     Mã OTP
                   </label>
                   <input
-                    className="w-full border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+                    className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
                     value={phoneForm.otp}
                     onChange={(event) =>
                       setPhoneForm((current) => ({ ...current, otp: event.target.value }))
@@ -370,9 +385,9 @@ export default function RegisterPage() {
                 </div>
               ) : null}
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <button
-                  className="flex-1 border border-black bg-black px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading || (phoneStep === "request" && resendCountdown > 0)}
                 >
@@ -389,7 +404,7 @@ export default function RegisterPage() {
 
                 {phoneStep === "verify" ? (
                   <button
-                    className="border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-widest text-black transition hover:border-black"
+                    className="border border-gray-300 bg-white px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-black transition hover:border-black"
                     type="button"
                     onClick={() => {
                       setPhoneStep("request");

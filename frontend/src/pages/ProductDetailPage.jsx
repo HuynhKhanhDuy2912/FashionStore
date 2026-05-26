@@ -5,9 +5,9 @@ import ReviewModal from "../components/ReviewModal.jsx";
 import ReviewsModal from "../components/ReviewsModal.jsx";
 import ProductInfoModal from "../components/ProductInfoModal.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
+import BestSellersSection from "../components/BestSellersSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
-import { attachVariantsToProducts } from "../lib/catalog.js";
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler, ArrowLeft, ArrowRight } from "lucide-react";
@@ -32,8 +32,6 @@ export default function ProductDetailPage() {
     : rawProductId;
 
   const [product, setProduct] = useState(null);
-  const [allProducts, setAllProducts] = useState([]);
-  const [allVariants, setAllVariants] = useState([]);
   const [variants, setVariants] = useState([]);
   const [productImages, setProductImages] = useState([]);
   const [selectedColor, setSelectedColor] = useState("");
@@ -57,9 +55,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const [productResponse, productsResponse, wishlistResponse] = await Promise.all([
+        const [productResponse, wishlistResponse] = await Promise.all([
           apiRequest(`/products/${productId}`),
-          apiRequest("/products?limit=100"),
           token ? apiRequest("/wishlists/me", { token }) : Promise.resolve({ data: { items: [] } })
         ]);
 
@@ -81,8 +78,6 @@ export default function ProductDetailPage() {
         const pImages = imgResponse.data || [];
 
         setProduct(currentProduct);
-        setAllProducts(productsResponse.data);
-        setAllVariants(variantResponse.data);
         setVariants(currentVariants);
         setProductImages(pImages);
 
@@ -190,15 +185,6 @@ export default function ProductDetailPage() {
   const goNext = () => setActiveImage(galleryImages[(activeIndex + 1) % galleryImages.length]);
   const activeMediaIsVideo = isVideoMedia(activeImage);
 
-  const relatedProducts = useMemo(() =>
-    allProducts.filter(i => i._id !== product?._id && product &&
-      (i.style === product.style || i.gender === product.gender)).slice(0, 4),
-    [allProducts, product]
-  );
-  const relatedWithVariants = useMemo(() =>
-    attachVariantsToProducts(relatedProducts, allVariants),
-    [relatedProducts, allVariants]
-  );
 
   const handleAddToCart = async () => {
     if (!selectedVariant) return;
@@ -900,49 +886,31 @@ export default function ProductDetailPage() {
         />
       </div>
 
-      {/* Sản phẩm liên quan */}
-      {relatedWithVariants.length > 0 && (
-        <section className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16">
-          <div className="mb-8 border-b border-gray-200 pb-6">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
-              Có thể bạn thích
-            </p>
-            <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
-              Sản phẩm liên quan
-            </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
-              Những sản phẩm có phong cách tương tự với sản phẩm bạn đang xem
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-            {relatedWithVariants.map(item => (
-              <ProductCard
-                key={item._id}
-                product={item}
-                onAddToWishlist={token ? (p) => handleWishlist(p, "product_detail_related") : null}
-                isWishlisted={wishlistProductIds.has(item._id)}
-                onAddToCart={token ? async (product, variant) => {
-                  try {
-                    await apiRequest("/carts/me/items", {
-                      method: "POST",
-                      token,
-                      body: {
-                        productId: product._id,
-                        variantId: variant._id,
-                        quantity: 1,
-                        source: "product_detail_related"
-                      }
-                    });
-                    toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
-                  } catch (err) {
-                    toast.error(err.message);
-                  }
-                } : null}
-              />
-            ))}
-          </div>
-        </section>
-      )}
+
+      {/* Bán chạy nhất */}
+      <BestSellersSection
+        excludeProductId={productId}
+        className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16"
+        onAddToWishlist={token ? (item) => handleWishlist(item, "product_detail_bestseller") : null}
+        onAddToCart={token ? async (prod, variant) => {
+          try {
+            await apiRequest("/carts/me/items", {
+              method: "POST",
+              token,
+              body: {
+                productId: prod._id,
+                variantId: variant._id,
+                quantity: 1,
+                source: "product_detail_bestseller"
+              }
+            });
+            toast.success(`Đã thêm ${prod.name} vào giỏ hàng`);
+          } catch (err) {
+            toast.error(err.message);
+          }
+        } : null}
+        wishlistProductIds={wishlistProductIds}
+      />
 
       <ProductInfoModal
         open={showProductInfoModal}

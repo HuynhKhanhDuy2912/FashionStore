@@ -116,7 +116,7 @@ export default function Layout() {
   const loadCategories = useCallback(() => {
     apiRequest("/categories?limit=1000")
       .then((response) => setCategories(response.data || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -252,10 +252,10 @@ export default function Layout() {
       {!isAdminView ? (
         <>
           <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
-            <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 lg:px-8">
+            <div className="mx-auto grid h-16 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-4 lg:px-8">
               <nav
                 ref={megaTriggerRef}
-                className="hidden items-center gap-5 lg:flex"
+                className="hidden items-center gap-5 justify-self-start lg:flex"
               >
                 <NavLink
                   to="/"
@@ -271,11 +271,10 @@ export default function Layout() {
                       key={root._id}
                       type="button"
                       onClick={() => toggleMegaMenu(root._id)}
-                      className={`border-none bg-transparent p-0 text-[15px] transition ${
-                        isActive
-                          ? "font-medium text-black"
-                          : "font-normal text-black hover:text-red-600"
-                      }`}
+                      className={`border-none bg-transparent p-0 text-[15px] transition ${isActive
+                        ? "font-medium text-black"
+                        : "font-normal text-black hover:text-red-600"
+                        }`}
                     >
                       <span className="tracking-wide">{root.name}</span>
                     </button>
@@ -288,20 +287,20 @@ export default function Layout() {
                   Bộ sưu tập
                 </NavLink>
                 <NavLink
-                  to="/products?tag=uu-dai"
-                  className="text-[15px] text-red-600 hover:opacity-80"
+                  to="/contact"
+                  className="text-[15px] text-black hover:text-red-600"
                 >
-                  Ưu đãi
+                  Liên hệ
                 </NavLink>
               </nav>
 
-              <NavLink to="/" className="text-4xl font-bold tracking-tight">
+              <NavLink to="/" className="justify-self-center text-4xl font-extrabold tracking-tight">
                 FS
               </NavLink>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 justify-self-end">
                 <form
-                  className="hidden w-[320px] items-center border border-gray-200 px-3 py-2 lg:flex"
+                  className="hidden w-[280px] items-center border border-gray-200 px-3 py-2 lg:flex rounded-md"
                   onSubmit={(event) => {
                     event.preventDefault();
                     navigate(searchHref);
@@ -324,11 +323,13 @@ export default function Layout() {
                   <div className="relative" ref={accountRef}>
                     <button
                       type="button"
-                      className="flex items-center gap-2 border-none bg-transparent text-sm text-black transition hover:text-red-600"
+                      className="flex items-center gap-2 rounded-full border border-gray-200 py-1.5 pl-2 pr-3 text-sm font-medium text-black transition hover:border-black hover:bg-gray-50"
                       onClick={() => setIsAccountOpen((current) => !current)}
                     >
-                      <User className="h-5 w-5" />
-                      <span className="hidden max-w-[140px] truncate lg:inline">
+                      <div className="grid h-7 w-7 place-items-center rounded-full bg-gray-100 text-black">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <span className="hidden max-w-[120px] truncate lg:inline">
                         {user?.fullname || user?.username || "Người dùng"}
                       </span>
                     </button>
@@ -381,9 +382,11 @@ export default function Layout() {
                 ) : (
                   <NavLink
                     to="/login"
-                    className="flex items-center gap-2 text-sm text-black hover:text-red-600"
+                    className="flex items-center gap-2 rounded-full border border-gray-200 py-1.5 pl-2 pr-3 text-sm font-medium text-black transition hover:border-black hover:bg-gray-50"
                   >
-                    <User className="h-5 w-5" />
+                    <div className="grid h-7 w-7 place-items-center rounded-full bg-gray-100 text-black">
+                      <User className="h-4 w-4" />
+                    </div>
                     <span className="hidden lg:inline">Đăng nhập</span>
                   </NavLink>
                 )}
@@ -392,9 +395,9 @@ export default function Layout() {
                   <NavLink
                     to="/cart"
                     className="relative grid h-10 w-10 place-items-center text-black transition hover:text-red-600"
-                    aria-label={`Gio hang co ${cartCount} san pham`}
+                    aria-label={`Giỏ hàng có ${cartCount} sản phẩm`}
                   >
-                    <ShoppingCart className="h-6 w-6" strokeWidth={1.6} />
+                    <ShoppingCart className="h-6 w-6" strokeWidth={1.9} />
                     {cartCount > 0 ? (
                       <span className="absolute -right-[3px] -top-[3px] grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[12px] font-bold leading-none text-white shadow-sm">
                         {cartCount > 99 ? "99+" : cartCount}
@@ -407,20 +410,18 @@ export default function Layout() {
           </header>
 
           <div
-            className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity duration-300 ${
-              activeMegaMenu
-                ? "pointer-events-auto opacity-100"
-                : "pointer-events-none opacity-0"
-            }`}
+            className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity duration-300 ${activeMegaMenu
+              ? "pointer-events-auto opacity-100"
+              : "pointer-events-none opacity-0"
+              }`}
           />
 
           <section
             ref={megaPanelRef}
-            className={`fixed left-0 right-0 z-50 bg-white transition-all duration-300 ${
-              activeMegaMenu
-                ? "translate-y-0 opacity-100"
-                : "-translate-y-2 opacity-0 pointer-events-none"
-            }`}
+            className={`fixed left-0 right-0 z-50 bg-white transition-all duration-300 ${activeMegaMenu
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-2 opacity-0 pointer-events-none"
+              }`}
           >
             <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-8">
               <button
@@ -490,9 +491,8 @@ export default function Layout() {
                           )}
                         </div>
                         <span
-                          className={`line-clamp-2 text-[15px] text-black transition transition-transform duration-200 group-hover:scale-105 ${
-                            item.isGroupTitle ? "font-normal" : "font-normal"
-                          }`}
+                          className={`line-clamp-2 text-[15px] text-black transition transition-transform duration-200 group-hover:scale-105 ${item.isGroupTitle ? "font-normal" : "font-normal"
+                            }`}
                         >
                           {item.name}
                         </span>

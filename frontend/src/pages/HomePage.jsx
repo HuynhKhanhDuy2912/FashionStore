@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
+import BestSellersSection from "../components/BestSellersSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
@@ -118,11 +119,10 @@ function Toast({ message, error, onClose }) {
   return (
     <div
       role="alert"
-      className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${
-        error
-          ? "border-red-200 bg-red-50 text-red-800"
-          : "border-gray-200 bg-white text-black"
-      }`}
+      className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${error
+        ? "border-red-200 bg-red-50 text-red-800"
+        : "border-gray-200 bg-white text-black"
+        }`}
     >
       <p className="flex-1 text-sm font-medium">{error || message}</p>
       <button
@@ -151,7 +151,6 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
   const [newArrivalsPage, setNewArrivalsPage] = useState(0);
-  const [bestSellersPage, setBestSellersPage] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -224,27 +223,6 @@ export default function HomePage() {
     return newArrivals.slice(start, start + 4);
   }, [newArrivals, newArrivalsPage]);
 
-  const bestSellers = useMemo(
-    () =>
-      [...productsWithVariants]
-        .filter((product) => Number(product.soldCount || 0) > 0)
-        .sort((left, right) => {
-          const soldDiff =
-            Number(right.soldCount || 0) - Number(left.soldCount || 0);
-          if (soldDiff !== 0) return soldDiff;
-          return (
-            Number(right.totalReviews || 0) - Number(left.totalReviews || 0)
-          );
-        })
-        .slice(0, 12),
-    [productsWithVariants],
-  );
-
-  const bestSellersPageCount = Math.max(1, bestSellers.length - 3);
-  const visibleBestSellers = useMemo(() => {
-    const start = bestSellersPage;
-    return bestSellers.slice(start, start + 4);
-  }, [bestSellers, bestSellersPage]);
 
   const featuredCollections = useMemo(
     () => collections.slice(0, 3),
@@ -372,16 +350,18 @@ export default function HomePage() {
   }, [newArrivalsPage, newArrivalsPageCount]);
 
   useEffect(() => {
-    if (bestSellersPage >= bestSellersPageCount) {
-      setBestSellersPage(0);
-    }
-  }, [bestSellersPage, bestSellersPageCount]);
-
-  useEffect(() => {
     if (activeBannerIndex >= banners.length && banners.length > 0) {
       setActiveBannerIndex(0);
     }
   }, [activeBannerIndex, banners.length]);
+
+  useEffect(() => {
+    if (banners.length <= 1 || isHeroPaused) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveBannerIndex((current) => (current + 1) % banners.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [banners.length, isHeroPaused, activeBannerIndex]);
 
   const activeBanner = banners[activeBannerIndex] || null;
   const bannerLink = activeBanner?.collectionId?.slug
@@ -507,11 +487,10 @@ export default function HomePage() {
                   key={banner._id}
                   type="button"
                   onClick={() => setActiveBannerIndex(index)}
-                  className={`rounded-full transition-all ${
-                    index === activeBannerIndex
-                      ? "h-2.5 w-8 bg-white"
-                      : "h-2.5 w-2.5 bg-white/40 hover:bg-white/70"
-                  }`}
+                  className={`rounded-full transition-all ${index === activeBannerIndex
+                    ? "h-2.5 w-8 bg-white"
+                    : "h-2.5 w-2.5 bg-white/40 hover:bg-white/70"
+                    }`}
                   aria-label={`Chuyển tới banner ${index + 1}`}
                 />
               ))}
@@ -538,7 +517,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      
+
       {/* Personalized Recommendations */}
       <section className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pb-16">
         {token ? (
@@ -591,7 +570,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-16 px-4 pb-20 md:px-8 md:pb-24">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-16 px-4 pb-4 md:px-8 md:pb-4">
         {/* New arrivals */}
         <section>
           <SectionHeader
@@ -697,61 +676,12 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        {/* Best sellers */}
-        <section>
-          <SectionHeader
-            eyebrow="Yêu thích"
-            title="Bán chạy nhất"
-            description="Những sản phẩm được khách hàng đánh giá và mua nhiều nhất."
-            linkTo="/products?bestSeller=1"
-          />
-          {loading ? (
-            <ProductGridSkeleton />
-          ) : (
-            <div className="group relative">
-              {bestSellers.length > 4 ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setBestSellersPage((prev) =>
-                        prev === 0 ? bestSellersPageCount - 1 : prev - 1,
-                      )
-                    }
-                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-left-5"
-                    aria-label="Xem sản phẩm bán chạy trước"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setBestSellersPage((prev) =>
-                        prev === bestSellersPageCount - 1 ? 0 : prev + 1,
-                      )
-                    }
-                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-right-5"
-                    aria-label="Xem sản phẩm bán chạy tiếp theo"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </>
-              ) : null}
 
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-                {visibleBestSellers.map((product) => (
-                  <ProductCard
-                    key={product._id}
-                    product={withCollectionName(product)}
-                    onAddToWishlist={(item) => handleWishlist(item, "home")}
-                    isWishlisted={wishlistProductIds.has(product._id)}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
+        <BestSellersSection
+          onAddToWishlist={token ? (item) => handleWishlist(item, "home_bestseller") : null}
+          onAddToCart={token ? handleAddToCart : null}
+          wishlistProductIds={wishlistProductIds}
+        />
 
         {/* Trending Products */}
         <RecommendationSection
@@ -765,7 +695,7 @@ export default function HomePage() {
         />
 
         {/* CTA banner */}
-        <section className="relative overflow-hidden rounded-sm bg-neutral-900 px-6 py-14 text-center text-white md:px-12 md:py-16">
+        <section className="relative overflow-hidden rounded-sm bg-neutral-900 px-6 text-center text-white md:px-12 md:py-16">
           <div
             className="pointer-events-none absolute inset-0 opacity-20"
             style={{
@@ -776,13 +706,13 @@ export default function HomePage() {
           />
           <div className="relative z-10 mx-auto max-w-2xl">
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/60">
-              Thành viên FashionStore
+              FashionStore
             </p>
             <h2 className="mt-3 text-2xl font-bold md:text-3xl">
-              Nhận gợi ý phối đồ thông minh
+              Gợi ý sản phẩm dành riêng cho bạn
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/75">
-              Đăng nhập để hệ thống học sở thích của bạn và đề xuất sản phẩm phù
+              Hệ thống học từ lịch sử xem và mua hàng của bạn để đề xuất sản phẩm phù
               hợp nhất.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
