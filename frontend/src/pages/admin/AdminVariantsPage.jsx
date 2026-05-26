@@ -93,7 +93,7 @@ export default function AdminVariantsPage() {
         method: "DELETE",
         token,
       });
-      setMessage("Đã xóa biến thể");
+      setMessage("Đã xóa biến thể thành công!");
       loadData();
     } catch (deleteError) {
       setError(deleteError.message);

@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../../components/AdminPageHeader";
-import { History, Download, Package, Filter, Calendar } from "lucide-react";
+import { History, Download, Package, Filter, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 export default function AdminInventoryHistoryPage() {
   const { token } = useAuth();
@@ -378,9 +378,9 @@ export default function AdminInventoryHistoryPage() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                &lt;
+                <ChevronsLeft className="w-4 h-4" />
               </button>
               <div className="flex items-center gap-1">
                 {(() => {
@@ -446,9 +446,9 @@ export default function AdminInventoryHistoryPage() {
                   setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                &gt;
+                <ChevronsRight className="w-4 h-4" />
               </button>
             </div>
           </div>

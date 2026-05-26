@@ -31,7 +31,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = location.state?.from || "/products";
+  const redirectTo = location.state?.from || "/";
 
   const resetMessages = () => {
     setError("");

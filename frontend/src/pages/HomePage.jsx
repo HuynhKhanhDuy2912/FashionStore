@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import ProductCard from "../components/ProductCard.jsx";
+import RecommendationSection from "../components/RecommendationSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
@@ -27,7 +28,7 @@ const categoryCards = [
     title: "Thời trang nữ",
     copy: "Đường nét mềm mại, layer thông minh và trang phục dạo phố thanh lịch.",
     link: "/products?gender=female",
-    image: "/images/nu.jpg",    
+    image: "/images/nu.jpg",
   },
   {
     title: "Bộ sưu tập",
@@ -60,7 +61,13 @@ const trustItems = [
   },
 ];
 
-function SectionHeader({ eyebrow, title, description, linkTo, linkLabel = "Xem tất cả" }) {
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  linkTo,
+  linkLabel = "Xem tất cả",
+}) {
   return (
     <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
       <div>
@@ -69,9 +76,13 @@ function SectionHeader({ eyebrow, title, description, linkTo, linkLabel = "Xem t
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">{title}</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
+          {title}
+        </h2>
         {description ? (
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">{description}</p>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
+            {description}
+          </p>
         ) : null}
       </div>
       {linkTo ? (
@@ -132,7 +143,6 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
   const [banners, setBanners] = useState([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
@@ -147,20 +157,31 @@ export default function HomePage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [productResponse, variantResponse, bannerResponse, collectionResponse, wishlistResponse] =
-          await Promise.all([
-            apiRequest("/products?limit=100"),
-            apiRequest("/product-variants?limit=1200"),
-            apiRequest("/banners/active"),
-            apiRequest("/collections?limit=6&isActive=true"),
-            token ? apiRequest("/wishlists/me", { token }) : Promise.resolve({ data: { items: [] } }),
-          ]);
+        const [
+          productResponse,
+          variantResponse,
+          bannerResponse,
+          collectionResponse,
+          wishlistResponse,
+        ] = await Promise.all([
+          apiRequest("/products?limit=100"),
+          apiRequest("/product-variants?limit=1200"),
+          apiRequest("/banners/active"),
+          apiRequest("/collections?limit=6&isActive=true"),
+          token
+            ? apiRequest("/wishlists/me", { token })
+            : Promise.resolve({ data: { items: [] } }),
+        ]);
 
         setProducts(productResponse.data);
         setVariants(variantResponse.data);
         setBanners(bannerResponse.data || []);
         setCollections(collectionResponse.data || []);
-        const wishlistIds = new Set((wishlistResponse.data?.items || []).map((item) => item.productId?._id).filter(Boolean));
+        const wishlistIds = new Set(
+          (wishlistResponse.data?.items || [])
+            .map((item) => item.productId?._id)
+            .filter(Boolean),
+        );
         setWishlistProductIds(wishlistIds);
         setError("");
       } catch (loadError) {
@@ -171,19 +192,6 @@ export default function HomePage() {
     };
 
     loadData();
-  }, [token]);
-
-  useEffect(() => {
-    const loadRecommendations = async () => {
-      if (!token) return;
-      try {
-        const response = await apiRequest("/recommendations/me", { token });
-        setRecommendations(response.data.slice(0, 4));
-      } catch (err) {
-        console.error("Lỗi khi tải gợi ý:", err);
-      }
-    };
-    loadRecommendations();
   }, [token]);
 
   useEffect(() => {
@@ -221,9 +229,12 @@ export default function HomePage() {
       [...productsWithVariants]
         .filter((product) => Number(product.soldCount || 0) > 0)
         .sort((left, right) => {
-          const soldDiff = Number(right.soldCount || 0) - Number(left.soldCount || 0);
+          const soldDiff =
+            Number(right.soldCount || 0) - Number(left.soldCount || 0);
           if (soldDiff !== 0) return soldDiff;
-          return Number(right.totalReviews || 0) - Number(left.totalReviews || 0);
+          return (
+            Number(right.totalReviews || 0) - Number(left.totalReviews || 0)
+          );
         })
         .slice(0, 12),
     [productsWithVariants],
@@ -235,7 +246,10 @@ export default function HomePage() {
     return bestSellers.slice(start, start + 4);
   }, [bestSellers, bestSellersPage]);
 
-  const featuredCollections = useMemo(() => collections.slice(0, 3), [collections]);
+  const featuredCollections = useMemo(
+    () => collections.slice(0, 3),
+    [collections],
+  );
 
   const productCollectionMap = useMemo(() => {
     const map = new Map();
@@ -253,7 +267,8 @@ export default function HomePage() {
 
   const withCollectionName = (product) => ({
     ...product,
-    collectionName: productCollectionMap.get(product._id) || product.collectionName,
+    collectionName:
+      productCollectionMap.get(product._id) || product.collectionName,
   });
 
   const handleWishlist = async (product, addedFrom = "home") => {
@@ -373,9 +388,7 @@ export default function HomePage() {
     ? `/collections/${activeBanner.collectionId.slug}`
     : "/collections";
   const bannerTitle =
-    activeBanner?.title ||
-    activeBanner?.collectionId?.name ||
-    "Bộ sưu tập mới";
+    activeBanner?.title || activeBanner?.collectionId?.name || "Bộ sưu tập mới";
 
   return (
     <div className="bg-white">
@@ -410,8 +423,8 @@ export default function HomePage() {
                 {bannerTitle}
               </h1>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
-                Khám phá phong cách mới nhất - thiết kế tinh gọn, chất liệu cao cấp,
-                dễ phối mọi dịp.
+                Khám phá phong cách mới nhất - thiết kế tinh gọn, chất liệu cao
+                cấp, dễ phối mọi dịp.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
@@ -525,9 +538,26 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      
+      {/* Personalized Recommendations */}
+      <section className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pb-16">
+        {token ? (
+          <RecommendationSection
+            type="personalized"
+            token={token}
+            limit={12}
+            onAddToWishlist={(item) =>
+              handleWishlist(item, "home_personalized")
+            }
+            onAddToCart={handleAddToCart}
+            wishlistProductIds={wishlistProductIds}
+            showAIBadge={true}
+          />
+        ) : null}
+      </section>
 
       {/* Category cards */}
-      <section className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:py-16">
+      <section className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16">
         <SectionHeader
           eyebrow="Danh mục"
           title="Mua sắm theo phong cách"
@@ -648,7 +678,9 @@ export default function HomePage() {
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white md:p-6">
-                    <h3 className="text-lg font-bold md:text-xl">{collection.name}</h3>
+                    <h3 className="text-lg font-bold md:text-xl">
+                      {collection.name}
+                    </h3>
                     {collection.description ? (
                       <p className="mt-1 line-clamp-2 text-sm text-white/75">
                         {collection.description}
@@ -721,28 +753,16 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Recommendations */}
-        {token && recommendations.length > 0 ? (
-          <section>
-            <SectionHeader
-              eyebrow="Dành cho bạn"
-              title="Gợi ý cá nhân hóa"
-              description="Dựa trên sở thích và lịch sử duyệt của bạn."
-              linkTo="/recommendations"
-            />
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {recommendations.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  onAddToWishlist={(item) => handleWishlist(item, "home")}
-                  isWishlisted={wishlistProductIds.has(product._id)}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {/* Trending Products */}
+        <RecommendationSection
+          type="trending"
+          limit={12}
+          onAddToWishlist={
+            token ? (item) => handleWishlist(item, "home_trending") : null
+          }
+          onAddToCart={token ? handleAddToCart : null}
+          wishlistProductIds={wishlistProductIds}
+        />
 
         {/* CTA banner */}
         <section className="relative overflow-hidden rounded-sm bg-neutral-900 px-6 py-14 text-center text-white md:px-12 md:py-16">
@@ -762,8 +782,8 @@ export default function HomePage() {
               Nhận gợi ý phối đồ thông minh
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-white/75">
-              Đăng nhập để hệ thống học sở thích của bạn và đề xuất sản phẩm phù hợp
-              nhất.
+              Đăng nhập để hệ thống học sở thích của bạn và đề xuất sản phẩm phù
+              hợp nhất.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               {token ? (

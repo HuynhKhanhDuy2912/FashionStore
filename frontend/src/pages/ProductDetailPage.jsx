@@ -4,12 +4,13 @@ import ProductCard from "../components/ProductCard.jsx";
 import ReviewModal from "../components/ReviewModal.jsx";
 import ReviewsModal from "../components/ReviewsModal.jsx";
 import ProductInfoModal from "../components/ProductInfoModal.jsx";
+import RecommendationSection from "../components/RecommendationSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
-import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler } from "lucide-react";
+import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler, ArrowLeft, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
@@ -19,11 +20,16 @@ function isVideoMedia(url = "") {
 }
 
 export default function ProductDetailPage() {
-  const { productId } = useParams();
+  const { productId: rawProductId } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedColorParam = searchParams.get("color") || "";
   const { token } = useAuth();
+
+  // Extract actual ObjectId from slug-id format
+  const productId = rawProductId.includes('-')
+    ? rawProductId.split('-').pop()
+    : rawProductId;
 
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -46,13 +52,15 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showProductInfoModal, setShowProductInfoModal] = useState(false);
+  const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const [productResponse, productsResponse] = await Promise.all([
+        const [productResponse, productsResponse, wishlistResponse] = await Promise.all([
           apiRequest(`/products/${productId}`),
-          apiRequest("/products?limit=100")
+          apiRequest("/products?limit=100"),
+          token ? apiRequest("/wishlists/me", { token }) : Promise.resolve({ data: { items: [] } })
         ]);
 
         const currentProduct = productResponse.data;
@@ -77,6 +85,10 @@ export default function ProductDetailPage() {
         setAllVariants(variantResponse.data);
         setVariants(currentVariants);
         setProductImages(pImages);
+
+        // Set wishlist
+        const wishlistIds = new Set((wishlistResponse.data?.items || []).map((item) => item.productId?._id).filter(Boolean));
+        setWishlistProductIds(wishlistIds);
 
         if (currentVariants.length > 0) {
           const uniqueColors = [...new Set(currentVariants.map(v => v.color))];
@@ -244,6 +256,50 @@ export default function ProductDetailPage() {
       }
     } catch (e) {
       toast.error(e.message);
+    }
+  };
+
+  const handleWishlist = async (product, addedFrom = "product_detail") => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const productId = product?._id;
+    if (!productId) return;
+
+    const isWishlisted = wishlistProductIds.has(productId);
+
+    try {
+      if (isWishlisted) {
+        await apiRequest(`/wishlists/me/product/${productId}`, {
+          method: "DELETE",
+          token,
+        });
+        setWishlistProductIds((current) => {
+          const next = new Set(current);
+          next.delete(productId);
+          return next;
+        });
+        toast.success(`Đã bỏ ${product.name} khỏi danh sách yêu thích`);
+      } else {
+        await apiRequest("/wishlists/me", {
+          method: "POST",
+          token,
+          body: {
+            productId,
+            addedFrom,
+          },
+        });
+        setWishlistProductIds((current) => {
+          const next = new Set(current);
+          next.add(productId);
+          return next;
+        });
+        toast.success(`Đã thêm ${product.name} vào danh sách yêu thích`);
+      }
+    } catch (requestError) {
+      toast.error(requestError.message);
     }
   };
 
@@ -815,27 +871,73 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Similar products */}
+      <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:py-16">
+        <RecommendationSection
+          type="similar"
+          productId={productId}
+          token={token}
+          limit={12}
+          onAddToWishlist={token ? (item) => handleWishlist(item, "product_detail_similar") : null}
+          onAddToCart={token ? async (product, variant) => {
+            try {
+              await apiRequest("/carts/me/items", {
+                method: "POST",
+                token,
+                body: {
+                  productId: product._id,
+                  variantId: variant._id,
+                  quantity: 1,
+                  source: "product_detail_similar"
+                }
+              });
+              toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
+            } catch (err) {
+              toast.error(err.message);
+            }
+          } : null}
+          wishlistProductIds={wishlistProductIds}
+        />
+      </div>
+
       {/* Sản phẩm liên quan */}
       {relatedWithVariants.length > 0 && (
-        <section className="border-t border-gray-200 py-16 px-6">
-          <h2 className="text-xl font-extrabold tracking-widest text-black uppercase mb-10">
-            SẢN PHẨM BAN CHẠY NHẤT
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 gap-y-10">
+        <section className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16">
+          <div className="mb-8 border-b border-gray-200 pb-6">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
+              Có thể bạn thích
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
+              Sản phẩm liên quan
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
+              Những sản phẩm có phong cách tương tự với sản phẩm bạn đang xem
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {relatedWithVariants.map(item => (
               <ProductCard
                 key={item._id}
                 product={item}
-                onAddToCart={token ? (product, variant) => apiRequest("/carts/me/items", {
-                  method: "POST",
-                  token,
-                  body: {
-                    productId: product._id,
-                    variantId: variant._id,
-                    quantity: 1,
-                    source: "product_detail_related"
+                onAddToWishlist={token ? (p) => handleWishlist(p, "product_detail_related") : null}
+                isWishlisted={wishlistProductIds.has(item._id)}
+                onAddToCart={token ? async (product, variant) => {
+                  try {
+                    await apiRequest("/carts/me/items", {
+                      method: "POST",
+                      token,
+                      body: {
+                        productId: product._id,
+                        variantId: variant._id,
+                        quantity: 1,
+                        source: "product_detail_related"
+                      }
+                    });
+                    toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
+                  } catch (err) {
+                    toast.error(err.message);
                   }
-                }) : null}
+                } : null}
               />
             ))}
           </div>

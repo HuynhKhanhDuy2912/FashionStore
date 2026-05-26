@@ -531,7 +531,7 @@ export default function AdminProductAddPage() {
     try {
       await apiRequest(`/product-variants/${id}`, { method: "DELETE", token });
       setVariants((prev) => prev.filter((v) => v._id !== id));
-      toast.success("Đã xóa biến thể");
+      toast.success("Đã xóa biến thể thành công!");
     } catch (e) {
       toast.error(e.message);
     }
@@ -555,7 +555,7 @@ export default function AdminProductAddPage() {
     onChange: (e) => setForm((c) => ({ ...c, [key]: e.target.value })),
   });
   const vField = (key) => ({
-    value: variantForm[key],
+    value: variantForm[key] ?? "",
     onChange: (e) => setVariantForm((c) => ({ ...c, [key]: e.target.value })),
   });
 
@@ -766,7 +766,7 @@ export default function AdminProductAddPage() {
                         <input
                           className={inputCls}
                           required
-                          placeholder="Vd: Đen"
+                          placeholder="Đỏ, Vàng, Đen,..."
                           {...field("color")}
                         />
                       </label>
@@ -824,12 +824,12 @@ export default function AdminProductAddPage() {
                             min="0"
                             max="100"
                             placeholder="0"
-                            value={form.discount === 0 ? "" : form.discount}
+                            value={form.discount || ""}
                             onChange={(e) =>
                               setForm((c) => ({
                                 ...c,
                                 discount:
-                                  e.target.value === "" ? 0 : e.target.value,
+                                  e.target.value === "" ? 0 : Number(e.target.value),
                               }))
                             }
                           />
@@ -848,11 +848,11 @@ export default function AdminProductAddPage() {
                           type="number"
                           min="0"
                           placeholder="0"
-                          value={form.stock === 0 ? "" : form.stock}
+                          value={form.stock || ""}
                           onChange={(e) =>
                             setForm((c) => ({
                               ...c,
-                              stock: e.target.value === "" ? 0 : e.target.value,
+                              stock: e.target.value === "" ? 0 : Number(e.target.value),
                             }))
                           }
                         />
@@ -951,10 +951,6 @@ export default function AdminProductAddPage() {
 
             <div className={cardCls}>
               <h2 className={headingCls}>Video sản phẩm</h2>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0">
-                Có thể thêm video ngắn để hiển thị trong trang chi tiết sản
-                phẩm.
-              </p>
               <MultiVideoUpload
                 label=""
                 values={form.videos}
@@ -1137,85 +1133,29 @@ export default function AdminProductAddPage() {
                 {editingVariantId ? "SỬA BIẾN THỂ" : "THÊM BIẾN THỂ MỚI"}
               </p>
 
-              <div className="grid grid-cols-[1fr_320px] gap-6 items-start">
-                {/* LEFT */}
-                <div className="grid gap-4">
-                  {/* ROW 1 */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className={labelCls}>
-                      Màu sắc *
-                      <input
-                        className={inputCls}
-                        placeholder="Đen, Trắng..."
-                        {...vField("color")}
-                      />
-                    </label>
+              <div className="grid grid-cols-[1fr_1fr_320px] gap-3 items-stretch">
+                {/* ROW 1 */}
+                <label className={labelCls}>
+                  Màu sắc *
+                  <input
+                    className={inputCls}
+                    placeholder="Đen, Trắng..."
+                    {...vField("color")}
+                  />
+                </label>
 
-                    <label className={labelCls}>
-                      Kích cỡ *
-                      <input
-                        className={inputCls}
-                        placeholder="S, M, L..."
-                        {...vField("size")}
-                        disabled={!!editingVariantId}
-                      />
-                    </label>
-                  </div>
+                <label className={labelCls}>
+                  Kích cỡ *
+                  <input
+                    className={inputCls}
+                    placeholder="S, M, L..."
+                    {...vField("size")}
+                    disabled={!!editingVariantId}
+                  />
+                </label>
 
-                  {/* ROW 2 */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className={labelCls}>
-                      Tồn kho
-                      <input
-                        className={inputCls}
-                        type="number"
-                        min="0"
-                        {...vField("stock")}
-                      />
-                    </label>
-
-                    <label className={labelCls}>
-                      Giá nhập
-                      <input
-                        className={inputCls}
-                        type="number"
-                        min="0"
-                        step="1000"
-                        placeholder={form.costPrice || "Giá nhập sản phẩm"}
-                        {...vField("costPrice")}
-                      />
-                    </label>
-                  </div>
-
-                  {/* ROW 3 */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className={labelCls}>
-                      Giá sản phẩm
-                      <input
-                        className={inputCls}
-                        type="number"
-                        {...vField("price")}
-                        placeholder={form.price ? `${form.price}` : "0"}
-                      />
-                    </label>
-
-                    <label className={labelCls}>
-                      Giảm giá (%)
-                      <input
-                        className={inputCls}
-                        type="number"
-                        min="0"
-                        max="100"
-                        {...vField("discount")}
-                      />
-                    </label>
-                  </div>
-
-                  {/* LEFT COLUMN END */}
-                </div>
-
-                {/* RIGHT */}
-                <div className="grid gap-3">
+                {/* IMAGE PREVIEW */}
+                <div className="row-span-2 min-h-[170px]">
                   <MultiImageUpload
                     label="Ảnh biến thể"
                     values={variantForm.images}
@@ -1234,28 +1174,73 @@ export default function AdminProductAddPage() {
                       setVariantForm((c) => ({ ...c, mainImage: url }))
                     }
                   />
+                </div>
 
-                  <div className="flex gap-2">
+                {/* ROW 2 */}
+                <label className={labelCls}>
+                  Tồn kho
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min="0"
+                    {...vField("stock")}
+                  />
+                </label>
+
+                <label className={labelCls}>
+                  Giá nhập
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder={form.costPrice || "Giá nhập sản phẩm"}
+                    {...vField("costPrice")}
+                  />
+                </label>
+
+                {/* ROW 3 */}
+                <label className={labelCls}>
+                  Giá sản phẩm
+                  <input
+                    className={inputCls}
+                    type="number"
+                    {...vField("price")}
+                    placeholder={form.price ? `${form.price}` : "0"}
+                  />
+                </label>
+
+                <label className={labelCls}>
+                  Giảm giá (%)
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min="0"
+                    max="100"
+                    {...vField("discount")}
+                  />
+                </label>
+
+                <div className="flex gap-2 items-end">
+                  <button
+                    type="submit"
+                    className="flex-1 h-[46px] text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 border-none cursor-pointer transition-colors"
+                  >
+                    {editingVariantId ? "CẬP NHẬT" : "THÊM"}
+                  </button>
+
+                  {editingVariantId && (
                     <button
-                      type="submit"
-                      className="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 border-none cursor-pointer transition-colors"
+                      type="button"
+                      onClick={() => {
+                        setEditingVariantId("");
+                        setVariantForm(initialVariantForm);
+                      }}
+                      className="h-[46px] px-6 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 cursor-pointer transition-colors"
                     >
-                      {editingVariantId ? "CẬP NHẬT" : "THÊM"}
+                      HỦY
                     </button>
-
-                    {editingVariantId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingVariantId("");
-                          setVariantForm(initialVariantForm);
-                        }}
-                        className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 cursor-pointer transition-colors"
-                      >
-                        HỦY
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </form>
