@@ -112,8 +112,11 @@ export default function CartPage() {
     [selectedItems]
   );
 
-  const shippingFee = selectedSubtotal === 0 || selectedSubtotal >= 500000 ? 0 : 30000;
-  const selectedTotal = selectedSubtotal + shippingFee;
+  const isFreeShipping = selectedSubtotal >= 999000;
+  const shippingFeeDisplay = selectedSubtotal === 0 ? "0 đ" : isFreeShipping ? "Miễn phí" : "Tính khi thanh toán";
+  
+  // Tổng cộng ở giỏ hàng sẽ chỉ là tạm tính nếu chưa biết phí ship
+  const selectedTotal = selectedSubtotal;
   const totalCartCount = cart?.items?.length || 0;
   const hasItems = Boolean(cart?.items?.length);
   const allSelected = hasItems && selectedIds.length === cart.items.length;
@@ -405,7 +408,7 @@ export default function CartPage() {
               <div className="flex items-center justify-between text-gray-500">
                 <span>Phí vận chuyển dự kiến</span>
                 <span className="font-semibold text-black">
-                  {shippingFee === 0 ? "Miễn phí" : formatCurrency(shippingFee)}
+                  {shippingFeeDisplay}
                 </span>
               </div>
             </div>
@@ -418,7 +421,7 @@ export default function CartPage() {
             <div className="my-5 grid gap-3 text-xs font-semibold text-gray-500">
               <p className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-black" />
-                Miễn phí vận chuyển từ 500.000 đ
+                Miễn phí vận chuyển từ 999.000 đ
               </p>
               <p className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-black" />

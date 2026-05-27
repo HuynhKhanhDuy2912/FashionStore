@@ -68,8 +68,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(emailForm);
-      navigate(redirectTo, { replace: true });
+      const authData = await login(emailForm);
+      if (authData?.user?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -85,8 +89,12 @@ export default function LoginPage() {
         throw new Error("Không nhận được token Google");
       }
 
-      await loginWithGoogle(credentialResponse.credential);
-      navigate(redirectTo, { replace: true });
+      const authData = await loginWithGoogle(credentialResponse.credential);
+      if (authData?.user?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message);
     }
@@ -125,8 +133,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await verifyPhoneOtp(phoneForm);
-      navigate(redirectTo, { replace: true });
+      const authData = await verifyPhoneOtp(phoneForm);
+      if (authData?.user?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     } catch (submitError) {
       setError(submitError.message);
     } finally {

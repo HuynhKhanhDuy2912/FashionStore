@@ -7,6 +7,7 @@ export default function AddressManager({ token }) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
@@ -22,7 +23,10 @@ export default function AddressManager({ token }) {
     ward: "",
     street: "",
     addressDetail: "",
-    isDefault: false
+    isDefault: false,
+    provinceId: "",
+    districtId: "",
+    wardCode: ""
   });
 
   useEffect(() => {
@@ -32,19 +36,17 @@ export default function AddressManager({ token }) {
 
   const loadProvinces = async () => {
     try {
-      const res = await fetch("https://provinces.open-api.vn/api/p/");
-      const data = await res.json();
-      setProvinces(data || []);
+      const res = await apiRequest("/ghn/provinces");
+      setProvinces(res.data || []);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const loadDistricts = async (provinceCode) => {
+  const loadDistricts = async (provinceId) => {
     try {
-      const res = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
-      const data = await res.json();
-      const districtList = data.districts || [];
+      const res = await apiRequest(`/ghn/districts?province_id=${provinceId}`);
+      const districtList = res.data || [];
       setDistricts(districtList);
       setWards([]);
       return districtList;
@@ -54,11 +56,10 @@ export default function AddressManager({ token }) {
     }
   };
 
-  const loadWards = async (districtCode) => {
+  const loadWards = async (districtId) => {
     try {
-      const res = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
-      const data = await res.json();
-      const wardList = data.wards || [];
+      const res = await apiRequest(`/ghn/wards?district_id=${districtId}`);
+      const wardList = res.data || [];
       setWards(wardList);
       return wardList;
     } catch (err) {
@@ -85,18 +86,43 @@ export default function AddressManager({ token }) {
   };
 
   const handleProvinceChange = (e) => {
-    const selectedProvince = provinces.find((p) => p.name === e.target.value);
-    setFormData((prev) => ({ ...prev, province: e.target.value, district: "", ward: "" }));
+    const selectedProvince = provinces.find((p) => String(p.ProvinceID) === String(e.target.value));
     if (selectedProvince) {
-      loadDistricts(selectedProvince.code);
+      setFormData((prev) => ({
+        ...prev,
+        province: selectedProvince.ProvinceName,
+        provinceId: selectedProvince.ProvinceID,
+        district: "",
+        districtId: "",
+        ward: "",
+        wardCode: ""
+      }));
+      loadDistricts(selectedProvince.ProvinceID);
     }
   };
 
   const handleDistrictChange = (e) => {
-    const selectedDistrict = districts.find((d) => d.name === e.target.value);
-    setFormData((prev) => ({ ...prev, district: e.target.value, ward: "" }));
+    const selectedDistrict = districts.find((d) => String(d.DistrictID) === String(e.target.value));
     if (selectedDistrict) {
-      loadWards(selectedDistrict.code);
+      setFormData((prev) => ({
+        ...prev,
+        district: selectedDistrict.DistrictName,
+        districtId: selectedDistrict.DistrictID,
+        ward: "",
+        wardCode: ""
+      }));
+      loadWards(selectedDistrict.DistrictID);
+    }
+  };
+
+  const handleWardChange = (e) => {
+    const selectedWard = wards.find((w) => String(w.WardCode) === String(e.target.value));
+    if (selectedWard) {
+      setFormData((prev) => ({
+        ...prev,
+        ward: selectedWard.WardName,
+        wardCode: selectedWard.WardCode
+      }));
     }
   };
 
@@ -111,15 +137,26 @@ export default function AddressManager({ token }) {
         ward: address.ward,
         street: address.street,
         addressDetail: address.addressDetail || "",
-        isDefault: address.isDefault
+        isDefault: address.isDefault,
+        provinceId: address.provinceId || "",
+        districtId: address.districtId || "",
+        wardCode: address.wardCode || ""
       });
 
-      const selectedProvince = provinces.find((p) => p.name === address.province);
-      if (selectedProvince) {
-        const districtList = await loadDistricts(selectedProvince.code);
-        const selectedDistrict = districtList.find((d) => d.name === address.district);
-        if (selectedDistrict) {
-          await loadWards(selectedDistrict.code);
+      if (address.provinceId) {
+        const districtList = await loadDistricts(address.provinceId);
+        if (address.districtId) {
+          await loadWards(address.districtId);
+        }
+      } else if (address.province) {
+        // Fallback for old addresses without IDs
+        const selectedProvince = provinces.find((p) => p.ProvinceName === address.province);
+        if (selectedProvince) {
+          const districtList = await loadDistricts(selectedProvince.ProvinceID);
+          const selectedDistrict = districtList.find((d) => d.DistrictName === address.district);
+          if (selectedDistrict) {
+            await loadWards(selectedDistrict.DistrictID);
+          }
         }
       }
     } else {
@@ -132,7 +169,10 @@ export default function AddressManager({ token }) {
         ward: "",
         street: "",
         addressDetail: "",
-        isDefault: false
+        isDefault: false,
+        provinceId: "",
+        districtId: "",
+        wardCode: ""
       });
       setDistricts([]);
       setWards([]);
@@ -180,8 +220,7 @@ export default function AddressManager({ token }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Bạn có chắc muốn xóa địa chỉ này?")) return;
-
+    setLoading(true);
     try {
       await apiRequest(`/addresses/${id}`, {
         method: "DELETE",
@@ -191,6 +230,9 @@ export default function AddressManager({ token }) {
       setSuccess("Xóa địa chỉ thành công!");
     } catch (err) {
       setError(err.message || "Có lỗi xảy ra");
+    } finally {
+      setLoading(false);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -275,7 +317,7 @@ export default function AddressManager({ token }) {
                       <span className="text-gray-300">|</span>
                       <button
                         type="button"
-                        onClick={() => handleDelete(address._id)}
+                        onClick={() => setDeleteConfirmId(address._id)}
                         className="text-sm text-red-600 hover:underline"
                       >
                         Xóa
@@ -284,7 +326,7 @@ export default function AddressManager({ token }) {
                       <button
                         type="button"
                         onClick={() => handleSetDefault(address._id)}
-                        className="text-sm text-gray-700 hover:underline"
+                        className="text-sm text-green-700 hover:underline"
                       >
                         Đặt mặc định
                       </button>
@@ -369,16 +411,16 @@ export default function AddressManager({ token }) {
                 <div>
                   <label className="mb-2 block text-sm">Tỉnh/Thành phố</label>
                   <select
-                    name="province"
-                    value={formData.province}
+                    name="provinceId"
+                    value={formData.provinceId}
                     onChange={handleProvinceChange}
                     required
                     className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                   >
                     <option value="">Chọn tỉnh/thành phố</option>
                     {provinces.map((province) => (
-                      <option key={province.code} value={province.name}>
-                        {province.name}
+                      <option key={province.ProvinceID} value={province.ProvinceID}>
+                        {province.ProvinceName}
                       </option>
                     ))}
                   </select>
@@ -387,17 +429,17 @@ export default function AddressManager({ token }) {
                 <div>
                   <label className="mb-2 block text-sm">Quận/Huyện</label>
                   <select
-                    name="district"
-                    value={formData.district}
+                    name="districtId"
+                    value={formData.districtId}
                     onChange={handleDistrictChange}
                     required
-                    disabled={!formData.province}
+                    disabled={!formData.provinceId}
                     className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black disabled:bg-gray-100"
                   >
                     <option value="">Chọn quận/huyện</option>
                     {districts.map((district) => (
-                      <option key={district.code} value={district.name}>
-                        {district.name}
+                      <option key={district.DistrictID} value={district.DistrictID}>
+                        {district.DistrictName}
                       </option>
                     ))}
                   </select>
@@ -406,17 +448,17 @@ export default function AddressManager({ token }) {
                 <div>
                   <label className="mb-2 block text-sm">Phường/Xã</label>
                   <select
-                    name="ward"
-                    value={formData.ward}
-                    onChange={handleInputChange}
+                    name="wardCode"
+                    value={formData.wardCode}
+                    onChange={handleWardChange}
                     required
-                    disabled={!formData.district}
+                    disabled={!formData.districtId}
                     className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black disabled:bg-gray-100"
                   >
                     <option value="">Chọn phường/xã</option>
                     {wards.map((ward) => (
-                      <option key={ward.code} value={ward.name}>
-                        {ward.name}
+                      <option key={ward.WardCode} value={ward.WardCode}>
+                        {ward.WardName}
                       </option>
                     ))}
                   </select>
@@ -474,6 +516,36 @@ export default function AddressManager({ token }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-[18px] font-semibold">Xác nhận xóa</h3>
+            <p className="mb-6 text-md text-gray-600">
+              Bạn có chắc chắn muốn xóa địa chỉ này không? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={loading}
+                className="border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={loading}
+                className="bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Xóa
+              </button>
+            </div>
           </div>
         </div>
       )}

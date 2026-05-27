@@ -43,7 +43,7 @@ const trustItems = [
   {
     icon: Truck,
     title: "Giao hàng toàn quốc",
-    copy: "Miễn phí đơn từ 500.000₫",
+    copy: "Miễn phí đơn từ 999.000₫",
   },
   {
     icon: RotateCcw,

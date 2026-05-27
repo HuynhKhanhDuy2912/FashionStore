@@ -76,7 +76,9 @@ export const createOrderFromCart = async (user, body) => {
     };
   });
 
-  const shippingFee = subTotal >= 500000 ? 0 : 30000;
+  // Receive shipping fee from frontend, with fallback to 0 (>= 999k) or 30k
+  const providedShippingFee = body.shippingFee;
+  const shippingFee = providedShippingFee !== undefined ? Number(providedShippingFee) : (subTotal >= 999000 ? 0 : 30000);
   const totalPrice = subTotal + shippingFee;
 
   const order = await Order.create({

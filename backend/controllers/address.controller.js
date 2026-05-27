@@ -19,7 +19,7 @@ export const getMyAddresses = async (req, res) => {
 
 export const createAddress = async (req, res) => {
   try {
-    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault } = req.body;
+    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault, provinceId, districtId, wardCode } = req.body;
 
     if (!fullName || !phoneNumber || !province || !district || !ward || !street) {
       return res.status(400).json({
@@ -37,7 +37,10 @@ export const createAddress = async (req, res) => {
       ward,
       street,
       addressDetail: addressDetail || "",
-      isDefault: isDefault || false
+      isDefault: isDefault || false,
+      provinceId: provinceId || null,
+      districtId: districtId || null,
+      wardCode: wardCode || null
     });
 
     return res.status(201).json({
@@ -56,7 +59,7 @@ export const createAddress = async (req, res) => {
 export const updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault } = req.body;
+    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault, provinceId, districtId, wardCode } = req.body;
 
     const address = await Address.findOne({ _id: id, userId: req.user._id });
 
@@ -75,6 +78,9 @@ export const updateAddress = async (req, res) => {
     if (street !== undefined) address.street = street;
     if (addressDetail !== undefined) address.addressDetail = addressDetail;
     if (isDefault !== undefined) address.isDefault = isDefault;
+    if (provinceId !== undefined) address.provinceId = provinceId;
+    if (districtId !== undefined) address.districtId = districtId;
+    if (wardCode !== undefined) address.wardCode = wardCode;
 
     await address.save();
 

@@ -219,15 +219,15 @@ export default function ProductDetailPage() {
       );
       const response = existingItem
         ? await apiRequest(`/carts/me/items/${existingItem._id}`, {
-            method: "PUT",
-            token,
-            body: { quantity }
-          })
+          method: "PUT",
+          token,
+          body: { quantity }
+        })
         : await apiRequest("/carts/me/items", {
-            method: "POST",
-            token,
-            body: { productId: product._id, variantId: selectedVariant._id, quantity, source: "buy_now" }
-          });
+          method: "POST",
+          token,
+          body: { productId: product._id, variantId: selectedVariant._id, quantity, source: "buy_now" }
+        });
 
       const cartItemId = response.data?._id;
       if (cartItemId) {
@@ -520,7 +520,7 @@ export default function ProductDetailPage() {
                   </p>
 
                   <p>
-                    Miễn phí đơn hàng từ 500.000đ.
+                    Miễn phí đơn hàng từ 999.000đ.
                   </p>
                 </div>
 
@@ -553,7 +553,7 @@ export default function ProductDetailPage() {
               <div className="px-6 py-2 text-[13px] text-gray-600">
 
                 <p className="mb-3" >
-                  Miễn phí giao hàng toàn quốc cho đơn từ 500.000đ.
+                  Miễn phí giao hàng toàn quốc cho đơn từ 999.000đ.
                 </p>
 
                 <p className="mb-3">
@@ -663,7 +663,7 @@ export default function ProductDetailPage() {
             <h1 className="text-2xl font-bold text-black leading-tight mb-1">
               {product.name}
             </h1>
-            
+
             <p className="text-[12px] text-gray-400 uppercase tracking-widest">
               SKU: {product._id.slice(-6).toUpperCase()}
             </p>

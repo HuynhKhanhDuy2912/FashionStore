@@ -399,7 +399,7 @@ export default function Layout() {
                   >
                     <ShoppingCart className="h-6 w-6" strokeWidth={1.9} />
                     {cartCount > 0 ? (
-                      <span className="absolute -right-[3px] -top-[3px] grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[12px] font-bold leading-none text-white shadow-sm">
+                      <span className="absolute -right-[3px] -top-[2px] grid min-h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[11px] font-semibold text-white shadow-sm">
                         {cartCount > 99 ? "99+" : cartCount}
                       </span>
                     ) : null}
