@@ -1,11 +1,49 @@
 import express from "express";
 import Order from "../models/Order.js";
+import Cart from "../models/Cart.js";
+import CartItem from "../models/CartItem.js";
+import OrderItem from "../models/OrderItem.js";
+import Payment from "../models/Payment.js";
 import { createVNPayPaymentUrl, verifyVNPayCallback } from "../utils/vnpay.js";
 import { createMoMoPayment, verifyMoMoCallback } from "../utils/momo.js";
 import { createPayPalOrder, capturePayPalOrder, getPayPalOrderDetails } from "../utils/paypal.js";
 import { protect } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+const handlePaymentFailure = async (orderId) => {
+  const order = await Order.findById(orderId);
+  if (!order) return [];
+
+  const restoredIds = [];
+
+  const items = await OrderItem.find({ orderId: order._id });
+  const cart = await Cart.findOne({ userId: order.userId });
+  if (cart && items.length > 0) {
+    for (const item of items) {
+      const existing = await CartItem.findOne({ cartId: cart._id, variantId: item.variantId });
+      if (existing) {
+        existing.quantity += item.quantity;
+        await existing.save();
+        restoredIds.push(existing._id.toString());
+      } else {
+        const newCartItem = await CartItem.create({
+          cartId: cart._id,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity
+        });
+        restoredIds.push(newCartItem._id.toString());
+      }
+    }
+  }
+
+  await Payment.deleteMany({ orderId: order._id });
+  await OrderItem.deleteMany({ orderId: order._id });
+  await Order.findByIdAndDelete(order._id);
+
+  return restoredIds;
+};
 
 // VNPay - Tạo URL thanh toán
 router.post("/vnpay/create", protect, async (req, res) => {
@@ -67,7 +105,7 @@ router.get("/vnpay/callback", async (req, res) => {
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=Order not found`);
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy`);
     }
 
     if (responseCode === "00") {
@@ -77,10 +115,9 @@ router.get("/vnpay/callback", async (req, res) => {
 
       return res.redirect(`${process.env.CLIENT_URL}/payment/success?orderId=${orderId}`);
     } else {
-      order.paymentStatus = "failed";
-      await order.save();
-
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?orderId=${orderId}`);
+      const restoredIds = await handlePaymentFailure(orderId);
+      const restoredParam = restoredIds.length > 0 ? `&restoredIds=${restoredIds.join(",")}` : "";
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy${restoredParam}`);
     }
   } catch (error) {
     return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=${error.message}`);
@@ -152,7 +189,7 @@ router.get("/momo/callback", async (req, res) => {
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=Order not found`);
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy`);
     }
 
     if (resultCode === "0") {
@@ -162,10 +199,9 @@ router.get("/momo/callback", async (req, res) => {
 
       return res.redirect(`${process.env.CLIENT_URL}/payment/success?orderId=${orderId}`);
     } else {
-      order.paymentStatus = "failed";
-      await order.save();
-
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?orderId=${orderId}`);
+      const restoredIds = await handlePaymentFailure(orderId);
+      const restoredParam = restoredIds.length > 0 ? `&restoredIds=${restoredIds.join(",")}` : "";
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy${restoredParam}`);
     }
   } catch (error) {
     return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=${error.message}`);
@@ -202,8 +238,7 @@ router.post("/momo/ipn", async (req, res) => {
       order.transactionId = data.transId;
       await order.save();
     } else {
-      order.paymentStatus = "failed";
-      await order.save();
+      await handlePaymentFailure(orderId);
     }
 
     return res.status(200).json({
@@ -280,7 +315,7 @@ router.get("/paypal/callback", async (req, res) => {
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=Order not found`);
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy`);
     }
 
     const captureResult = await capturePayPalOrder(token);
@@ -292,14 +327,26 @@ router.get("/paypal/callback", async (req, res) => {
 
       return res.redirect(`${process.env.CLIENT_URL}/payment/success?orderId=${orderId}`);
     } else {
-      order.paymentStatus = "failed";
-      await order.save();
-
-      return res.redirect(`${process.env.CLIENT_URL}/payment/failed?orderId=${orderId}`);
+      const restoredIds = await handlePaymentFailure(orderId);
+      const restoredParam = restoredIds.length > 0 ? `&restoredIds=${restoredIds.join(",")}` : "";
+      return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+thất+bại+hoặc+bị+hủy${restoredParam}`);
     }
   } catch (error) {
     return res.redirect(`${process.env.CLIENT_URL}/payment/failed?message=${error.message}`);
   }
+});
+
+// PayPal - Cancel
+router.get("/paypal/cancel", async (req, res) => {
+  const { orderId } = req.query;
+  let restoredParam = "";
+  if (orderId) {
+    const restoredIds = await handlePaymentFailure(orderId);
+    if (restoredIds.length > 0) {
+      restoredParam = `&restoredIds=${restoredIds.join(",")}`;
+    }
+  }
+  return res.redirect(`${process.env.CLIENT_URL}/checkout?error=Thanh+toán+bị+hủy${restoredParam}`);
 });
 
 export default router;

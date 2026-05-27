@@ -22,6 +22,7 @@ import {
   Package,
   Warehouse,
   History,
+  Ruler,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { NotificationProvider } from "../context/NotificationContext.jsx";
@@ -57,6 +58,7 @@ const adminNavItems = [
   { to: "/admin/users", label: "Người dùng", icon: Users },
   { to: "/admin/reviews", label: "Đánh giá", icon: MessageSquare },
   { to: "/admin/banners", label: "Banner", icon: Image },
+  { to: "/admin/size-guides", label: "Bảng size", icon: Ruler },
 ];
 
 const utilityNavItems = [

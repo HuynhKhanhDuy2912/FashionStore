@@ -18,6 +18,7 @@ import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 import AdminBannersPage from "./pages/admin/AdminBannersPage.jsx";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage.jsx";
+import AdminSizeGuidesPage from "./pages/admin/AdminSizeGuidesPage.jsx";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage.jsx";
 import AdminInventoryHistoryPage from "./pages/admin/AdminInventoryHistoryPage.jsx";
 
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
             <Route path="banners" element={<AdminBannersPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
+            <Route path="size-guides" element={<AdminSizeGuidesPage />} />
           </Route>
           </Route>
         </Routes>

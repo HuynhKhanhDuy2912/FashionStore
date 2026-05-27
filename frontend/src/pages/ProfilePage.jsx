@@ -254,10 +254,6 @@ export default function ProfilePage() {
       <h1 className="mb-2 text-2xl font-bold uppercase tracking-wide">
         {user.fullname || user.username}
       </h1>
-      <div className="mb-8 flex items-center gap-4 text-sm text-gray-500">
-        <span>Số điểm đang có: <strong className="text-black">0 điểm</strong></span>
-        <span>SĐT tích điểm: <strong className="text-black">{user.phone_number || "Chưa có"}</strong></span>
-      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
         <aside className="lg:col-span-1">
@@ -270,11 +266,10 @@ export default function ProfilePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => handleTabChange(tab.id)}
-                  className={`flex w-full items-center gap-3 border-b border-gray-100 px-4 py-4 text-left text-l transition last:border-b-0 ${
-                    isActive
-                      ? "bg-gray-100 font-semibold text-black"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`flex w-full items-center gap-3 border-b border-gray-100 px-4 py-4 text-left text-l transition last:border-b-0 ${isActive
+                    ? "bg-gray-100 font-semibold text-black"
+                    : "text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -328,7 +323,7 @@ export default function ProfilePage() {
                         onChange={(e) => {
                           const firstName = formData.fullname.split(" ").slice(0, -1).join(" ") || "";
                           const lastName = e.target.value;
-                          setFormData((prev) => ({ ...prev, fullname: `${firstName} ${lastName}`}));
+                          setFormData((prev) => ({ ...prev, fullname: `${firstName} ${lastName}` }));
                         }}
                         className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
                       />
@@ -486,11 +481,10 @@ export default function ProfilePage() {
                           key={style.value}
                           type="button"
                           onClick={() => toggleStyle(style.value)}
-                          className={`border-2 px-6 py-4 text-left text-sm transition ${
-                            isSelected
-                              ? "border-black bg-black text-white"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                          }`}
+                          className={`border-2 px-6 py-4 text-left text-sm transition ${isSelected
+                            ? "border-black bg-black text-white"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                            }`}
                         >
                           <div className="font-medium">{style.label}</div>
                           <div className="mt-1 text-xs opacity-80">{style.labelVi}</div>

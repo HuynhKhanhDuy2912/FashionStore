@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, ChevronRight, CreditCard, Loader2, MapPin, Plus, Truck, Wallet } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
@@ -14,8 +14,29 @@ export default function CheckoutPage() {
   const { refreshCartCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const restoredIdsParam = searchParams.get("restoredIds");
+  const errorParam = searchParams.get("error");
+
+  useEffect(() => {
+    if (restoredIdsParam) {
+      sessionStorage.setItem(CHECKOUT_SELECTION_KEY, JSON.stringify(restoredIdsParam.split(",")));
+    }
+
+    if (restoredIdsParam || errorParam) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("restoredIds");
+      newParams.delete("error");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [restoredIdsParam, errorParam, searchParams, setSearchParams]);
 
   const selectedItemIds = (() => {
+    if (restoredIdsParam) {
+      return restoredIdsParam.split(",");
+    }
+
     const stateIds = location.state?.selectedItemIds || location.state?.cartItemIds;
     if (Array.isArray(stateIds)) return stateIds;
 
@@ -34,7 +55,7 @@ export default function CheckoutPage() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [note, setNote] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(searchParams.get("error") || "");
   const [loading, setLoading] = useState(false);
 
   const [shippingFee, setShippingFee] = useState(30000);

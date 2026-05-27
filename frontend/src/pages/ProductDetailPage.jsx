@@ -4,6 +4,7 @@ import ProductCard from "../components/ProductCard.jsx";
 import ReviewModal from "../components/ReviewModal.jsx";
 import ReviewsModal from "../components/ReviewsModal.jsx";
 import ProductInfoModal from "../components/ProductInfoModal.jsx";
+import SizeGuideModal from "../components/SizeGuideModal.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
 import BestSellersSection from "../components/BestSellersSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -51,6 +52,8 @@ export default function ProductDetailPage() {
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showProductInfoModal, setShowProductInfoModal] = useState(false);
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [sizeGuide, setSizeGuide] = useState(null);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -76,6 +79,13 @@ export default function ProductDetailPage() {
 
         const currentVariants = variantResponse.data || [];
         const pImages = imgResponse.data || [];
+
+        const catId = typeof currentProduct.categoryId === "object" ? currentProduct.categoryId?._id : currentProduct.categoryId;
+        if (catId) {
+          apiRequest(`/size-guides/by-category/${catId}`)
+            .then(res => setSizeGuide(res.data))
+            .catch(() => setSizeGuide(null));
+        }
 
         setProduct(currentProduct);
         setVariants(currentVariants);
@@ -775,10 +785,16 @@ export default function ProductDetailPage() {
             <div>
               <div className="flex justify-between items-center mb-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-black">KÍCH THƯỚC</p>
-                <button className="text-[13px] text-black flex items-center border-none bg-transparent cursor-pointer transition-transform duration-300 hover:scale-105 origin-left">
-                  <Ruler className="-rotate-[15deg] mr-1" size={13} strokeWidth={1.7} />
-                  Hướng dẫn chọn size
-                </button>
+                {sizeGuide && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSizeGuide(true)}
+                    className="text-[13px] text-black flex items-center border-none bg-transparent cursor-pointer transition-transform duration-300 hover:scale-105 origin-left"
+                  >
+                    <Ruler className="-rotate-[15deg] mr-1" size={13} strokeWidth={1.7} />
+                    Hướng dẫn chọn size
+                  </button>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map(size => {
@@ -951,6 +967,12 @@ export default function ProductDetailPage() {
         onVideoFilesChange={(files) => setReviewVideoFiles(prev => [...prev, ...files])}
         onRemoveSelectedImage={(index) => setReviewImageFiles(prev => prev.filter((_, i) => i !== index))}
         onRemoveSelectedVideo={(index) => setReviewVideoFiles(prev => prev.filter((_, i) => i !== index))}
+      />
+
+      <SizeGuideModal
+        open={showSizeGuide}
+        onClose={() => setShowSizeGuide(false)}
+        sizeGuide={sizeGuide}
       />
     </div>
   );

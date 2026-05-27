@@ -38,7 +38,7 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-        <div className="w-full max-w-5xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+        <div className="w-full max-w-5xl bg-white shadow-2xl max-h-[550px] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
             <h2 className="text-sm font-extrabold uppercase tracking-widest text-black">
@@ -106,7 +106,14 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
             </div>
 
             {/* Right - Reviews List */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div 
+              className="flex-1 overflow-y-auto p-6" 
+              style={{
+                /* Tùy chỉnh thanh cuộn cho webkit */
+                scrollbarWidth: "thin",
+                scrollbarColor: "#d1d5db #f3f4f6"
+              }}
+            >
               {reviews.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 text-sm">Chưa có đánh giá nào</p>
@@ -119,22 +126,28 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
                     const displayComment = hasLongComment && !isExpanded
                       ? review.comment.slice(0, 200) + "..."
                       : review.comment;
+                    
+                    const userName = review.userId?.fullname || review.userId?.username || "User";
+                    const initial = userName.charAt(0).toUpperCase();
+                    const colors = ["bg-red-500", "bg-orange-500", "bg-green-500", "bg-blue-500", "bg-purple-500", "bg-pink-500"];
+                    const colorIndex = userName.charCodeAt(0) % colors.length;
+                    const bgColor = colors[colorIndex];
 
                     return (
                       <div key={review._id} className="border-b border-gray-200 pb-6 last:border-b-0">
                         <div className="flex gap-4">
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                              {review.userId?.avatar ? (
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden text-white font-bold relative ${bgColor}`}>
+                              <span className="z-0">{initial}</span>
+                              {review.userId?.avatar && (
                                 <img
                                   src={review.userId.avatar}
-                                  alt={review.userId.username || "User"}
-                                  className="w-full h-full object-cover"
+                                  alt={userName}
+                                  className="w-full h-full object-cover absolute inset-0 z-10"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
                                 />
-                              ) : (
-                                <span className="text-sm font-bold text-gray-600">
-                                  {(review.userId?.username || "U").charAt(0).toUpperCase()}
-                                </span>
                               )}
                             </div>
                           </div>
