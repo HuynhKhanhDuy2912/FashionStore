@@ -124,7 +124,10 @@ export class RuleBasedEngine {
       return 0.5;
     }
 
-    if (preferredStyles.includes(product.style)) {
+    const productStyles = Array.isArray(product.style) ? product.style : [product.style || "casual"];
+
+    // Direct match: any of the product's styles is in user's preferred styles
+    if (productStyles.some(s => preferredStyles.includes(s))) {
       return 1.0;
     } else {
       // Partial match cho similar styles
@@ -138,10 +141,10 @@ export class RuleBasedEngine {
         smart_casual: ["casual", "elegant", "minimal"]
       };
 
-      const productStyle = product.style || "casual";
-      const similar = similarStyles[productStyle] || [];
-
-      const hasSimilar = similar.some(s => preferredStyles.includes(s));
+      const hasSimilar = productStyles.some(ps => {
+        const similar = similarStyles[ps] || [];
+        return similar.some(s => preferredStyles.includes(s));
+      });
       return hasSimilar ? 0.6 : 0.3;
     }
   }

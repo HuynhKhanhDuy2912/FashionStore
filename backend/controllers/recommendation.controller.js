@@ -11,7 +11,7 @@ import Collection from "../models/Collection.js";
  * Enrich a list of products with availableVariants and collectionName
  * so ProductCard can display color swatches, sizes, and quick-add to cart.
  */
-async function enrichProducts(products) {
+export async function enrichProducts(products) {
   if (!products || products.length === 0) return products;
 
   const productIds = products.map((p) => p._id);

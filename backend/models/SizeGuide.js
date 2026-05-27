@@ -72,6 +72,4 @@ const sizeGuideSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-sizeGuideSchema.index({ categoryId: 1 }, { unique: true });
-
 export default mongoose.model("SizeGuide", sizeGuideSchema);

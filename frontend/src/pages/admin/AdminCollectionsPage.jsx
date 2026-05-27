@@ -83,7 +83,7 @@ export default function AdminCollectionsPage() {
           token,
           body: payload,
         });
-        toast.success("Đã cập nhật bộ sưu tập");
+        toast.success("Đã cập nhật bộ sưu tập thành công!");
       } else {
         await apiRequest("/collections", {
           method: "POST",
@@ -497,9 +497,8 @@ export default function AdminCollectionsPage() {
               <button
                 type="button"
                 onClick={() => handleToggleActive(col)}
-                className={`flex items-center justify-center text-xs font-bold uppercase tracking-widest cursor-pointer bg-transparent border-none p-0 ${
-                  col.isActive ? "text-green-600" : "text-gray-400"
-                }`}
+                className={`flex items-center justify-center text-xs font-bold uppercase tracking-widest cursor-pointer bg-transparent border-none p-0 ${col.isActive ? "text-green-600" : "text-gray-400"
+                  }`}
                 title={col.isActive ? "Bấm để ẩn" : "Bấm để hiện"}
               >
                 {col.isActive ? <Eye size={16} /> : <EyeOff size={16} />}

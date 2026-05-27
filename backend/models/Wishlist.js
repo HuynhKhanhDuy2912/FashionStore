@@ -5,30 +5,29 @@ const wishlistSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
 
     productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true
+      required: true,
     },
 
     addedFrom: {
       type: String,
       trim: true,
-      enum: ["product_page", "recommendation", "search", "outfit", "other"],
-      default: "other"
+      default: "other",
     },
 
     note: {
       type: String,
       trim: true,
       maxlength: 300,
-      default: ""
-    }
+      default: "",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 wishlistSchema.index({ userId: 1, productId: 1 }, { unique: true });

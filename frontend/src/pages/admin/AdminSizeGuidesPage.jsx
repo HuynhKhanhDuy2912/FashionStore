@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Edit3, Save, X, Upload, Image as ImageIcon, Ruler, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
+import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { apiRequest } from "../../lib/api.js";
 import toast from "react-hot-toast";
 
@@ -229,30 +230,26 @@ export default function AdminSizeGuidesPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold uppercase tracking-wide">Quản lý bảng size</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Thiết lập bảng thông số size cho từng danh mục sản phẩm
-          </p>
-        </div>
-        {!editing && (
+    <section className="grid gap-4 p-6">
+      <AdminPageHeader
+        title="QUẢN LÝ BẢNG SIZE"
+        description="Thiết lập bảng thông số size cho từng danh mục sản phẩm."
+        aside={
           <button
             type="button"
             onClick={handleNew}
-            className="flex items-center gap-2 bg-black px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-gray-800 cursor-pointer border-none"
+            className="flex items-center gap-2 bg-black px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-gray-800 cursor-pointer border-none rounded-md"
           >
             <Plus size={16} /> Thêm bảng size
           </button>
-        )}
-      </div>
+        }
+      />
 
       {/* ═══ EDIT FORM ═══ */}
       {editing && (
         <div className="mb-8 border border-gray-200 bg-white">
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-bold">
+            <h2 className="text-[18px] font-medium uppercase">
               {editing._isNew ? "Tạo bảng size mới" : "Chỉnh sửa bảng size"}
             </h2>
             <button type="button" onClick={handleCancel} className="text-gray-500 hover:text-black cursor-pointer border-none bg-transparent">
@@ -496,14 +493,12 @@ export default function AdminSizeGuidesPage() {
               <button
                 type="button"
                 onClick={() => setForm((p) => ({ ...p, isActive: !p.isActive }))}
-                className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer border-none ${
-                  form.isActive ? "bg-green-500" : "bg-gray-300"
-                }`}
+                className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer border-none ${form.isActive ? "bg-green-500" : "bg-gray-300"
+                  }`}
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    form.isActive ? "translate-x-5" : ""
-                  }`}
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.isActive ? "translate-x-5" : ""
+                    }`}
                 />
               </button>
               <span className="text-sm text-gray-500">{form.isActive ? "Đang bật" : "Đã tắt"}</span>
@@ -523,7 +518,7 @@ export default function AdminSizeGuidesPage() {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-600 transition hover:text-black cursor-pointer border border-gray-300 bg-white"
+                className="px-6 py-3 text-xs font-bold uppercase tracking-wider transition hover:text-white hover:bg-red-600 cursor-pointer border border-gray-300 bg-white"
               >
                 Huỷ
               </button>
@@ -567,9 +562,8 @@ export default function AdminSizeGuidesPage() {
                     Danh mục: {getCategoryName(guide)} · {guide.rows?.length || 0} sizes · {guide.headers?.length || 0} cột
                   </p>
                   <span
-                    className={`mt-1 inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${
-                      guide.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                    }`}
+                    className={`mt-1 inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${guide.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                      }`}
                   >
                     {guide.isActive ? "Đang bật" : "Đã tắt"}
                   </span>
@@ -579,14 +573,14 @@ export default function AdminSizeGuidesPage() {
                 <button
                   type="button"
                   onClick={() => handleEdit(guide)}
-                  className="flex items-center gap-1.5 border border-gray-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-700 transition hover:border-black hover:text-black cursor-pointer"
+                  className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                 >
                   <Edit3 size={13} /> Sửa
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(guide._id)}
-                  className="flex items-center gap-1.5 border border-gray-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-red-500 transition hover:border-red-500 cursor-pointer"
+                  className="flex items-center gap-1.5 rounded border border-red-600 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
                 >
                   <Trash2 size={13} /> Xoá
                 </button>
@@ -595,6 +589,6 @@ export default function AdminSizeGuidesPage() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

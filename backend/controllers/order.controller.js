@@ -9,12 +9,12 @@ import {
   getMyOrders,
   getOrderDetail,
   markOrderAsReceivedByUser,
-  updateAdminOrderStatus
+  updateAdminOrderStatus,
 } from "../services/order.service.js";
 
 const baseOrderController = createCrudControllers(Order, {
   modelName: "Order",
-  populate: [{ path: "userId", select: "username email fullname" }]
+  populate: [{ path: "userId", select: "username email fullname" }],
 });
 
 export const checkoutMyOrder = async (req, res) => {
@@ -24,12 +24,12 @@ export const checkoutMyOrder = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Checkout successful",
-      data: order
+      data: order,
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -41,12 +41,12 @@ export const getMyOrderList = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Orders fetched successfully",
-      data: orders
+      data: orders,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -58,52 +58,59 @@ export const getMyOrderById = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Order fetched successfully",
-      data: order
+      data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Order not found" ? 404 : 400;
+    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 export const cancelMyOrder = async (req, res) => {
   try {
-    const order = await cancelOrder(req.user._id, req.params.orderId, req.body.cancellationReason || "");
+    const order = await cancelOrder(
+      req.user._id,
+      req.params.orderId,
+      req.body.cancellationReason || "",
+    );
 
     return res.status(200).json({
       success: true,
       message: "Order cancelled successfully",
-      data: order
+      data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Order not found" ? 404 : 400;
+    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 export const markMyOrderAsReceived = async (req, res) => {
   try {
-    const order = await markOrderAsReceivedByUser(req.user._id, req.params.orderId);
+    const order = await markOrderAsReceivedByUser(
+      req.user._id,
+      req.params.orderId,
+    );
 
     return res.status(200).json({
       success: true,
       message: "Order marked as received successfully",
-      data: order
+      data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Order not found" ? 404 : 400;
+    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -132,12 +139,12 @@ export const getAdminOrderList = async (_req, res) => {
     return res.status(200).json({
       success: true,
       message: "Admin orders fetched successfully",
-      data: orders
+      data: orders,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -149,14 +156,14 @@ export const getAdminOrderById = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Admin order fetched successfully",
-      data: order
+      data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Order not found" ? 404 : 400;
+    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -166,20 +173,20 @@ export const updateAdminOrder = async (req, res) => {
     const order = await updateAdminOrderStatus(
       req.params.orderId,
       req.body.status,
-      req.body.cancellationReason || ""
+      req.body.cancellationReason || "",
     );
 
     return res.status(200).json({
       success: true,
       message: "Order status updated successfully",
-      data: order
+      data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Order not found" ? 404 : 400;
+    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

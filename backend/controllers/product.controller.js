@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import OrderItem from "../models/OrderItem.js";
 import { createCrudControllers } from "./base.controller.js";
+import { clearRecommendationCache } from "../services/hybridRecommendation.service.js";
 
 const productPopulate = [{ path: "categoryId", select: "name" }];
 
@@ -86,6 +87,10 @@ const list = async (req, res) => {
     const sort = req.query.sort || { createdAt: -1 };
     const filters = buildFilters(req.query);
 
+    if (!req.user || req.user.role !== "admin") {
+      filters.isActive = true;
+    }
+
     const query = Product.find(filters)
       .sort(sort)
       .skip((page - 1) * limit)
@@ -121,9 +126,15 @@ const getById = async (req, res) => {
   try {
     const identifier = req.params.id;
     const objectId = extractObjectId(identifier);
-    const query = objectId
-      ? Product.findById(objectId)
-      : Product.findOne({ slug: createSlug(identifier) });
+    const filters = objectId
+      ? { _id: objectId }
+      : { slug: createSlug(identifier) };
+
+    if (!req.user || req.user.role !== "admin") {
+      filters.isActive = true;
+    }
+
+    const query = Product.findOne(filters);
 
     applyPopulate(query);
     const item = await query;
@@ -148,8 +159,39 @@ const getById = async (req, res) => {
   }
 };
 
+const update = async (req, res) => {
+  try {
+    const item = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Clear cache whenever a product is updated (especially isActive status)
+    clearRecommendationCache();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: item
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 export default {
   ...baseProductController,
   list,
-  getById
+  getById,
+  update
 };

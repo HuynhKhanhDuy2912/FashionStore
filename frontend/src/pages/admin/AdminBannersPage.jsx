@@ -71,7 +71,7 @@ export default function AdminBannersPage() {
           token,
           body: payload
         });
-        toast.success("Đã cập nhật banner");
+        toast.success("Đã cập nhật banner thành công!");
       } else {
         await apiRequest("/banners/admin", {
           method: "POST",
@@ -264,11 +264,10 @@ export default function AdminBannersPage() {
                     onBlur={(event) => handleOrderUpdate(banner._id, event.target.value)}
                   />
                   <button
-                    className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-blue-700 ${
-                      banner.isActive
+                    className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-blue-700 ${banner.isActive
                         ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
                         : "text-gray-600 border-gray-400 hover:bg-gray-600 hover:text-white"
-                    }`}
+                      }`}
                     onClick={() => handleToggleStatus(banner._id)}
                   >
                     {banner.isActive ? "HIỆN" : "ẨN"}

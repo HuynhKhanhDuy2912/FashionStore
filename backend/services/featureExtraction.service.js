@@ -15,7 +15,7 @@ export class ProductFeatureExtractor {
       elegant: 3,
       sporty: 4,
       vintage: 5,
-      smart_casual: 6
+      smart_casual: 6,
     };
 
     this.seasonWeights = {
@@ -23,7 +23,7 @@ export class ProductFeatureExtractor {
       summer: 1,
       autumn: 2,
       winter: 3,
-      all_season: 4
+      all_season: 4,
     };
 
     this.occasionWeights = {
@@ -34,7 +34,7 @@ export class ProductFeatureExtractor {
       travel: 4,
       sport: 5,
       formal: 6,
-      street: 7
+      street: 7,
     };
   }
 
@@ -44,11 +44,10 @@ export class ProductFeatureExtractor {
   buildTfIdfModel(products) {
     this.tfidf = new TfIdf();
 
-    products.forEach(product => {
+    products.forEach((product) => {
       const textFeatures = [
-        ...(product.tags || []),
         product.material || "",
-        product.description || ""
+        product.description || "",
       ].join(" ");
 
       this.tfidf.addDocument(textFeatures.toLowerCase());
@@ -62,21 +61,31 @@ export class ProductFeatureExtractor {
     const features = {};
 
     // 1. Categorical features (one-hot encoding)
-    features.style = this.styleWeights[product.style] || 2;
-    features.gender = product.gender === "male" ? 0 : product.gender === "female" ? 1 : 0.5;
+    // style is now an array — use average weight of all styles
+    const styleArr = Array.isArray(product.style) ? product.style : [product.style || "casual"];
+    const styleValues = styleArr.map(s => this.styleWeights[s] ?? 2);
+    features.style = styleValues.reduce((a, b) => a + b, 0) / styleValues.length;
+    features.gender =
+      product.gender === "male" ? 0 : product.gender === "female" ? 1 : 0.5;
 
     // 2. Season features (multi-hot encoding - average)
     if (product.season && product.season.length > 0) {
-      const seasonValues = product.season.map(s => this.seasonWeights[s] || 0);
-      features.season = seasonValues.reduce((a, b) => a + b, 0) / seasonValues.length;
+      const seasonValues = product.season.map(
+        (s) => this.seasonWeights[s] || 0,
+      );
+      features.season =
+        seasonValues.reduce((a, b) => a + b, 0) / seasonValues.length;
     } else {
       features.season = 4; // all_season default
     }
 
     // 3. Occasion features (multi-hot encoding - average)
     if (product.occasion && product.occasion.length > 0) {
-      const occasionValues = product.occasion.map(o => this.occasionWeights[o] || 0);
-      features.occasion = occasionValues.reduce((a, b) => a + b, 0) / occasionValues.length;
+      const occasionValues = product.occasion.map(
+        (o) => this.occasionWeights[o] || 0,
+      );
+      features.occasion =
+        occasionValues.reduce((a, b) => a + b, 0) / occasionValues.length;
     } else {
       features.occasion = 0; // casual default
     }
@@ -90,9 +99,12 @@ export class ProductFeatureExtractor {
     // 5. Text features (TF-IDF) - lấy top terms
     const tfidfVector = [];
     if (this.tfidf.documents.length > productIndex) {
-      this.tfidf.listTerms(productIndex).slice(0, 10).forEach(item => {
-        tfidfVector.push(item.tfidf);
-      });
+      this.tfidf
+        .listTerms(productIndex)
+        .slice(0, 10)
+        .forEach((item) => {
+          tfidfVector.push(item.tfidf);
+        });
     }
 
     // Pad hoặc truncate về 10 dimensions
@@ -102,7 +114,9 @@ export class ProductFeatureExtractor {
     features.tfidf = tfidfVector.slice(0, 10);
 
     // 6. Category ID (encoded)
-    features.categoryId = product.categoryId ? product.categoryId.toString() : "";
+    features.categoryId = product.categoryId
+      ? product.categoryId.toString()
+      : "";
 
     return features;
   }
@@ -135,7 +149,7 @@ export class ProductFeatureExtractor {
       features.discount,
       features.rating,
       features.popularity,
-      ...features.tfidf
+      ...features.tfidf,
     ];
   }
 
@@ -163,7 +177,7 @@ export class UserProfileBuilder {
       remove_from_cart: -2,
       add_to_wishlist: 3.5,
       remove_from_wishlist: -1.5,
-      purchase: 5
+      purchase: 5,
     };
   }
 
@@ -185,7 +199,7 @@ export class UserProfileBuilder {
     const weightedVectors = [];
     const totalWeight = { value: 0 };
 
-    behaviors.forEach(behavior => {
+    behaviors.forEach((behavior) => {
       const productId = behavior.productId?.toString();
       if (!productId || !productMap.has(productId)) return;
 
@@ -193,7 +207,9 @@ export class UserProfileBuilder {
       const weight = this.actionWeights[behavior.actionType] || 1;
 
       // Apply recency decay (behaviors are sorted by createdAt desc)
-      const daysSinceAction = (Date.now() - new Date(behavior.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceAction =
+        (Date.now() - new Date(behavior.createdAt).getTime()) /
+        (1000 * 60 * 60 * 24);
       const recencyWeight = Math.exp(-daysSinceAction / 30); // Decay over 30 days
 
       const finalWeight = weight * recencyWeight;
@@ -231,7 +247,7 @@ export class UserProfileBuilder {
   extractStylePreferences(behaviors) {
     const styleCounts = {};
 
-    behaviors.forEach(behavior => {
+    behaviors.forEach((behavior) => {
       const style = behavior.metadata?.style;
       if (style) {
         const weight = this.actionWeights[behavior.actionType] || 1;
@@ -250,16 +266,16 @@ export class UserProfileBuilder {
    */
   extractOccasionPreferences(behaviors, products) {
     const occasionCounts = {};
-    const productMap = new Map(products.map(p => [p._id.toString(), p]));
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
-    behaviors.forEach(behavior => {
+    behaviors.forEach((behavior) => {
       const productId = behavior.productId?.toString();
       if (!productId || !productMap.has(productId)) return;
 
       const product = productMap.get(productId);
       const weight = this.actionWeights[behavior.actionType] || 1;
 
-      (product.occasion || []).forEach(occ => {
+      (product.occasion || []).forEach((occ) => {
         occasionCounts[occ] = (occasionCounts[occ] || 0) + weight;
       });
     });

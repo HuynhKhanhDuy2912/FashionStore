@@ -31,6 +31,12 @@ const productSchema = new mongoose.Schema(
       min: 0
     },
 
+    costPrice: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
     discount: {
       type: Number,
       default: 0,
@@ -58,8 +64,7 @@ const productSchema = new mongoose.Schema(
     },
 
     style: {
-      type: String,
-      trim: true,
+      type: [String],
       enum: [
         "minimal",
         "streetwear",
@@ -69,7 +74,7 @@ const productSchema = new mongoose.Schema(
         "vintage",
         "smart_casual"
       ],
-      default: "casual"
+      default: ["casual"]
     },
 
     season: {
@@ -90,11 +95,6 @@ const productSchema = new mongoose.Schema(
     },
 
     videos: {
-      type: [String],
-      default: []
-    },
-
-    tags: {
       type: [String],
       default: []
     },
@@ -124,7 +124,6 @@ productSchema.index({ categoryId: 1, gender: 1, isActive: 1 });
 productSchema.index({ style: 1 });
 productSchema.index({ season: 1 });
 productSchema.index({ occasion: 1 });
-productSchema.index({ tags: 1 });
 productSchema.index({ slug: 1 });
 
 const createSlug = (value = "") =>

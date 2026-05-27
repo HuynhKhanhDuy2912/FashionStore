@@ -26,9 +26,9 @@ const initialForm = {
   categoryId: "",
   gender: "male",
   material: "",
-  style: "casual",
-  season: "all_season",
-  occasion: "casual",
+  style: ["casual"],
+  season: ["all_season"],
+  occasion: ["casual"],
   mainImage: "",
   gallery: [],
   videos: [],
@@ -46,6 +46,66 @@ const initialVariantForm = {
   discount: null,
   images: [],
   mainImage: "",
+};
+
+const styleOptions = [
+  { value: "casual", label: "Thường ngày (Casual)" },
+  { value: "minimal", label: "Tối giản (Minimal)" },
+  { value: "streetwear", label: "Đường phố (Streetwear)" },
+  { value: "elegant", label: "Thanh lịch (Elegant)" },
+  { value: "sporty", label: "Thể thao (Sporty)" },
+  { value: "vintage", label: "Cổ điển (Vintage)" },
+  { value: "smart_casual", label: "Công sở năng động (Smart Casual)" },
+];
+
+const seasonOptions = [
+  { value: "all_season", label: "Tất cả mùa" },
+  { value: "spring", label: "Mùa Xuân" },
+  { value: "summer", label: "Mùa Hạ" },
+  { value: "autumn", label: "Mùa Thu" },
+  { value: "winter", label: "Mùa Đông" },
+];
+
+const occasionOptions = [
+  { value: "casual", label: "Thường ngày" },
+  { value: "work", label: "Đi làm" },
+  { value: "party", label: "Tiệc tùng" },
+  { value: "date", label: "Hẹn hò" },
+  { value: "travel", label: "Du lịch" },
+  { value: "sport", label: "Thể thao" },
+  { value: "formal", label: "Trang trọng" },
+  { value: "street", label: "Dạo phố" },
+];
+
+const MultiSelectTags = ({ options, value = [], onChange }) => {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <label
+          key={opt.value}
+          className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded cursor-pointer border transition-colors ${
+            value.includes(opt.value)
+              ? "bg-black text-white border-black"
+              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-black"
+          }`}
+        >
+          <input
+            type="checkbox"
+            className="hidden"
+            checked={value.includes(opt.value)}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onChange([...value, opt.value]);
+              } else {
+                onChange(value.filter((v) => v !== opt.value));
+              }
+            }}
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  );
 };
 
 export default function AdminProductAddPage() {
@@ -128,9 +188,9 @@ export default function AdminProductAddPage() {
             categoryId: catId,
             gender: p.gender || "male",
             material: p.material || "",
-            style: p.style || "casual",
-            season: p.season?.[0] || "all_season",
-            occasion: p.occasion?.[0] || "casual",
+            style: Array.isArray(p.style) ? p.style : (p.style ? [p.style] : []),
+            season: p.season || [],
+            occasion: p.occasion || [],
             mainImage: mainGalleryImg,
             gallery: [],
             videos: p.videos || [],
@@ -168,13 +228,14 @@ export default function AdminProductAddPage() {
         name: form.name,
         description: form.description,
         price: Number(form.price),
+        costPrice: Number(form.costPrice) || 0,
         discount: Number(form.discount),
         categoryId: form.categoryId,
         gender: form.gender,
         material: form.material,
         style: form.style,
-        season: [form.season],
-        occasion: [form.occasion],
+        season: form.season,
+        occasion: form.occasion,
         images: form.mainImage ? [form.mainImage] : [],
         videos: form.videos || [],
       };
@@ -396,7 +457,7 @@ export default function AdminProductAddPage() {
           token,
           body: { ...baseBody, size: sizes[0] },
         });
-        toast.success("Đã cập nhật biến thể");
+        toast.success("Đã cập nhật biến thể thành công!");
 
         // Fix 3: đồng bộ gallery khi update biến thể có ảnh mới
         // tránh tạo ảnh trùng lặp trong gallery
@@ -539,9 +600,10 @@ export default function AdminProductAddPage() {
   const handleCloneVariant = (v) => {
     setEditingVariantId("");
     setVariantForm({
-      size: "",
+      size: v.size || "",
       color: v.color,
       stock: v.stock || 0,
+      costPrice: v.costPrice || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
       discount: v.discount ?? null,
       images: v.image ? [v.image] : [],
@@ -868,7 +930,7 @@ export default function AdminProductAddPage() {
                         <span className="text-sm font-bold text-black">
                           {Math.round(
                             Number(form.price) *
-                              (1 - Number(form.discount) / 100),
+                            (1 - Number(form.discount) / 100),
                           ).toLocaleString("vi-VN")}
                           ₫
                         </span>
@@ -887,43 +949,30 @@ export default function AdminProductAddPage() {
                   </h2>
                 </div>
               </div>
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid gap-6 mt-2">
                 <label className={labelCls}>
                   Phong cách
-                  <select className={inputCls} {...field("style")}>
-                    <option value="casual">Thường ngày (Casual)</option>
-                    <option value="minimal">Tối giản (Minimal)</option>
-                    <option value="streetwear">Đường phố (Streetwear)</option>
-                    <option value="elegant">Thanh lịch (Elegant)</option>
-                    <option value="sporty">Thể thao (Sporty)</option>
-                    <option value="vintage">Cổ điển (Vintage)</option>
-                    <option value="smart_casual">
-                      Công sở năng động (Smart Casual)
-                    </option>
-                  </select>
+                  <MultiSelectTags
+                    options={styleOptions}
+                    value={form.style}
+                    onChange={(val) => setForm((c) => ({ ...c, style: val }))}
+                  />
                 </label>
                 <label className={labelCls}>
                   Mùa
-                  <select className={inputCls} {...field("season")}>
-                    <option value="all_season">Tất cả mùa</option>
-                    <option value="spring">Mùa Xuân</option>
-                    <option value="summer">Mùa Hạ</option>
-                    <option value="autumn">Mùa Thu</option>
-                    <option value="winter">Mùa Đông</option>
-                  </select>
+                  <MultiSelectTags
+                    options={seasonOptions}
+                    value={form.season}
+                    onChange={(val) => setForm((c) => ({ ...c, season: val }))}
+                  />
                 </label>
                 <label className={labelCls}>
                   Dịp mặc
-                  <select className={inputCls} {...field("occasion")}>
-                    <option value="casual">Thường ngày</option>
-                    <option value="work">Đi làm</option>
-                    <option value="party">Tiệc tùng</option>
-                    <option value="date">Hẹn hò</option>
-                    <option value="travel">Du lịch</option>
-                    <option value="sport">Thể thao</option>
-                    <option value="formal">Trang trọng</option>
-                    <option value="street">Dạo phố</option>
-                  </select>
+                  <MultiSelectTags
+                    options={occasionOptions}
+                    value={form.occasion}
+                    onChange={(val) => setForm((c) => ({ ...c, occasion: val }))}
+                  />
                 </label>
               </div>
             </div>
@@ -1150,7 +1199,6 @@ export default function AdminProductAddPage() {
                     className={inputCls}
                     placeholder="S, M, L..."
                     {...vField("size")}
-                    disabled={!!editingVariantId}
                   />
                 </label>
 
@@ -1183,7 +1231,14 @@ export default function AdminProductAddPage() {
                     className={inputCls}
                     type="number"
                     min="0"
-                    {...vField("stock")}
+                    placeholder="0"
+                    value={variantForm.stock || ""}
+                    onChange={(e) =>
+                      setVariantForm((c) => ({
+                        ...c,
+                        stock: e.target.value === "" ? 0 : Number(e.target.value),
+                      }))
+                    }
                   />
                 </label>
 
@@ -1196,6 +1251,13 @@ export default function AdminProductAddPage() {
                     step="1000"
                     placeholder={form.costPrice || "Giá nhập sản phẩm"}
                     {...vField("costPrice")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab" && (variantForm.costPrice === "" || variantForm.costPrice == null)) {
+                        if (form.costPrice) {
+                          setVariantForm((c) => ({ ...c, costPrice: form.costPrice }));
+                        }
+                      }
+                    }}
                   />
                 </label>
 
@@ -1207,6 +1269,13 @@ export default function AdminProductAddPage() {
                     type="number"
                     {...vField("price")}
                     placeholder={form.price ? `${form.price}` : "0"}
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab" && (variantForm.price === "" || variantForm.price == null)) {
+                        if (form.price) {
+                          setVariantForm((c) => ({ ...c, price: form.price }));
+                        }
+                      }
+                    }}
                   />
                 </label>
 
@@ -1337,7 +1406,7 @@ export default function AdminProductAddPage() {
                               const variantDiscount = v.discount;
                               const effectiveDiscount =
                                 variantDiscount !== null &&
-                                variantDiscount !== undefined
+                                  variantDiscount !== undefined
                                   ? Number(variantDiscount)
                                   : productDiscount;
 
@@ -1373,14 +1442,14 @@ export default function AdminProductAddPage() {
                               const variantDiscount = v.discount;
                               const effectiveDiscount =
                                 variantDiscount !== null &&
-                                variantDiscount !== undefined
+                                  variantDiscount !== undefined
                                   ? Number(variantDiscount)
                                   : productDiscount;
                               const final =
                                 effectiveDiscount > 0
                                   ? Math.round(
-                                      base * (1 - effectiveDiscount / 100),
-                                    )
+                                    base * (1 - effectiveDiscount / 100),
+                                  )
                                   : base;
                               return final.toLocaleString("vi-VN");
                             })()}

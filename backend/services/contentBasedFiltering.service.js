@@ -205,7 +205,7 @@ export class DiversityHelper {
 
     for (const item of sorted) {
       const categoryId = item.product.categoryId?.toString() || "unknown";
-      const style = item.product.style || "unknown";
+      const style = (Array.isArray(item.product.style) ? item.product.style[0] : item.product.style) || "unknown";
 
       const catCount = categoryCount[categoryId] || 0;
       const styCount = styleCount[style] || 0;
@@ -296,8 +296,10 @@ export class DiversityHelper {
     }
     factors++;
 
-    // Same style
-    if (productA.style === productB.style) {
+    // Same style (check overlap for arrays)
+    const stylesA = Array.isArray(productA.style) ? productA.style : [productA.style || "casual"];
+    const stylesB = Array.isArray(productB.style) ? productB.style : [productB.style || "casual"];
+    if (stylesA.some(s => stylesB.includes(s))) {
       similarity += 0.3;
     }
     factors++;

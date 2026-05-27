@@ -1,5 +1,6 @@
 import Wishlist from "../models/Wishlist.js";
 import { createCrudControllers } from "./base.controller.js";
+import { enrichProducts } from "./recommendation.controller.js";
 
 const baseWishlistController = createCrudControllers(Wishlist, {
   modelName: "Wishlist",
@@ -77,9 +78,23 @@ export const removeWishlistItemByProduct = async (req, res) => {
 
 export const getMyWishlistSummary = async (req, res) => {
   try {
-    const items = await Wishlist.find({ userId: req.user._id })
+    let items = await Wishlist.find({ userId: req.user._id })
       .sort({ createdAt: -1 })
-      .populate("productId", "name slug price discount style averageRating gender occasion images tags");
+      .populate("productId", "name slug price discount style averageRating gender occasion images")
+      .lean();
+
+    const products = items.map(item => item.productId).filter(Boolean);
+    const enrichedProducts = await enrichProducts(products);
+
+    items = items.map(item => {
+      if (item.productId) {
+        const enriched = enrichedProducts.find(p => p._id.toString() === item.productId._id.toString());
+        if (enriched) {
+          item.productId = enriched;
+        }
+      }
+      return item;
+    });
 
     return res.status(200).json({
       success: true,

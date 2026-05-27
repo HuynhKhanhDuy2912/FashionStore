@@ -70,7 +70,7 @@ export default function AdminProductsPage() {
           token,
           body: buildPayload(),
         });
-        setMessage("Đã cập nhật sản phẩm");
+        setMessage("Đã cập nhật sản phẩm thành công!");
       } else {
         await apiRequest("/products", {
           method: "POST",

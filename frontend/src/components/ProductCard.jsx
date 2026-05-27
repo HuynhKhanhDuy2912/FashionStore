@@ -121,9 +121,9 @@ export default function ProductCard({
           }}
         >
           <div className="flex h-full items-center justify-center gap-3">
-            {product.collectionName || product.collectionId?.name || product.tags?.[0] ? (
+            {product.collectionName || product.collectionId?.name ? (
               <p className="mr-auto text-[15px] font-semibold leading-4 text-red-600">
-                {product.collectionName || product.collectionId?.name || product.tags?.[0]}
+                {product.collectionName || product.collectionId?.name}
               </p>
             ) : null}
             {onAddToCart ? (

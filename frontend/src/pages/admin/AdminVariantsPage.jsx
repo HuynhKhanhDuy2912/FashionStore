@@ -56,7 +56,7 @@ export default function AdminVariantsPage() {
           token,
           body: payload,
         });
-        setMessage("Đã cập nhật biến thể");
+        setMessage("Đã cập nhật biến thể thành công!");
       } else {
         await apiRequest("/product-variants", {
           method: "POST",

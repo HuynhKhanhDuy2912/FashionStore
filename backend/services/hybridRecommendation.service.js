@@ -209,7 +209,9 @@ class HybridRecommendationEngine {
 
       // Check similarity
       const isSameCategory = behaviorProduct.categoryId?.toString() === product.categoryId?.toString();
-      const isSameStyle = behaviorProduct.style === product.style;
+      const bStyles = Array.isArray(behaviorProduct.style) ? behaviorProduct.style : [behaviorProduct.style];
+      const pStyles = Array.isArray(product.style) ? product.style : [product.style];
+      const isSameStyle = bStyles.some(s => pStyles.includes(s));
       const hasOccasionOverlap = (behaviorProduct.occasion || []).some(o =>
         (product.occasion || []).includes(o)
       );
@@ -271,7 +273,9 @@ class HybridRecommendationEngine {
         if (product.categoryId?.toString() === targetProduct.categoryId?.toString()) {
           boost += 0.2;
         }
-        if (product.style === targetProduct.style) {
+        const tStyles = Array.isArray(targetProduct.style) ? targetProduct.style : [targetProduct.style];
+        const pStyles = Array.isArray(product.style) ? product.style : [product.style];
+        if (tStyles.some(s => pStyles.includes(s))) {
           boost += 0.15;
         }
 

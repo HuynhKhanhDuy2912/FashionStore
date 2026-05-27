@@ -18,6 +18,8 @@ import {
   Edit2,
   Trash2,
   TriangleAlert,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -73,6 +75,26 @@ export default function AdminProductListPage() {
       await apiRequest(`/products/${product._id}`, { method: "DELETE", token });
       toast.success(`Đã xóa sản phẩm "${product.name}" thành công!`);
       setDeleteConfirm(null);
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleToggleActive = async (product) => {
+    try {
+      await apiRequest(`/products/${product._id}`, {
+        method: "PUT",
+        token,
+        body: { isActive: !product.isActive },
+      });
+      setProducts((prev) =>
+        prev.map((p) =>
+          p._id === product._id ? { ...p, isActive: !product.isActive } : p
+        )
+      );
+      toast.success(
+        `Đã ${product.isActive ? "ẩn" : "hiển thị"} sản phẩm "${product.name}"`
+      );
     } catch (e) {
       toast.error(e.message);
     }
@@ -265,11 +287,10 @@ export default function AdminProductListPage() {
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${
-              showFilters
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${showFilters
                 ? "border-black bg-gray-100 text-black"
                 : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <SlidersHorizontal size={16} />
             Bộ lọc
@@ -399,7 +420,7 @@ export default function AdminProductListPage() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[1200px]">
-            <div className="grid grid-cols-[80px_1fr_200px_140px_120px_100px_140px] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3">
+            <div className="grid grid-cols-[80px_1fr_200px_140px_120px_100px_200px] gap-4 border-b border-gray-200 bg-gray-50 px-5 py-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
                 Ảnh
               </span>
@@ -445,13 +466,17 @@ export default function AdminProductListPage() {
                     0,
                   );
                   const isOutOfStock = totalStock === 0;
+                  const maxDiscount = Math.max(
+                    product.discount || 0,
+                    ...(product.variants || []).map(v => (v.discount != null ? v.discount : (product.discount || 0)))
+                  );
 
                   return (
                     <div
                       key={product._id}
-                      className="grid items-center grid-cols-[80px_1fr_200px_140px_120px_100px_140px] gap-4 px-5 py-4 transition hover:bg-gray-50"
+                      className={`grid items-center grid-cols-[80px_1fr_200px_140px_120px_100px_200px] gap-4 px-5 py-4 transition hover:bg-gray-50 ${!product.isActive ? "bg-gray-50/50" : ""}`}
                     >
-                      <div className="relative h-16 w-16 overflow-hidden rounded border border-gray-200 bg-gray-100">
+                      <div className={`relative h-16 w-16 overflow-hidden rounded border border-gray-200 bg-gray-100 ${!product.isActive ? "opacity-50 grayscale" : ""}`}>
                         {product.images?.[0] ? (
                           <img
                             src={product.images[0]}
@@ -475,10 +500,13 @@ export default function AdminProductListPage() {
                       <div className="flex flex-col justify-center">
                         <strong className="mb-1 line-clamp-1 text-sm text-gray-900">
                           {product.name}
+                          {!product.isActive && (
+                            <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">ĐÃ ẨN</span>
+                          )}
                         </strong>
                         <div className="flex flex-wrap gap-2">
                           <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-                            {product.style || "N/A"}
+                            {Array.isArray(product.style) ? product.style.join(", ") : (product.style || "N/A")}
                           </span>
                           <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-600">
                             {product.gender === "female" ? "Nữ" : "Nam"}
@@ -539,11 +567,11 @@ export default function AdminProductListPage() {
                         <span className="text-sm font-bold text-gray-900">
                           {Number(product.price).toLocaleString("vi-VN")}₫
                         </span>
-                        {product.discount > 0 && (
+                        {maxDiscount > 0 && (
                           <span className="text-xs font-semibold text-green-600">
                             Sau giảm:{" "}
                             {Math.round(
-                              product.price * (1 - product.discount / 100),
+                              product.price * (1 - maxDiscount / 100),
                             ).toLocaleString("vi-VN")}
                             ₫
                           </span>
@@ -551,9 +579,9 @@ export default function AdminProductListPage() {
                       </div>
 
                       <div className="flex items-center justify-center">
-                        {product.discount > 0 ? (
+                        {maxDiscount > 0 ? (
                           <span className="rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-600">
-                            -{product.discount}%
+                            {maxDiscount !== (product.discount || 0) ? `${maxDiscount}%` : `-${maxDiscount}%`}
                           </span>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -561,6 +589,21 @@ export default function AdminProductListPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <button
+                          title={product.isActive ? "Ẩn sản phẩm" : "Hiện sản phẩm"}
+                          className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-white transition ${
+                            product.isActive 
+                              ? "bg-gray-500 border-gray-500 hover:bg-gray-600"
+                              : "bg-green-600 border-green-600 hover:bg-green-700"
+                          }`}
+                          onClick={() => handleToggleActive(product)}
+                        >
+                          {product.isActive ? (
+                            <><EyeOff size={12} /> Ẩn</>
+                          ) : (
+                            <><Eye size={12} /> Hiện</>
+                          )}
+                        </button>
                         <button
                           className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                           onClick={() =>

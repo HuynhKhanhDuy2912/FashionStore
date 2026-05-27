@@ -8,14 +8,18 @@ import Review from "../models/Review.js";
 import { createNotificationForAdmins } from "./notification.service.js";
 import { createTransaction } from "./inventory.service.js";
 
-const ORDER_POPULATE = [
-  { path: "userId", select: "username email fullname" }
-];
+const ORDER_POPULATE = [{ path: "userId", select: "username email fullname" }];
 
 const populateOrder = (query) => query.populate(ORDER_POPULATE);
 
 export const createOrderFromCart = async (user, body) => {
-  const { shippingAddress, receiverName, receiverPhone, note, paymentMethod = "cod" } = body;
+  const {
+    shippingAddress,
+    receiverName,
+    receiverPhone,
+    note,
+    paymentMethod = "cod",
+  } = body;
   const requestedItemIds = Array.isArray(body.cartItemIds)
     ? body.cartItemIds
     : Array.isArray(body.selectedItemIds)
@@ -41,7 +45,10 @@ export const createOrderFromCart = async (user, body) => {
 
   const cartItems = await CartItem.find(cartItemQuery)
     .populate("productId", "name price discount")
-    .populate("variantId", "size color sku stock priceAdjustment discount isActive");
+    .populate(
+      "variantId",
+      "size color sku stock priceAdjustment discount isActive",
+    );
 
   if (cartItems.length === 0) throw new Error("Cart is empty");
   if (selectedItemIds.length && cartItems.length !== selectedItemIds.length) {
@@ -50,8 +57,12 @@ export const createOrderFromCart = async (user, body) => {
 
   // Validate stock
   for (const item of cartItems) {
-    if (!item.variantId?.isActive) throw new Error(`Variant for ${item.productId?.name} is no longer available`);
-    if (item.variantId.stock < item.quantity) throw new Error(`Not enough stock for ${item.productId?.name}`);
+    if (!item.variantId?.isActive)
+      throw new Error(
+        `Variant for ${item.productId?.name} is no longer available`,
+      );
+    if (item.variantId.stock < item.quantity)
+      throw new Error(`Not enough stock for ${item.productId?.name}`);
   }
 
   // Calculate totals
@@ -60,9 +71,10 @@ export const createOrderFromCart = async (user, body) => {
     const basePrice = item.productId?.price || 0;
     const productDiscount = item.productId?.discount || 0;
     const variantDiscount = item.variantId?.discount;
-    const discount = (variantDiscount !== null && variantDiscount !== undefined)
-      ? variantDiscount
-      : productDiscount;
+    const discount =
+      variantDiscount !== null && variantDiscount !== undefined
+        ? variantDiscount
+        : productDiscount;
     const discounted = basePrice - (basePrice * discount) / 100;
     const adj = item.variantId?.priceAdjustment || 0;
     const unitPrice = Math.round(Math.max(discounted + adj, 0));
@@ -72,13 +84,18 @@ export const createOrderFromCart = async (user, body) => {
       productId: item.productId._id,
       variantId: item.variantId._id,
       quantity: item.quantity,
-      price: unitPrice
+      price: unitPrice,
     };
   });
 
   // Receive shipping fee from frontend, with fallback to 0 (>= 999k) or 30k
   const providedShippingFee = body.shippingFee;
-  const shippingFee = providedShippingFee !== undefined ? Number(providedShippingFee) : (subTotal >= 999000 ? 0 : 30000);
+  const shippingFee =
+    providedShippingFee !== undefined
+      ? Number(providedShippingFee)
+      : subTotal >= 999000
+        ? 0
+        : 30000;
   const totalPrice = subTotal + shippingFee;
 
   const order = await Order.create({
@@ -93,17 +110,19 @@ export const createOrderFromCart = async (user, body) => {
     shippingAddress,
     receiverName,
     receiverPhone,
-    note: note || ""
+    note: note || "",
   });
 
-  await OrderItem.insertMany(orderItemsData.map((d) => ({ ...d, orderId: order._id })));
+  await OrderItem.insertMany(
+    orderItemsData.map((d) => ({ ...d, orderId: order._id })),
+  );
 
   await Payment.create({
     orderId: order._id,
     userId: user._id,
     amount: totalPrice,
     paymentMethod,
-    paymentStatus: "pending"
+    paymentStatus: "pending",
   });
 
   // KHÔNG trừ stock ngay - chỉ trừ khi đơn hàng được xác nhận (confirmed)
@@ -113,7 +132,7 @@ export const createOrderFromCart = async (user, body) => {
   await CartItem.deleteMany(
     selectedItemIds.length
       ? { cartId: cart._id, _id: { $in: selectedItemIds } }
-      : { cartId: cart._id }
+      : { cartId: cart._id },
   );
 
   await createNotificationForAdmins("order", {
@@ -121,14 +140,16 @@ export const createOrderFromCart = async (user, body) => {
     orderNumber: order._id.toString().slice(-8).toUpperCase(),
     customerName: user.fullname || user.username || "Khách hàng",
     totalPrice,
-    userName: user.fullname || user.username || "Khách hàng"
+    userName: user.fullname || user.username || "Khách hàng",
   });
 
   return populateOrder(Order.findById(order._id));
 };
 
 export const getMyOrders = async (userId) => {
-  const orders = await Order.find({ userId }).sort({ createdAt: -1 }).populate(ORDER_POPULATE);
+  const orders = await Order.find({ userId })
+    .sort({ createdAt: -1 })
+    .populate(ORDER_POPULATE);
 
   const ordersWithItems = await Promise.all(
     orders.map(async (order) => {
@@ -139,38 +160,49 @@ export const getMyOrders = async (userId) => {
       if (order.status !== "completed") {
         const itemsWithReviewFlag = items.map((item) => ({
           ...item.toObject(),
-          isReviewed: false
+          isReviewed: false,
         }));
         return { ...order.toObject(), items: itemsWithReviewFlag };
       }
 
-      const productIds = [...new Set(items.map((item) => item.productId?._id?.toString()).filter(Boolean))];
+      const productIds = [
+        ...new Set(
+          items.map((item) => item.productId?._id?.toString()).filter(Boolean),
+        ),
+      ];
       const reviewedRecords = await Review.find({
         userId,
         orderId: order._id,
-        productId: { $in: productIds }
+        productId: { $in: productIds },
       }).select("productId");
 
-      const reviewedProductIds = new Set(reviewedRecords.map((review) => review.productId.toString()));
+      const reviewedProductIds = new Set(
+        reviewedRecords.map((review) => review.productId.toString()),
+      );
       const itemsWithReviewFlag = items.map((item) => ({
         ...item.toObject(),
-        isReviewed: reviewedProductIds.has(item.productId?._id?.toString())
+        isReviewed: reviewedProductIds.has(item.productId?._id?.toString()),
       }));
 
       return { ...order.toObject(), items: itemsWithReviewFlag };
-    })
+    }),
   );
 
   return ordersWithItems;
 };
 
 export const getOrderDetail = async (userId, orderId) => {
-  const order = await Order.findOne({ _id: orderId, userId }).populate(ORDER_POPULATE);
-  if (!order) throw new Error("Order not found");
+  const order = await Order.findOne({ _id: orderId, userId }).populate(
+    ORDER_POPULATE,
+  );
+  if (!order) throw new Error("Khôn tìm thấy đơn hàng!");
 
   const items = await OrderItem.find({ orderId })
     .populate("productId", "name price discount images")
-    .populate("variantId", "size color sku image stock priceAdjustment discount");
+    .populate(
+      "variantId",
+      "size color sku image stock priceAdjustment discount",
+    );
 
   return { ...order.toObject(), items };
 };
@@ -180,7 +212,7 @@ export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
   if (!reason) throw new Error("Cancellation reason is required");
 
   const order = await Order.findOne({ _id: orderId, userId });
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new Error("Khôn tìm thấy đơn hàng!");
   if (!["pending", "confirmed"].includes(order.status)) {
     throw new Error("Cannot cancel order at this stage");
   }
@@ -201,11 +233,11 @@ export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
         newStock: variant.stock + item.quantity,
         reason: "Hoàn trả từ đơn hàng bị hủy bởi khách hàng",
         orderId: orderId,
-        createdBy: userId
+        createdBy: userId,
       });
 
       await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: item.quantity }
+        $inc: { stock: item.quantity },
       });
     }
   }
@@ -224,7 +256,7 @@ export { getAdminDashboardStats } from "./dashboard.service.js";
 
 export const getAdminOrderDetail = async (orderId) => {
   const order = await Order.findById(orderId).populate(ORDER_POPULATE);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new Error("Khôn tìm thấy đơn hàng!");
 
   const items = await OrderItem.find({ orderId })
     .populate("productId", "name price images")
@@ -235,7 +267,7 @@ export const getAdminOrderDetail = async (orderId) => {
 
 export const markOrderAsReceivedByUser = async (userId, orderId) => {
   const order = await Order.findOne({ _id: orderId, userId });
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new Error("Khôn tìm thấy đơn hàng!");
   if (order.status !== "shipping") {
     throw new Error("Only shipping orders can be marked as received");
   }
@@ -247,7 +279,7 @@ export const markOrderAsReceivedByUser = async (userId, orderId) => {
     order.paymentStatus = "paid";
     await Payment.findOneAndUpdate(
       { orderId: order._id },
-      { paymentStatus: "paid", paidAt: new Date() }
+      { paymentStatus: "paid", paidAt: new Date() },
     );
   }
 
@@ -255,15 +287,26 @@ export const markOrderAsReceivedByUser = async (userId, orderId) => {
   return order;
 };
 
-export const updateAdminOrderStatus = async (orderId, status, cancellationReason = "") => {
-  const validStatuses = ["pending", "confirmed", "shipping", "completed", "cancelled"];
+export const updateAdminOrderStatus = async (
+  orderId,
+  status,
+  cancellationReason = "",
+) => {
+  const validStatuses = [
+    "pending",
+    "confirmed",
+    "shipping",
+    "completed",
+    "cancelled",
+  ];
   if (!validStatuses.includes(status)) throw new Error("Invalid status");
 
   const reason = cancellationReason.trim();
-  if (status === "cancelled" && !reason) throw new Error("Cancellation reason is required");
+  if (status === "cancelled" && !reason)
+    throw new Error("Cancellation reason is required");
 
   const order = await Order.findById(orderId);
-  if (!order) throw new Error("Order not found");
+  if (!order) throw new Error("Khôn tìm thấy đơn hàng!");
 
   const previousStatus = order.status;
 
@@ -273,7 +316,7 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
     confirmed: ["shipping", "cancelled"],
     shipping: ["completed"],
     completed: [],
-    cancelled: []
+    cancelled: [],
   };
 
   if (!allowedTransitions[previousStatus]?.includes(status)) {
@@ -300,11 +343,11 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
         newStock: variant.stock - item.quantity,
         reason: "Xuất kho cho đơn hàng",
         orderId: orderId,
-        createdBy: order.userId
+        createdBy: order.userId,
       });
 
       await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: -item.quantity }
+        $inc: { stock: -item.quantity },
       });
     }
   }
@@ -325,11 +368,11 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
         newStock: variant.stock + item.quantity,
         reason: "Hoàn trả từ đơn hàng bị hủy",
         orderId: orderId,
-        createdBy: order.userId
+        createdBy: order.userId,
       });
 
       await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: item.quantity }
+        $inc: { stock: item.quantity },
       });
     }
   }
@@ -356,7 +399,7 @@ export const updateAdminOrderStatus = async (orderId, status, cancellationReason
     order.paymentStatus = "paid";
     await Payment.findOneAndUpdate(
       { orderId: order._id },
-      { paymentStatus: "paid", paidAt: new Date() }
+      { paymentStatus: "paid", paidAt: new Date() },
     );
   }
 
