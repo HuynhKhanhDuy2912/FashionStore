@@ -57,7 +57,7 @@ export default function AdminInventoryPage() {
     try {
       setLoading(true);
       const [inventoryRes, statsRes] = await Promise.all([
-        apiRequest("/inventory", { token }),
+        apiRequest("/inventory?limit=10000", { token }),
         apiRequest("/inventory/stats", { token }),
       ]);
       setInventory(inventoryRes.data || []);
@@ -99,11 +99,11 @@ export default function AdminInventoryPage() {
     }
 
     if (stockFilter === "in-stock") {
-      filtered = filtered.filter((item) => item.stock > 10);
+      filtered = filtered.filter((item) => (item.stock || 0) > 10);
     } else if (stockFilter === "low-stock") {
-      filtered = filtered.filter((item) => item.stock > 0 && item.stock <= 10);
+      filtered = filtered.filter((item) => (item.stock || 0) > 0 && (item.stock || 0) <= 10);
     } else if (stockFilter === "out-of-stock") {
-      filtered = filtered.filter((item) => item.stock === 0);
+      filtered = filtered.filter((item) => (item.stock || 0) === 0);
     }
 
     filtered.sort((a, b) => {

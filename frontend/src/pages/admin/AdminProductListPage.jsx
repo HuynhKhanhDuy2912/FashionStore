@@ -7,21 +7,31 @@ import { sortVariantsBySize } from "../../lib/sizes.js";
 import {
   Plus,
   Search,
-  Filter,
   X,
   Package,
   TrendingUp,
   Tag,
   Grid3x3,
   SlidersHorizontal,
-  ChevronDown,
   Edit2,
   Trash2,
   TriangleAlert,
   Eye,
   EyeOff,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
+
+const styleLabels = {
+  casual: "Thường ngày (Casual)",
+  minimal: "Tối giản (Minimal)",
+  streetwear: "Đường phố (Streetwear)",
+  elegant: "Thanh lịch (Elegant)",
+  sporty: "Thể thao (Sporty)",
+  vintage: "Cổ điển (Vintage)",
+  smart_casual: "Công sở năng động (Smart Casual)",
+};
 
 export default function AdminProductListPage() {
   const { token } = useAuth();
@@ -36,6 +46,8 @@ export default function AdminProductListPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const loadProducts = async () => {
     try {
@@ -101,7 +113,14 @@ export default function AdminProductListPage() {
   };
 
   const styles = useMemo(() => {
-    const styleSet = new Set(products.map((p) => p.style).filter(Boolean));
+    const styleSet = new Set();
+    products.forEach((p) => {
+      if (Array.isArray(p.style)) {
+        p.style.forEach((s) => s && styleSet.add(s));
+      } else if (p.style) {
+        styleSet.add(p.style);
+      }
+    });
     return Array.from(styleSet).sort();
   }, [products]);
 
@@ -114,7 +133,11 @@ export default function AdminProductListPage() {
 
       const categoryMatch =
         categoryFilter === "all" || p.categoryId?._id === categoryFilter;
-      const styleMatch = styleFilter === "all" || p.style === styleFilter;
+      const styleMatch =
+        styleFilter === "all" ||
+        (Array.isArray(p.style)
+          ? p.style.includes(styleFilter)
+          : p.style === styleFilter);
       const genderMatch = genderFilter === "all" || p.gender === genderFilter;
       const discountMatch =
         discountFilter === "all" ||
@@ -162,6 +185,17 @@ export default function AdminProductListPage() {
     sortBy,
   ]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, categoryFilter, styleFilter, genderFilter, discountFilter, sortBy]);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSorted.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSorted, currentPage]);
+
+  const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
+
   const stats = useMemo(() => {
     const totalVariants = products.reduce(
       (sum, p) => sum + (p.variants?.length || 0),
@@ -197,7 +231,7 @@ export default function AdminProductListPage() {
   const inputClass =
     "w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600";
   const selectClass =
-    "rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600";
+    "w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-600";
 
   return (
     <section className="grid gap-4 p-6">
@@ -288,8 +322,8 @@ export default function AdminProductListPage() {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${showFilters
-                ? "border-black bg-gray-100 text-black"
-                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              ? "border-black bg-gray-100 text-black"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
           >
             <SlidersHorizontal size={16} />
@@ -356,7 +390,7 @@ export default function AdminProductListPage() {
                 <option value="all">Tất cả phong cách</option>
                 {styles.map((style) => (
                   <option key={style} value={style}>
-                    {style}
+                    {styleLabels[style] || style}
                   </option>
                 ))}
               </select>
@@ -412,9 +446,9 @@ export default function AdminProductListPage() {
           <p className="text-sm text-gray-600">
             Hiển thị{" "}
             <span className="font-bold text-gray-900">
-              {filteredAndSorted.length}
+              {paginatedProducts.length}
             </span>{" "}
-            / {products.length} sản phẩm
+            / {filteredAndSorted.length} sản phẩm
           </p>
         </div>
 
@@ -445,7 +479,7 @@ export default function AdminProductListPage() {
             </div>
 
             <div className="divide-y divide-gray-200">
-              {filteredAndSorted.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Package size={48} className="mb-3 text-gray-300" />
                   <p className="text-sm font-medium text-gray-600">
@@ -460,7 +494,7 @@ export default function AdminProductListPage() {
                   </p>
                 </div>
               ) : (
-                filteredAndSorted.map((product) => {
+                paginatedProducts.map((product) => {
                   const totalStock = (product.variants || []).reduce(
                     (sum, v) => sum + (v.stock || 0),
                     0,
@@ -536,14 +570,17 @@ export default function AdminProductListPage() {
                                     <span className="font-medium">
                                       {color}:
                                     </span>{" "}
-                                    {sortedVariants.map((v, idx) => (
-                                      <span key={idx}>
-                                        {v.size}({v.stock || 0})
-                                        {idx < sortedVariants.length - 1
-                                          ? ", "
-                                          : ""}
-                                      </span>
-                                    ))}
+                                    {sortedVariants.map((v, idx) => {
+                                      const isVariantOutOfStock = (v.stock || 0) === 0;
+                                      return (
+                                        <span key={idx}>
+                                          <span className={isVariantOutOfStock ? "text-red-600 font-bold" : ""}>
+                                            {v.size}({v.stock || 0})
+                                          </span>
+                                          {idx < sortedVariants.length - 1 ? ", " : ""}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
                                 );
                               },
@@ -591,11 +628,10 @@ export default function AdminProductListPage() {
                       <div className="flex items-center gap-2">
                         <button
                           title={product.isActive ? "Ẩn sản phẩm" : "Hiện sản phẩm"}
-                          className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-white transition ${
-                            product.isActive 
-                              ? "bg-gray-500 border-gray-500 hover:bg-gray-600"
-                              : "bg-green-600 border-green-600 hover:bg-green-700"
-                          }`}
+                          className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-white transition ${product.isActive
+                            ? "bg-gray-500 border-gray-500 hover:bg-gray-600"
+                            : "bg-green-600 border-green-600 hover:bg-green-700"
+                            }`}
                           onClick={() => handleToggleActive(product)}
                         >
                           {product.isActive ? (
@@ -628,6 +664,58 @@ export default function AdminProductListPage() {
             </div>
           </div>
         </div>
+
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+            <span className="text-sm text-gray-500">
+              Trang {currentPage} / {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                  .map((page, index, array) => {
+                    // Render ellipsis if there is a gap
+                    if (index > 0 && page - array[index - 1] > 1) {
+                      return (
+                        <span key={`ellipsis-${page}`} className="px-1 text-gray-400">...</span>
+                      );
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`h-8 w-8 rounded text-sm font-medium ${currentPage === page
+                          ? "bg-black text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-100"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })
+                }
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {deleteConfirm && (

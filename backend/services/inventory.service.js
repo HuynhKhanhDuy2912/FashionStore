@@ -283,7 +283,7 @@ export const getInventoryStats = async () => {
     outOfStockCount,
     inventoryValueAgg
   ] = await Promise.all([
-    ProductVariant.countDocuments({ isActive: true, stock: { $gt: 0 } }),
+    ProductVariant.countDocuments({ isActive: true }),
     ProductVariant.countDocuments({ isActive: true, stock: { $lte: 10, $gt: 0 } }),
     ProductVariant.countDocuments({ isActive: true, stock: 0 }),
     ProductVariant.aggregate([

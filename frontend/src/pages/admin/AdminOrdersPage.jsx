@@ -334,11 +334,10 @@ export default function AdminOrdersPage() {
           <button
             type="button"
             onClick={() => setShowFilters((prev) => !prev)}
-            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${
-              showFilters
-                ? "border-black bg-gray-100 text-black"
-                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${showFilters
+              ? "border-black bg-gray-100 text-black"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
             Bộ lọc
@@ -463,8 +462,8 @@ export default function AdminOrdersPage() {
                 </tr>
               ) : filteredOrders.length === 0 ? (
                 <tr>
-                  <td className="px-6 py-8 text-sm text-gray-500" colSpan={8}>
-                    Không có đơn hàng phù hợp.
+                  <td className="px-6 py-8 text-sm text-gray-500 text-center" colSpan={8}>
+                    Chưa có đơn hàng nào.
                   </td>
                 </tr>
               ) : (

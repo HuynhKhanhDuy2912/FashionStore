@@ -426,7 +426,7 @@ export default function HomePage() {
         ) : (
           <>
             <img
-              src="https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop"
+              src="/images/bst.jpg"
               alt="Fashion hero"
               className="absolute inset-0 h-full w-full object-cover"
             />

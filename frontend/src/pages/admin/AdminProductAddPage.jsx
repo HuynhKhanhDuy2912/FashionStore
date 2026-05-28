@@ -14,6 +14,8 @@ import {
   ArrowLeft,
   Plus,
   Save,
+  Tag,
+  FolderOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -83,11 +85,10 @@ const MultiSelectTags = ({ options, value = [], onChange }) => {
       {options.map((opt) => (
         <label
           key={opt.value}
-          className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded cursor-pointer border transition-colors ${
-            value.includes(opt.value)
-              ? "bg-black text-white border-black"
-              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-black"
-          }`}
+          className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded cursor-pointer border transition-colors ${value.includes(opt.value)
+            ? "bg-black text-white border-black"
+            : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-black"
+            }`}
         >
           <input
             type="checkbox"
@@ -125,6 +126,9 @@ export default function AdminProductAddPage() {
   const [variantForm, setVariantForm] = useState(initialVariantForm);
   const [editingVariantId, setEditingVariantId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [allCollections, setAllCollections] = useState([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState("");
+  const [productCollections, setProductCollections] = useState([]); // collections this product belongs to (edit mode)
   const variantsRef = useRef(null);
 
   useEffect(() => {
@@ -144,6 +148,12 @@ export default function AdminProductAddPage() {
         const catRes = await apiRequest("/categories?limit=1000", { token });
         const cats = catRes.data || [];
         setCategories(cats);
+
+        // Load collections
+        const colRes = await apiRequest("/collections?limit=100", { token });
+        const cols = colRes.data || [];
+        setAllCollections(cols);
+
         if (editId) {
           const [prodRes, imgRes, varRes] = await Promise.all([
             apiRequest(`/products/${editId}`, { token }),
@@ -154,6 +164,15 @@ export default function AdminProductAddPage() {
               token,
             }),
           ]);
+
+          // Find which collections this product belongs to
+          const belongsTo = cols.filter((col) =>
+            (col.products || []).some((p) => (p._id || p) === editId)
+          );
+          setProductCollections(belongsTo);
+          if (belongsTo.length > 0) {
+            setSelectedCollectionId(belongsTo[0]._id);
+          }
           const p = prodRes.data;
           const catId = p.categoryId?._id || "";
           // Trace back: find the category and its ancestors
@@ -306,6 +325,25 @@ export default function AdminProductAddPage() {
         );
 
         toast.success("Đã thêm sản phẩm thành công!");
+
+        // Add product to selected collection
+        if (selectedCollectionId) {
+          try {
+            const targetCol = allCollections.find((c) => c._id === selectedCollectionId);
+            if (targetCol) {
+              const existingProductIds = (targetCol.products || []).map((p) => p._id || p);
+              await apiRequest(`/collections/${selectedCollectionId}`, {
+                method: "PUT",
+                token,
+                body: { products: [...existingProductIds, newProductId] },
+              });
+              toast.success(`Đã thêm vào bộ sưu tập "${targetCol.name}"`);
+            }
+          } catch (colErr) {
+            toast.error("Không thể thêm vào bộ sưu tập: " + colErr.message);
+          }
+        }
+
         navigate(`/admin/products/add?id=${newProductId}&new=true`, {
           replace: true,
         });
@@ -980,6 +1018,70 @@ export default function AdminProductAddPage() {
 
           {/* RIGHT COL */}
           <div className="grid gap-6 content-start sticky top-24 h-fit">
+            {/* Collection selector */}
+            <div className={cardCls}>
+              <h2 className={headingCls}>
+                <span className="flex items-center gap-2">
+                  <FolderOpen size={14} />
+                  Bộ sưu tập
+                </span>
+              </h2>
+
+              {/* Show current collections in edit mode */}
+              {editId && productCollections.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0 mb-2">
+                    Sản phẩm đang thuộc bộ sưu tập:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {productCollections.map((col) => (
+                      <span
+                        key={col._id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      >
+                        <Tag size={10} />
+                        {col.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {editId && productCollections.length === 0 && (
+                <p className="text-[12px] text-gray-400 italic m-0 mb-3">
+                  Sản phẩm chưa thuộc bộ sưu tập nào
+                </p>
+              )}
+
+              {!editId && (
+                <>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest m-0 mb-2">
+                    Chọn bộ sưu tập để thêm sản phẩm vào
+                  </p>
+                  <select
+                    className={inputCls}
+                    value={selectedCollectionId}
+                    onChange={(e) => setSelectedCollectionId(e.target.value)}
+                  >
+                    <option value="">— Không có bộ sưu tập —</option>
+                    {allCollections.map((col) => (
+                      <option key={col._id} value={col._id}>
+                        {col.name} ({col.products?.length || 0} sản phẩm)
+                      </option>
+                    ))}
+                  </select>
+                  {selectedCollectionId && (
+                    <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded">
+                      <Tag size={12} className="text-emerald-600 shrink-0" />
+                      <span className="text-[11px] font-medium text-emerald-700">
+                        Sẽ thêm vào bộ sưu tập: {allCollections.find((c) => c._id === selectedCollectionId)?.name}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             {!editId && (
               <div className={cardCls}>
                 <h2 className={headingCls}>Bộ sưu tập ảnh</h2>
@@ -1038,7 +1140,7 @@ export default function AdminProductAddPage() {
                     <label className={labelCls}>
                       Màu sắc (Tùy chọn)
                       <select
-                        className={inputCls}
+                        className={`${inputCls} min-w-[300px]`}
                         value={newGalleryColor}
                         onChange={(e) => setNewGalleryColor(e.target.value)}
                       >

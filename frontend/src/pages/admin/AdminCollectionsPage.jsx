@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import ImageUpload from "../../components/ImageUpload.jsx";
@@ -8,7 +8,6 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  GripVertical,
   X,
   Search,
 } from "lucide-react";
@@ -166,6 +165,19 @@ export default function AdminCollectionsPage() {
     }));
   };
 
+  // Build a map: productId → list of collection names it belongs to
+  const productCollectionsMap = useMemo(() => {
+    const map = new Map();
+    collections.forEach((col) => {
+      (col.products || []).forEach((p) => {
+        const pid = p._id || p;
+        if (!map.has(pid)) map.set(pid, []);
+        map.get(pid).push(col.name);
+      });
+    });
+    return map;
+  }, [collections]);
+
   const filteredPickerProducts = allProducts.filter((p) => {
     const alreadySelected = form.products.some(
       (sp) => (sp._id || sp) === p._id,
@@ -301,6 +313,8 @@ export default function AdminCollectionsPage() {
                   const img = product?.images?.[0];
                   const id = product?._id || p;
 
+                  const belongsTo = productCollectionsMap.get(id) || [];
+
                   return (
                     <div
                       key={id}
@@ -313,9 +327,16 @@ export default function AdminCollectionsPage() {
                           className="w-8 h-8 object-cover border border-gray-100"
                         />
                       )}
-                      <span className="text-xs font-medium text-black max-w-[150px] truncate">
-                        {name}
-                      </span>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-xs font-medium text-black max-w-[150px] truncate">
+                          {name}
+                        </span>
+                        {belongsTo.length > 0 && (
+                          <span className="text-[9px] text-amber-600 font-medium truncate max-w-[150px]" title={belongsTo.join(", ")}>
+                            {belongsTo.join(", ")}
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={() => removeProduct(id)}
@@ -372,9 +393,16 @@ export default function AdminCollectionsPage() {
                           <p className="text-xs font-medium text-black m-0 truncate">
                             {product.name}
                           </p>
-                          <p className="text-[10px] text-gray-400 m-0">
-                            {product.price?.toLocaleString("vi-VN")}₫
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-gray-400 m-0">
+                              {product.price?.toLocaleString("vi-VN")}₫
+                            </p>
+                            {(productCollectionsMap.get(product._id) || []).length > 0 && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 rounded text-[8px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200" title={(productCollectionsMap.get(product._id) || []).join(", ")}>
+                                {(productCollectionsMap.get(product._id) || []).join(", ")}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </button>
                     ))
