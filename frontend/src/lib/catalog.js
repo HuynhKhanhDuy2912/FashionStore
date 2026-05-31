@@ -33,8 +33,7 @@ export function filterProducts(products, filters) {
   return products.filter((product) => {
     const matchesSearch =
       !filters.search ||
-      product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      product.description?.toLowerCase().includes(filters.search.toLowerCase());
+      product.name.toLowerCase().includes(filters.search.toLowerCase());
 
     const matchesStyle = !filters.style || (
       Array.isArray(product.style)

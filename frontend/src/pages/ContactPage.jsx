@@ -19,7 +19,6 @@ import { apiRequest } from "../lib/api.js";
 const initialForm = {
   fullName: "",
   email: "",
-  phone: "",
   orderCode: "",
   topic: "",
   message: "",
@@ -105,18 +104,12 @@ const socialLinks = [
 
 function validate(values) {
   const nextErrors = {};
-  const phone = values.phone.trim().replace(/\s/g, "");
-
   if (values.fullName.trim().length < 2) {
     nextErrors.fullName = "Vui lòng nhập họ tên đầy đủ.";
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
     nextErrors.email = "Email chưa đúng định dạng.";
-  }
-
-  if (!/^(\+84|0)[0-9]{8,10}$/.test(phone)) {
-    nextErrors.phone = "Số điện thoại chưa hợp lệ.";
   }
 
   if (values.orderCode.trim() && values.orderCode.trim().length < 5) {
@@ -150,7 +143,6 @@ export default function ContactPage() {
         ...prev,
         fullName: user.fullname || user.username || prev.fullName,
         email: user.email || prev.email,
-        phone: user.phone || prev.phone,
       }));
     }
   }, [user]);
@@ -272,13 +264,13 @@ export default function ContactPage() {
             FashionStore sẽ tiếp nhận và phản hồi trong thời gian sớm nhất
           </h2>
           <p className="mt-4 text-sm leading-7 text-[#6B625A]">
-            Với vấn đề liên quan đến đơn hàng, mã đơn hàng giúp đội ngũ chăm sóc khách hàng kiểm tra nhanh hơn.
+            Với vấn đề liên quan đến đơn hàng, mã đơn hàng sẽ giúp đội ngũ chăm sóc khách hàng kiểm tra nhanh hơn.
           </p>
 
           {!isAuthenticated ? (
             <div className="mt-8 border border-[#E4DED6] bg-[#FAF8F5] p-6 text-center">
               <p className="mb-4 text-sm font-medium text-[#171717]">
-                Vui lòng đăng nhập để gửi yêu cầu hỗ trợ. Điều này giúp FashionStore ngăn chặn spam và quản lý yêu cầu của bạn tốt hơn.
+                Vui lòng đăng nhập để gửi yêu cầu hỗ trợ. Điều này giúp FashionStore quản lý yêu cầu và hỗ trợ bạn tốt hơn.
               </p>
               <button
                 type="button"
@@ -318,26 +310,6 @@ export default function ContactPage() {
                   />
                 </Field>
 
-                <Field label="Số điện thoại" error={shouldShowError("phone")}>
-                  <input
-                    value={form.phone}
-                    onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
-                    onChange={(event) => updateField("phone", event.target.value)}
-                    className="contact-input"
-                    placeholder="0901 234 567"
-                  />
-                </Field>
-
-                <Field label="Mã đơn hàng" optional error={shouldShowError("orderCode")}>
-                  <input
-                    value={form.orderCode}
-                    onBlur={() => setTouched((current) => ({ ...current, orderCode: true }))}
-                    onChange={(event) => updateField("orderCode", event.target.value.toUpperCase())}
-                    className="contact-input"
-                    placeholder="FS123456"
-                  />
-                </Field>
-
                 <Field label="Chủ đề cần hỗ trợ" error={shouldShowError("topic")}>
                   <select
                     value={form.topic}
@@ -354,7 +326,15 @@ export default function ContactPage() {
                   </select>
                 </Field>
 
-                <div className="hidden md:block" />
+                <Field label="Mã đơn hàng" optional error={shouldShowError("orderCode")}>
+                  <input
+                    value={form.orderCode}
+                    onBlur={() => setTouched((current) => ({ ...current, orderCode: true }))}
+                    onChange={(event) => updateField("orderCode", event.target.value.toUpperCase())}
+                    className="contact-input"
+                    placeholder="FS123456"
+                  />
+                </Field>
 
                 <div className="md:col-span-2">
                   <Field label="Nội dung" error={shouldShowError("message")}>
@@ -437,7 +417,7 @@ export default function ContactPage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#C58B45]">
               Social atelier
             </p>
-            <h2 className="mt-2 text-2xl font-bold">Theo dõi FashionStore qua những kênh hình ảnh</h2>
+            <h2 className="mt-2 text-2xl font-bold">Theo dõi hoặc liên hệ trực tiếp FashionStore qua những kênh hình ảnh</h2>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
             {socialLinks.map((item) => {

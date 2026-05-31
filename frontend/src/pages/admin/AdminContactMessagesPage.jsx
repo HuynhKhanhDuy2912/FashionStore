@@ -8,7 +8,6 @@ import {
   Inbox,
   Mail,
   MessageSquareReply,
-  Phone,
   Search,
   Send,
   User,
@@ -154,22 +153,6 @@ export default function AdminContactMessagesPage() {
     loadMessages();
   };
 
-  const updateStatus = async (nextStatus) => {
-    if (!selectedMessage) return;
-
-    try {
-      const response = await apiRequest(`/contact/${selectedMessage._id}/status`, {
-        method: "PATCH",
-        token,
-        body: { status: nextStatus },
-      });
-      setSelectedMessage(response.data);
-      toast.success("Đã cập nhật trạng thái tin nhắn.");
-      loadMessages();
-    } catch (error) {
-      toast.error(error.message || "Không thể cập nhật trạng thái.");
-    }
-  };
 
   const submitReply = async (event) => {
     event.preventDefault();
@@ -320,26 +303,11 @@ export default function AdminContactMessagesPage() {
                   <p className="mt-1 text-sm text-gray-500">Gửi lúc {formatDateTime(selectedMessage.createdAt)}</p>
                 </div>
 
-                <label className="grid gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Trạng thái</span>
-                  <select
-                    value={selectedMessage.status}
-                    onChange={(event) => updateStatus(event.target.value)}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition focus:border-black"
-                  >
-                    {statusOptions.filter((item) => item.value !== "all").map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <InfoCard icon={User} label="Khách hàng" value={selectedMessage.fullName} />
                 <InfoCard icon={Mail} label="Email" value={selectedMessage.email} href={`mailto:${selectedMessage.email}`} />
-                <InfoCard icon={Phone} label="Số điện thoại" value={selectedMessage.phone} href={`tel:${selectedMessage.phone}`} />
                 <InfoCard icon={Inbox} label="Mã đơn hàng" value={selectedMessage.orderCode || "Không cung cấp"} />
               </div>
 

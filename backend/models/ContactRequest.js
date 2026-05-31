@@ -22,12 +22,6 @@ const contactRequestSchema = new mongoose.Schema(
       lowercase: true,
       maxlength: 120,
     },
-    phone: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 20,
-    },
     orderCode: {
       type: String,
       trim: true,
@@ -113,7 +107,6 @@ const contactRequestSchema = new mongoose.Schema(
 
 contactRequestSchema.index({ createdAt: -1 });
 contactRequestSchema.index({ email: 1, createdAt: -1 });
-contactRequestSchema.index({ phone: 1, createdAt: -1 });
 contactRequestSchema.index({ isRead: 1, createdAt: -1 });
 
 const ContactRequest = mongoose.model("ContactRequest", contactRequestSchema);

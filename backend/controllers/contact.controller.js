@@ -27,9 +27,6 @@ function validateContactPayload(payload) {
   const email = String(payload.email || "")
     .trim()
     .toLowerCase();
-  const phone = String(payload.phone || "")
-    .trim()
-    .replace(/\s/g, "");
   const orderCode = String(payload.orderCode || "")
     .trim()
     .toUpperCase();
@@ -39,8 +36,6 @@ function validateContactPayload(payload) {
   if (fullName.length < 2) errors.fullName = "Vui lòng nhập họ tên đầy đủ.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     errors.email = "Email chưa đúng định dạng.";
-  if (!/^(\+84|0)[0-9]{8,10}$/.test(phone))
-    errors.phone = "Số điện thoại chưa hợp lệ.";
   if (orderCode && orderCode.length < 5)
     errors.orderCode = "Mã đơn hàng cần có ít nhất 5 ký tự.";
   if (!allowedTopics.has(topic))
@@ -49,7 +44,7 @@ function validateContactPayload(payload) {
 
   return {
     errors,
-    values: { fullName, email, phone, orderCode, topic, message },
+    values: { fullName, email, orderCode, topic, message },
   };
 }
 
@@ -65,7 +60,6 @@ async function sendContactWebhook(contactRequest) {
         ticketCode: contactRequest.ticketCode,
         fullName: contactRequest.fullName,
         email: contactRequest.email,
-        phone: contactRequest.phone,
         orderCode: contactRequest.orderCode,
         topic: contactRequest.topic,
         message: contactRequest.message,
@@ -125,7 +119,6 @@ export const getContactRequests = async (req, res) => {
         { ticketCode: searchRegex },
         { fullName: searchRegex },
         { email: searchRegex },
-        { phone: searchRegex },
         { orderCode: searchRegex },
         { topic: searchRegex },
       ];
@@ -218,42 +211,6 @@ export const markContactRequestAsRead = async (req, res) => {
   }
 };
 
-export const updateContactRequestStatus = async (req, res) => {
-  try {
-    const status = String(req.body.status || "").trim();
-
-    if (!["new", "resolved"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Trạng thái không hợp lệ.",
-      });
-    }
-
-    const contactRequest = await ContactRequest.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true },
-    );
-
-    if (!contactRequest) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy tin nhắn liên hệ.",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Đã cập nhật trạng thái tin nhắn.",
-      data: contactRequest,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 export const replyContactRequest = async (req, res) => {
   try {
@@ -333,6 +290,5 @@ export default {
   getUnreadContactCount,
   getContactRequestById,
   markContactRequestAsRead,
-  updateContactRequestStatus,
   replyContactRequest,
 };
