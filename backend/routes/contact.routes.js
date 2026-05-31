@@ -4,7 +4,7 @@ import { authorize, protect } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", contactController.createContactRequest);
+router.post("/", protect, contactController.createContactRequest);
 router.get("/", protect, authorize("admin"), contactController.getContactRequests);
 router.get("/unread-count", protect, authorize("admin"), contactController.getUnreadContactCount);
 router.get("/:id", protect, authorize("admin"), contactController.getContactRequestById);

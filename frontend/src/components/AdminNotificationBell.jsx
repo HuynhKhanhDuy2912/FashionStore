@@ -1,4 +1,4 @@
-import { Bell, ShoppingCart, Star } from "lucide-react";
+import { Bell, MessageCircleQuestion, ShoppingCart, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../context/NotificationContext.jsx";
@@ -42,6 +42,8 @@ export default function AdminNotificationBell() {
       navigate(`/admin/orders/${item.metadata.orderId}`);
     } else if (item.type === "review" && item.metadata?.productId) {
       navigate(`/products/${item.metadata.productId}?review=true`);
+    } else if (item.type === "question") {
+      navigate("/admin/product-questions");
     }
 
     setIsOpen(false);
@@ -106,10 +108,18 @@ export default function AdminNotificationBell() {
                     >
                       <span
                         className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${
-                          isOrder ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                          isOrder
+                            ? "bg-emerald-100 text-emerald-700"
+                            : item.type === "question"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {isOrder ? <ShoppingCart className="h-4 w-4" /> : <Star className="h-4 w-4" />}
+                        {isOrder
+                          ? <ShoppingCart className="h-4 w-4" />
+                          : item.type === "question"
+                            ? <MessageCircleQuestion className="h-4 w-4" />
+                            : <Star className="h-4 w-4" />}
                       </span>
 
                       <span className="min-w-0 flex-1">

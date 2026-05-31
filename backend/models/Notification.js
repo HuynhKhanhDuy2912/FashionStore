@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["order", "review"],
+      enum: ["order", "review", "question"],
       required: true,
     },
     title: {
@@ -33,6 +33,10 @@ const notificationSchema = new mongoose.Schema(
       productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
+      },
+      questionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProductQuestion",
       },
       productName: String,
       orderNumber: String,

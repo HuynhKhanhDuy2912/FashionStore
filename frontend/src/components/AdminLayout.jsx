@@ -23,6 +23,7 @@ import {
   Warehouse,
   History,
   Ruler,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { NotificationProvider } from "../context/NotificationContext.jsx";
@@ -58,6 +59,7 @@ const adminNavItems = [
   { to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
   { to: "/admin/users", label: "Người dùng", icon: Users },
   { to: "/admin/reviews", label: "Đánh giá", icon: MessageSquare },
+  { to: "/admin/product-questions", label: "Câu hỏi", icon: MessageCircleQuestion },
   { to: "/admin/contact-messages", label: "Liên hệ", icon: Mail },
   { to: "/admin/banners", label: "Banner", icon: Image },
   { to: "/admin/size-guides", label: "Bảng size", icon: Ruler },

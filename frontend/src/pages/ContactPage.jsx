@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import toast from "react-hot-toast";
 import {
   ArrowRight,
@@ -134,11 +135,25 @@ function validate(values) {
 }
 
 export default function ContactPage() {
+  const { user, token, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   const [form, setForm] = useState(initialForm);
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ticketCode, setTicketCode] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        fullName: user.fullname || user.username || prev.fullName,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
 
   const errors = useMemo(() => validate(form), [form]);
 
@@ -162,6 +177,7 @@ export default function ContactPage() {
     try {
       const response = await apiRequest("/contact", {
         method: "POST",
+        token,
         body: form,
       });
       const code = response.data?.ticketCode || "";
@@ -248,7 +264,7 @@ export default function ContactPage() {
       </section>
 
       <section className="mx-auto grid max-w-[1440px] gap-8 px-4 pb-12 md:px-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <form id="contact-form" onSubmit={handleSubmit} className="border border-[#E4DED6] bg-white p-5 md:p-8">
+        <div id="contact-form" className="border border-[#E4DED6] bg-white p-5 md:p-8">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-[#C58B45]">
             Gửi yêu cầu hỗ trợ
           </p>
@@ -259,94 +275,111 @@ export default function ContactPage() {
             Với vấn đề liên quan đến đơn hàng, mã đơn hàng giúp đội ngũ chăm sóc khách hàng kiểm tra nhanh hơn.
           </p>
 
-          {ticketCode ? (
-            <div className="mt-6 border border-[#CFE1D7] bg-[#F1F8F4] px-4 py-3 text-sm text-[#2F6B4F]">
-              Yêu cầu {ticketCode} đã được ghi nhận. FashionStore sẽ phản hồi qua email hoặc điện thoại bạn cung cấp.
-            </div>
-          ) : null}
-
-          <div className="mt-7 grid gap-5 md:grid-cols-2">
-            <Field label="Họ tên" error={shouldShowError("fullName")}>
-              <input
-                value={form.fullName}
-                onBlur={() => setTouched((current) => ({ ...current, fullName: true }))}
-                onChange={(event) => updateField("fullName", event.target.value)}
-                className="contact-input"
-                placeholder="Nguyễn Minh Anh"
-              />
-            </Field>
-
-            <Field label="Email" error={shouldShowError("email")}>
-              <input
-                type="email"
-                value={form.email}
-                onBlur={() => setTouched((current) => ({ ...current, email: true }))}
-                onChange={(event) => updateField("email", event.target.value)}
-                className="contact-input"
-                placeholder="email@example.com"
-              />
-            </Field>
-
-            <Field label="Số điện thoại" error={shouldShowError("phone")}>
-              <input
-                value={form.phone}
-                onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
-                onChange={(event) => updateField("phone", event.target.value)}
-                className="contact-input"
-                placeholder="0901 234 567"
-              />
-            </Field>
-
-            <Field label="Mã đơn hàng" optional error={shouldShowError("orderCode")}>
-              <input
-                value={form.orderCode}
-                onBlur={() => setTouched((current) => ({ ...current, orderCode: true }))}
-                onChange={(event) => updateField("orderCode", event.target.value.toUpperCase())}
-                className="contact-input"
-                placeholder="FS123456"
-              />
-            </Field>
-
-            <Field label="Chủ đề cần hỗ trợ" error={shouldShowError("topic")}>
-              <select
-                value={form.topic}
-                onBlur={() => setTouched((current) => ({ ...current, topic: true }))}
-                onChange={(event) => updateField("topic", event.target.value)}
-                className="contact-input"
+          {!isAuthenticated ? (
+            <div className="mt-8 border border-[#E4DED6] bg-[#FAF8F5] p-6 text-center">
+              <p className="mb-4 text-sm font-medium text-[#171717]">
+                Vui lòng đăng nhập để gửi yêu cầu hỗ trợ. Điều này giúp FashionStore ngăn chặn spam và quản lý yêu cầu của bạn tốt hơn.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="inline-flex min-h-12 items-center justify-center bg-[#171717] px-8 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#C58B45]"
               >
-                <option value="">Chọn chủ đề</option>
-                {topics.map((topic) => (
-                  <option key={topic} value={topic}>
-                    {topic}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <div className="hidden md:block" />
-
-            <div className="md:col-span-2">
-              <Field label="Nội dung" error={shouldShowError("message")}>
-                <textarea
-                  value={form.message}
-                  onBlur={() => setTouched((current) => ({ ...current, message: true }))}
-                  onChange={(event) => updateField("message", event.target.value)}
-                  className="contact-input min-h-[150px] resize-none"
-                  placeholder="Hãy mô tả vấn đề bạn cần FashionStore hỗ trợ..."
-                />
-              </Field>
+                Đăng nhập ngay
+              </button>
             </div>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {ticketCode ? (
+                <div className="mt-6 border border-[#CFE1D7] bg-[#F1F8F4] px-4 py-3 text-sm text-[#2F6B4F]">
+                  Yêu cầu {ticketCode} đã được ghi nhận. FashionStore sẽ phản hồi qua email hoặc điện thoại bạn cung cấp.
+                </div>
+              ) : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#171717] px-7 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#C58B45] disabled:cursor-not-allowed disabled:bg-[#6B625A] md:w-auto"
-          >
-            {loading ? "Đang gửi..." : "Gửi yêu cầu"}
-            <Send className="h-4 w-4" />
-          </button>
-        </form>
+              <div className="mt-7 grid gap-5 md:grid-cols-2">
+                <Field label="Họ tên" error={shouldShowError("fullName")}>
+                  <input
+                    value={form.fullName}
+                    onBlur={() => setTouched((current) => ({ ...current, fullName: true }))}
+                    onChange={(event) => updateField("fullName", event.target.value)}
+                    className="contact-input"
+                    placeholder="Nguyễn Minh Anh"
+                  />
+                </Field>
+
+                <Field label="Email" error={shouldShowError("email")}>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onBlur={() => setTouched((current) => ({ ...current, email: true }))}
+                    onChange={(event) => updateField("email", event.target.value)}
+                    className="contact-input"
+                    placeholder="email@example.com"
+                  />
+                </Field>
+
+                <Field label="Số điện thoại" error={shouldShowError("phone")}>
+                  <input
+                    value={form.phone}
+                    onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
+                    onChange={(event) => updateField("phone", event.target.value)}
+                    className="contact-input"
+                    placeholder="0901 234 567"
+                  />
+                </Field>
+
+                <Field label="Mã đơn hàng" optional error={shouldShowError("orderCode")}>
+                  <input
+                    value={form.orderCode}
+                    onBlur={() => setTouched((current) => ({ ...current, orderCode: true }))}
+                    onChange={(event) => updateField("orderCode", event.target.value.toUpperCase())}
+                    className="contact-input"
+                    placeholder="FS123456"
+                  />
+                </Field>
+
+                <Field label="Chủ đề cần hỗ trợ" error={shouldShowError("topic")}>
+                  <select
+                    value={form.topic}
+                    onBlur={() => setTouched((current) => ({ ...current, topic: true }))}
+                    onChange={(event) => updateField("topic", event.target.value)}
+                    className="contact-input"
+                  >
+                    <option value="">Chọn chủ đề</option>
+                    {topics.map((topic) => (
+                      <option key={topic} value={topic}>
+                        {topic}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <div className="hidden md:block" />
+
+                <div className="md:col-span-2">
+                  <Field label="Nội dung" error={shouldShowError("message")}>
+                    <textarea
+                      value={form.message}
+                      onBlur={() => setTouched((current) => ({ ...current, message: true }))}
+                      onChange={(event) => updateField("message", event.target.value)}
+                      className="contact-input min-h-[150px] resize-none"
+                      placeholder="Hãy mô tả vấn đề bạn cần FashionStore hỗ trợ..."
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#171717] px-7 text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#C58B45] disabled:cursor-not-allowed disabled:bg-[#6B625A] md:w-auto"
+              >
+                {loading ? "Đang gửi..." : "Gửi yêu cầu"}
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
+          )}
+        </div>
 
         <div className="grid gap-6">
           <div className="min-h-[360px] overflow-hidden border border-[#E4DED6] bg-white">

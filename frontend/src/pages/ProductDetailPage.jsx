@@ -7,6 +7,7 @@ import ProductInfoModal from "../components/ProductInfoModal.jsx";
 import SizeGuideModal from "../components/SizeGuideModal.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
 import BestSellersSection from "../components/BestSellersSection.jsx";
+import ProductQAModal from "../components/ProductQAModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { getProductPath } from "../lib/slug.js";
@@ -52,6 +53,7 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showProductInfoModal, setShowProductInfoModal] = useState(false);
+  const [showQAModal, setShowQAModal] = useState(false);
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuide, setSizeGuide] = useState(null);
@@ -544,42 +546,20 @@ export default function ProductDetailPage() {
             </button>
 
             {/* ================= FAQ ================= */}
-            <details className="group border-t border-gray-200">
-              <summary className="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
-
+            <button
+              type="button"
+              onClick={() => setShowQAModal(true)}
+              className="w-full border-t border-gray-200 bg-transparent px-6 py-4 text-left group"
+            >
+              <span className="flex items-center justify-between">
                 <span className="text-[13px] font-bold uppercase tracking-wide text-black">
                   Các câu hỏi thường gặp
                 </span>
-
-                <span className="text-black transition-transform duration-300 group-open:rotate-45">
-                  <Plus size={18} strokeWidth={1.5} />
+                <span className="text-black transition-transform duration-300 group-hover:translate-x-0.5">
+                  <ChevronsRight size={18} strokeWidth={1.8} />
                 </span>
-              </summary>
-
-              <div className="px-6 py-2 text-[13px] text-gray-600">
-
-                <div>
-                  <p className="font-semibold text-black">
-                    Giao hàng
-                  </p>
-
-                  <p>
-                    Miễn phí đơn hàng từ 999.000đ.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-semibold text-black mt-2">
-                    Đổi trả
-                  </p>
-
-                  <p>
-                    Hỗ trợ đổi trả trong vòng 30 ngày.
-                  </p>
-                </div>
-
-              </div>
-            </details>
+              </span>
+            </button>
 
             {/* ================= SHIPPING ================= */}
             <details className="group border-t border-gray-200">
@@ -1008,6 +988,14 @@ export default function ProductDetailPage() {
         onClose={() => setShowSizeGuide(false)}
         sizeGuide={sizeGuide}
       />
+
+      {showQAModal && (
+        <ProductQAModal
+          productId={product._id}
+          productName={product.name}
+          onClose={() => setShowQAModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -9,6 +9,16 @@
     font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
   }
+
+  /* Ẩn scrollbar toàn bộ app — vẫn cuộn được bình thường */
+  * {
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE / Edge cũ */
+  }
+
+  *::-webkit-scrollbar {
+    display: none;               /* Chrome / Safari / Opera */
+  }
 }
 
 @layer utilities {

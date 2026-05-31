@@ -22,6 +22,7 @@ import AdminSizeGuidesPage from "./pages/admin/AdminSizeGuidesPage.jsx";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage.jsx";
 import AdminInventoryHistoryPage from "./pages/admin/AdminInventoryHistoryPage.jsx";
 import AdminContactMessagesPage from "./pages/admin/AdminContactMessagesPage.jsx";
+import AdminProductQuestionsPage from "./pages/admin/AdminProductQuestionsPage.jsx";
 
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="contact-messages" element={<AdminContactMessagesPage />} />
             <Route path="contact-messages/:requestId" element={<AdminContactMessagesPage />} />
             <Route path="size-guides" element={<AdminSizeGuidesPage />} />
+            <Route path="product-questions" element={<AdminProductQuestionsPage />} />
           </Route>
           </Route>
         </Routes>

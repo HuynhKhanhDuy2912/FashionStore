@@ -207,7 +207,7 @@ export default function AdminContactMessagesPage() {
   return (
     <section className="grid gap-4 p-6">
       <AdminPageHeader
-        title="Hộp thư liên hệ"
+        title="QUẢN LÝ TIN NHẮN LIÊN HỆ"
         description={`${stats.total} tin nhắn, ${stats.unread} chưa đọc, ${stats.unresolved} chưa hoàn tất`}
       />
 
@@ -236,8 +236,8 @@ export default function AdminContactMessagesPage() {
                   type="button"
                   onClick={() => setStatusFilter(item.value)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${statusFilter === item.value
-                      ? "border-black bg-black text-white"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-black hover:text-black"
+                    ? "border-black bg-black text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-black hover:text-black"
                     }`}
                 >
                   {item.label}

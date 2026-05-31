@@ -16,6 +16,9 @@ export const createNotificationForAdmins = async (type, data) => {
       } else if (type === "review") {
         title = "Bình luận mới";
         message = `${data.userName} đã bình luận về ${data.productName}`;
+      } else if (type === "question") {
+        title = "Câu hỏi sản phẩm mới";
+        message = `${data.userName} hỏi về ${data.productName}`;
       }
 
       return {

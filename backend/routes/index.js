@@ -24,6 +24,7 @@ import inventoryRoutes from "./inventory.routes.js";
 import ghnRoutes from "./ghn.routes.js";
 import sizeGuideRoutes from "./sizeGuide.routes.js";
 import contactRoutes from "./contact.routes.js";
+import productQuestionRoutes from "./productQuestion.routes.js";
 
 const router = express.Router();
 
@@ -59,5 +60,6 @@ router.use("/inventory", inventoryRoutes);
 router.use("/ghn", ghnRoutes);
 router.use("/size-guides", sizeGuideRoutes);
 router.use("/contact", contactRoutes);
+router.use("/product-questions", productQuestionRoutes);
 
 export default router;

@@ -248,7 +248,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-black overflow-x-hidden">
+    <div className="min-h-screen bg-white font-sans text-black">
       {!isAdminView ? (
         <>
           <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
