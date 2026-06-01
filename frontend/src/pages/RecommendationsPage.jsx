@@ -7,6 +7,7 @@ import RecommendationSection from "../components/RecommendationSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
+import { formatProductName } from "../lib/productName.js";
 
 export default function RecommendationsPage() {
   const { token } = useAuth();
@@ -86,7 +87,7 @@ export default function RecommendationsPage() {
           next.delete(productId);
           return next;
         });
-        setMessage(`Đã bỏ ${product.name} khỏi danh sách yêu thích`);
+        setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
       } else {
         await apiRequest("/wishlists/me", {
           method: "POST",
@@ -101,7 +102,7 @@ export default function RecommendationsPage() {
           next.add(productId);
           return next;
         });
-        setMessage(`Đã thêm ${product.name} vào danh sách yêu thích`);
+        setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
       }
       setTimeout(() => setMessage(""), 3000);
     } catch (requestError) {
@@ -122,7 +123,7 @@ export default function RecommendationsPage() {
         }
       });
 
-      setMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+      setMessage(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
       setTimeout(() => setMessage(""), 3000);
     } catch (requestError) {
       setError(requestError.message);

@@ -4,6 +4,7 @@ import { Check, ChevronRight, CreditCard, Loader2, MapPin, Plus, Truck, Wallet }
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { apiRequest } from "../lib/api.js";
+import { formatProductName } from "../lib/productName.js";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
 
@@ -299,16 +300,17 @@ export default function CheckoutPage() {
                     : productDiscount;
                   const finalPrice = price - (price * discount) / 100;
                   const image = variant?.image || product?.images?.[0] || "";
+                  const displayName = formatProductName(product?.name);
 
                   return (
                     <div key={item._id} className="flex gap-4 border-b border-gray-100 pb-4 last:border-b-0">
                       <div className="h-20 w-20 flex-shrink-0 overflow-hidden border border-gray-200 bg-gray-50">
                         {image && (
-                          <img src={image} alt={product?.name} className="h-full w-full object-cover" />
+                          <img src={image} alt={displayName} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <h3 className="mb-1 font-medium">{product?.name}</h3>
+                        <h3 className="mb-1 font-medium">{displayName}</h3>
                         <p className="mb-2 text-sm text-gray-600">
                           {variant?.color && `Màu: ${variant.color}`}
                           {variant?.color && variant?.size && " • "}

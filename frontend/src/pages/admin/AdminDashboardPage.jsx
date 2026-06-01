@@ -21,6 +21,7 @@ import {
   formatCurrency,
   formatPercent,
 } from "../../lib/adminStats.js";
+import { formatProductName } from "../../lib/productName.js";
 
 const STATUS_BADGE = {
   pending: "bg-amber-50 text-amber-700 ring-amber-600/20",
@@ -337,7 +338,7 @@ export default function AdminDashboardPage() {
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-slate-800">
-                          {variant.productName}
+                          {formatProductName(variant.productName)}
                         </p>
                         <p className="text-xs text-slate-500">
                           {variant.color} · {variant.size}

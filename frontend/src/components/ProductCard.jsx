@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart, Plus, X } from "lucide-react";
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
+import { formatProductName } from "../lib/productName.js";
 
 function getColorGroups(product) {
   const groups = new Map();
@@ -72,6 +73,7 @@ export default function ProductCard({
     null;
   const selectedVariantOutOfStock = Number(selectedVariant?.stock || 0) <= 0;
   const productPath = getProductPath(product, { color: activeColorGroup?.color });
+  const displayName = formatProductName(product.name);
 
   const basePrice = Number(product.price || 0);
   const adjustment = Number(selectedVariant?.priceAdjustment || 0);
@@ -101,12 +103,12 @@ export default function ProductCard({
         <Link to={productPath} className="absolute inset-0 block">
           <img
             src={primaryImage}
-            alt={product.name}
+            alt={displayName}
             className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-0"
           />
           <img
             src={secondaryImage}
-            alt={product.name}
+            alt={displayName}
             className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           />
         </Link>
@@ -246,7 +248,7 @@ export default function ProductCard({
         </div>
 
         <h3 className="line-clamp-1 text-[15px] font-bold text-black">
-          <Link to={productPath} className="hover:text-red-600">{product.name}</Link>
+          <Link to={productPath} className="hover:text-red-600">{displayName}</Link>
         </h3>
       </div>
     </article>

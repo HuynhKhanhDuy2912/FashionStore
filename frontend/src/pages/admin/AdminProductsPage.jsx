@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import { formatProductName } from "../../lib/productName.js";
 import ImageUpload from "../../components/ImageUpload.jsx";
 
 const initialForm = {
@@ -353,7 +354,7 @@ export default function AdminProductsPage() {
                   </div>
                   <div>
                     <strong className="block text-black mb-1 text-sm">
-                      {product.name}
+                      {formatProductName(product.name)}
                     </strong>
                     <p className="m-0 text-xs text-gray-500 uppercase tracking-widest">
                       {product.categoryId?.name} · {product.style}

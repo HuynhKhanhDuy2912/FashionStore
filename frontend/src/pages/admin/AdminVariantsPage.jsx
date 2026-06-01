@@ -3,6 +3,7 @@ import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import ImageUpload from "../../components/ImageUpload.jsx";
+import { formatProductName } from "../../lib/productName.js";
 
 const initialForm = {
   productId: "",
@@ -134,7 +135,7 @@ export default function AdminVariantsPage() {
               <option value="">Chọn sản phẩm</option>
               {products.map((product) => (
                 <option key={product._id} value={product._id}>
-                  {product.name}
+                  {formatProductName(product.name)}
                 </option>
               ))}
             </select>
@@ -269,7 +270,7 @@ export default function AdminVariantsPage() {
                   </div>
                   <div>
                     <strong className="block text-black mb-1 text-sm">
-                      {variant.productId?.name}
+                      {formatProductName(variant.productId?.name)}
                     </strong>
                     <p className="m-0 text-xs text-gray-500 uppercase tracking-widest">
                       {variant.color} - {variant.size} · Tồn kho:{" "}

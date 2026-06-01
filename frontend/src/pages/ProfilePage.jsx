@@ -220,7 +220,7 @@ export default function ProfilePage() {
 
     try {
       const formDataUpload = new FormData();
-      formDataUpload.append("images", file);
+      formDataUpload.append("image", file);
 
       const uploadResponse = await apiRequest("/upload", {
         method: "POST",
@@ -229,7 +229,12 @@ export default function ProfilePage() {
         isFormData: true
       });
 
-      const avatarUrl = uploadResponse.data.urls[0];
+      const avatarUrl =
+        uploadResponse.imageUrl || uploadResponse.mediaUrl || uploadResponse.data?.urls?.[0];
+
+      if (!avatarUrl) {
+        throw new Error("Không nhận được URL ảnh sau khi tải lên");
+      }
 
       await apiRequest("/auth/profile", {
         method: "PUT",

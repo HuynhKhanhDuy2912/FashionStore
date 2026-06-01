@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../../components/AdminPageHeader";
+import { formatProductName } from "../../lib/productName";
 import {
   Package,
   Search,
@@ -428,7 +429,7 @@ export default function AdminInventoryPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-center font-medium">
-                      {item.productId?.name || "N/A"}
+                      {formatProductName(item.productId?.name) || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       {item.color}
@@ -613,7 +614,7 @@ export default function AdminInventoryPage() {
 
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium">
-                {selectedVariant.productId?.name}
+                {formatProductName(selectedVariant.productId?.name)}
               </p>
               <p className="text-sm text-gray-600">
                 Màu: {selectedVariant.color} | Size: {selectedVariant.size}
@@ -698,7 +699,7 @@ export default function AdminInventoryPage() {
 
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium">
-                {selectedVariant.productId?.name}
+                {formatProductName(selectedVariant.productId?.name)}
               </p>
               <p className="text-sm text-gray-600">
                 Màu: {selectedVariant.color} | Size: {selectedVariant.size}
@@ -788,7 +789,7 @@ export default function AdminInventoryPage() {
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-xl font-bold">Lịch sử giao dịch</h3>
               <p className="text-sm text-gray-600 mt-1">
-                {selectedVariant.productId?.name} - {selectedVariant.color} /{" "}
+                {formatProductName(selectedVariant.productId?.name)} - {selectedVariant.color} /{" "}
                 {selectedVariant.size}
               </p>
             </div>

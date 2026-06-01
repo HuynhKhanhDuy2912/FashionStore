@@ -17,6 +17,7 @@ import {
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import { formatProductName } from "../../lib/productName.js";
 import toast from "react-hot-toast";
 
 const orderStatuses = [
@@ -406,7 +407,7 @@ export default function AdminOrderDetailPage() {
                           src={
                             item.variantId?.image || item.productId.images[0]
                           }
-                          alt={item.productId?.name || "Sản phẩm"}
+                          alt={formatProductName(item.productId?.name) || "Sản phẩm"}
                           className="h-full w-full object-cover"
                         />
                       ) : (
@@ -420,7 +421,7 @@ export default function AdminOrderDetailPage() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <p className="truncate text-base font-bold text-slate-900">
-                            {item.productId?.name || "Sản phẩm"}
+                            {formatProductName(item.productId?.name) || "Sản phẩm"}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
                             <span className="rounded-full bg-slate-100 px-2.5 py-1">

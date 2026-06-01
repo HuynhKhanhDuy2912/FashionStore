@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { deleteMediaFromCloudinaryIfUnused } from "../config/cloudinary.js";
 
 const collectionSchema = new mongoose.Schema(
   {
@@ -71,5 +72,40 @@ collectionSchema.pre("validate", function (next) {
 
 collectionSchema.index({ slug: 1 }, { unique: true });
 collectionSchema.index({ isActive: 1, order: 1 });
+
+const getUpdatedValue = (update = {}, field) => {
+  if (Object.prototype.hasOwnProperty.call(update, field)) return update[field];
+  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field)) return update.$set[field];
+  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field)) return "";
+  return undefined;
+};
+
+collectionSchema.pre("findOneAndUpdate", async function() {
+  const update = this.getUpdate() || {};
+  const fields = ["coverImage", "bannerImage"];
+  const current = await this.model.findOne(this.getQuery()).select(fields.join(" ")).lean();
+  const removedMediaUrls = [];
+
+  fields.forEach((field) => {
+    const nextValue = getUpdatedValue(update, field);
+    if (nextValue !== undefined && current?.[field] && current[field] !== nextValue) {
+      removedMediaUrls.push(current[field]);
+    }
+  });
+
+  this._removedMediaUrls = removedMediaUrls;
+});
+
+collectionSchema.post("findOneAndUpdate", async function() {
+  for (const mediaUrl of this._removedMediaUrls || []) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
+
+collectionSchema.post("findOneAndDelete", async function(docToUpdate) {
+  for (const mediaUrl of [docToUpdate?.coverImage, docToUpdate?.bannerImage].filter(Boolean)) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
 
 export default mongoose.model("Collection", collectionSchema);

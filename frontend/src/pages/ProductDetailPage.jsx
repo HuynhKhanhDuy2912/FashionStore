@@ -13,6 +13,7 @@ import { apiRequest } from "../lib/api.js";
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { trackBehavior } from "../lib/tracking.js";
+import { formatProductName } from "../lib/productName.js";
 import { ChevronLeft, ChevronsRight, ChevronRight, Star, ZoomIn, ZoomOut, Plus, Ruler, ArrowLeft, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -294,7 +295,7 @@ export default function ProductDetailPage() {
           next.delete(productId);
           return next;
         });
-        toast.success(`Đã bỏ ${product.name} khỏi danh sách yêu thích`);
+        toast.success(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
         
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
@@ -316,7 +317,7 @@ export default function ProductDetailPage() {
           next.add(productId);
           return next;
         });
-        toast.success(`Đã thêm ${product.name} vào danh sách yêu thích`);
+        toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
         
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
@@ -451,6 +452,7 @@ export default function ProductDetailPage() {
   const totalReviews = Number(product.totalReviews || 0);
   const roundedRating = Math.round(averageRating);
   const soldCount = Number(product.soldCount || 0);
+  const displayName = formatProductName(product.name);
 
 
   return (
@@ -461,7 +463,7 @@ export default function ProductDetailPage() {
         <span>/</span>
         <Link to="/products" className="hover:text-black">SẢN PHẨM</Link>
         <span>/</span>
-        <span className="text-black truncate max-w-[200px]">{product.name}</span>
+        <span className="text-black truncate max-w-[200px]">{displayName}</span>
       </nav>
 
       {/* ══ 3-COLUMN LAYOUT ══ */}
@@ -635,7 +637,7 @@ export default function ProductDetailPage() {
               <img
                 key={activeImage}
                 src={activeImage}
-                alt={product.name}
+                alt={displayName}
                 className={`max-w-full max-h-[78vh] object-contain transition-transform duration-300 ${isZoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in"
                   }`}
                 onClick={() => setIsZoomed(z => !z)}
@@ -685,7 +687,7 @@ export default function ProductDetailPage() {
           {/* Tên sản phẩm */}
           <div>
             <h1 className="text-2xl font-bold text-black leading-tight mb-1">
-              {product.name}
+              {displayName}
             </h1>
 
             <p className="text-[12px] text-gray-400 uppercase tracking-widest">
@@ -907,7 +909,7 @@ export default function ProductDetailPage() {
                   source: "product_detail_similar"
                 }
               });
-              toast.success(`Đã thêm ${product.name} vào giỏ hàng`);
+              toast.success(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
             } catch (err) {
               toast.error(err.message);
             }
@@ -934,7 +936,7 @@ export default function ProductDetailPage() {
                 source: "product_detail_bestseller"
               }
             });
-            toast.success(`Đã thêm ${prod.name} vào giỏ hàng`);
+            toast.success(`Đã thêm ${formatProductName(prod.name)} vào giỏ hàng`);
           } catch (err) {
             toast.error(err.message);
           }
@@ -968,7 +970,7 @@ export default function ProductDetailPage() {
         }}
         onSubmit={handleSubmitReview}
         submitting={reviewSubmitting}
-        productName={product.name}
+        productName={displayName}
         productSku={product._id.slice(-6).toUpperCase()}
         imageUrl={activeImage}
         rating={reviewRating}
@@ -992,7 +994,7 @@ export default function ProductDetailPage() {
       {showQAModal && (
         <ProductQAModal
           productId={product._id}
-          productName={product.name}
+          productName={displayName}
           onClose={() => setShowQAModal(false)}
         />
       )}

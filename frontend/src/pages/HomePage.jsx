@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
 import { trackBehavior } from "../lib/tracking.js";
+import { formatProductName } from "../lib/productName.js";
 
 const categoryCards = [
   {
@@ -272,7 +273,7 @@ export default function HomePage() {
           next.delete(productId);
           return next;
         });
-        setMessage(`Đã bỏ ${product.name} khỏi danh sách yêu thích`);
+        setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
         
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
@@ -294,7 +295,7 @@ export default function HomePage() {
           next.add(productId);
           return next;
         });
-        setMessage(`Đã thêm ${product.name} vào danh sách yêu thích`);
+        setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
         
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
@@ -331,7 +332,7 @@ export default function HomePage() {
         },
       });
 
-      setMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+      setMessage(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
     } catch (requestError) {
       setError(requestError.message);
     }

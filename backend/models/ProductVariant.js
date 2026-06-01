@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { deleteImageFromCloudinary } from "../config/cloudinary.js";
+import { deleteMediaFromCloudinaryIfUnused } from "../config/cloudinary.js";
 
 const variantSchema = new mongoose.Schema(
   {
@@ -72,15 +72,34 @@ variantSchema.index({ sku: 1 }, { unique: true });
 variantSchema.index({ productId: 1, color: 1, size: 1 }, { unique: true });
 variantSchema.index({ productId: 1, isActive: 1 });
 
-variantSchema.pre('findOneAndDelete', async function(next) {
-  try {
-    const docToUpdate = await this.model.findOne(this.getQuery());
-    if (docToUpdate && docToUpdate.image) {
-      await deleteImageFromCloudinary(docToUpdate.image);
+const getUpdatedValue = (update = {}, field) => {
+  if (Object.prototype.hasOwnProperty.call(update, field)) return update[field];
+  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field)) return update.$set[field];
+  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field)) return "";
+  return undefined;
+};
+
+variantSchema.pre("findOneAndUpdate", async function() {
+  const nextImage = getUpdatedValue(this.getUpdate() || {}, "image");
+
+  if (nextImage !== undefined) {
+    const current = await this.model.findOne(this.getQuery()).select("image").lean();
+    if (current?.image && current.image !== nextImage) {
+      this._removedMediaUrls = [current.image];
     }
-    next();
-  } catch (error) {
-    next(error);
+  }
+
+});
+
+variantSchema.post("findOneAndUpdate", async function() {
+  for (const mediaUrl of this._removedMediaUrls || []) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
+
+variantSchema.post('findOneAndDelete', async function(docToUpdate) {
+  if (docToUpdate?.image) {
+    await deleteMediaFromCloudinaryIfUnused(docToUpdate.image);
   }
 });
 

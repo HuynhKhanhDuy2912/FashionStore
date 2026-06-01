@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { deleteImageFromCloudinary } from "../config/cloudinary.js";
+import { deleteMediaFromCloudinaryIfUnused } from "../config/cloudinary.js";
 import ProductVariant from "./ProductVariant.js";
 import ProductImage from "./PrductImage.js";
 
@@ -143,55 +143,79 @@ productSchema.pre("validate", function(next) {
   next();
 });
 
-productSchema.pre("findOneAndUpdate", function(next) {
+const getUpdatedArrayValue = (update = {}, field) => {
+  if (Object.prototype.hasOwnProperty.call(update, field)) return update[field];
+  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field)) return update.$set[field];
+  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field)) return [];
+  return undefined;
+};
+
+const getRemovedMediaUrls = (currentUrls = [], nextUrls = []) => {
+  const nextSet = new Set((nextUrls || []).filter(Boolean));
+  return [...new Set((currentUrls || []).filter(Boolean))].filter(
+    (url) => !nextSet.has(url),
+  );
+};
+
+productSchema.pre("findOneAndUpdate", async function() {
   const update = this.getUpdate() || {};
   const name = update.name || update.$set?.name;
 
-  if (name && !update.slug && !update.$set?.slug) {
-    this.setUpdate({
-      ...update,
-      $set: {
-        ...(update.$set || {}),
-        slug: createSlug(name)
-      }
-    });
+  const nextUpdate =
+    name && !update.slug && !update.$set?.slug
+      ? {
+          ...update,
+          $set: {
+            ...(update.$set || {}),
+            slug: createSlug(name)
+          }
+        }
+      : update;
+
+  this.setUpdate(nextUpdate);
+
+  const nextImages = getUpdatedArrayValue(nextUpdate, "images");
+  const nextVideos = getUpdatedArrayValue(nextUpdate, "videos");
+
+  if (nextImages !== undefined || nextVideos !== undefined) {
+    const current = await this.model.findOne(this.getQuery()).select("images videos").lean();
+    this._removedMediaUrls = [
+      ...(nextImages !== undefined ? getRemovedMediaUrls(current?.images, nextImages) : []),
+      ...(nextVideos !== undefined ? getRemovedMediaUrls(current?.videos, nextVideos) : []),
+    ];
   }
 
-  next();
 });
 
-productSchema.pre('findOneAndDelete', async function(next) {
+productSchema.post("findOneAndUpdate", async function() {
+  for (const mediaUrl of this._removedMediaUrls || []) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
+
+productSchema.post('findOneAndDelete', async function(docToUpdate) {
+  if (!docToUpdate) return;
+
   try {
-    const docToUpdate = await this.model.findOne(this.getQuery());
-    if (docToUpdate) {
-      // 1. Delete main images
-      if (docToUpdate.images && docToUpdate.images.length > 0) {
-        for (const imgUrl of docToUpdate.images) {
-          await deleteImageFromCloudinary(imgUrl);
-        }
-      }
-
-      if (docToUpdate.videos && docToUpdate.videos.length > 0) {
-        for (const videoUrl of docToUpdate.videos) {
-          await deleteImageFromCloudinary(videoUrl);
-        }
-      }
-
-      // 2. Cascade delete variants
-      const variants = await ProductVariant.find({ productId: docToUpdate._id });
-      for (const variant of variants) {
-        await ProductVariant.findByIdAndDelete(variant._id);
-      }
-
-      // 3. Cascade delete product images
-      const images = await ProductImage.find({ productId: docToUpdate._id });
-      for (const image of images) {
-        await ProductImage.findByIdAndDelete(image._id);
-      }
+    for (const imgUrl of docToUpdate.images || []) {
+      await deleteMediaFromCloudinaryIfUnused(imgUrl);
     }
-    next();
+
+    for (const videoUrl of docToUpdate.videos || []) {
+      await deleteMediaFromCloudinaryIfUnused(videoUrl);
+    }
+
+    const variants = await ProductVariant.find({ productId: docToUpdate._id });
+    for (const variant of variants) {
+      await ProductVariant.findByIdAndDelete(variant._id);
+    }
+
+    const images = await ProductImage.find({ productId: docToUpdate._id });
+    for (const image of images) {
+      await ProductImage.findByIdAndDelete(image._id);
+    }
   } catch (error) {
-    next(error);
+    console.error("Error cleaning product media:", error);
   }
 });
 

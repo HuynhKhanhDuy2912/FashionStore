@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
+import { formatProductName } from "../../lib/productName.js";
 import {
   Eye,
   EyeOff,
@@ -230,7 +231,7 @@ export default function AdminReviewsPage() {
 
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-gray-500 uppercase mb-1">
-                      {review.productId?.name || "Sản phẩm đã xóa"}
+                      {formatProductName(review.productId?.name) || "Sản phẩm đã xóa"}
                     </p>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">

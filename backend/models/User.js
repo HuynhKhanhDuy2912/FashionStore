@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { deleteMediaFromCloudinaryIfUnused } from "../config/cloudinary.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -155,6 +156,28 @@ userSchema.pre("save", async function savePassword(next) {
   }
 });
 
+userSchema.pre("save", async function cleanupOldAvatarOnSave(next) {
+  if (this.isNew || !this.isModified("avatar")) {
+    return next();
+  }
+
+  try {
+    const current = await this.constructor.findById(this._id).select("avatar").lean();
+    if (current?.avatar && current.avatar !== this.avatar) {
+      this.$locals.removedMediaUrls = [current.avatar];
+    }
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+userSchema.post("save", async function cleanupOldAvatarAfterSave(doc) {
+  for (const mediaUrl of doc.$locals.removedMediaUrls || []) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
+
 userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
@@ -173,6 +196,37 @@ userSchema.pre("findOneAndUpdate", async function hashPasswordOnUpdate(next) {
     return next();
   } catch (error) {
     return next(error);
+  }
+});
+
+const getUpdatedValue = (update = {}, field) => {
+  if (Object.prototype.hasOwnProperty.call(update, field)) return update[field];
+  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field)) return update.$set[field];
+  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field)) return "";
+  return undefined;
+};
+
+userSchema.pre("findOneAndUpdate", async function cleanupOldAvatarOnUpdate() {
+  const nextAvatar = getUpdatedValue(this.getUpdate() || {}, "avatar");
+
+  if (nextAvatar !== undefined) {
+    const current = await this.model.findOne(this.getQuery()).select("avatar").lean();
+    if (current?.avatar && current.avatar !== nextAvatar) {
+      this._removedMediaUrls = [current.avatar];
+    }
+  }
+
+});
+
+userSchema.post("findOneAndUpdate", async function() {
+  for (const mediaUrl of this._removedMediaUrls || []) {
+    await deleteMediaFromCloudinaryIfUnused(mediaUrl);
+  }
+});
+
+userSchema.post("findOneAndDelete", async function(docToUpdate) {
+  if (docToUpdate?.avatar) {
+    await deleteMediaFromCloudinaryIfUnused(docToUpdate.avatar);
   }
 });
 

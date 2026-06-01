@@ -4,6 +4,7 @@ import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import { sortVariantsBySize } from "../../lib/sizes.js";
+import { formatProductName } from "../../lib/productName.js";
 import {
   Plus,
   Search,
@@ -85,7 +86,7 @@ export default function AdminProductListPage() {
   const handleDelete = async (product) => {
     try {
       await apiRequest(`/products/${product._id}`, { method: "DELETE", token });
-      toast.success(`Đã xóa sản phẩm "${product.name}" thành công!`);
+      toast.success(`Đã xóa sản phẩm "${formatProductName(product.name)}" thành công!`);
       setDeleteConfirm(null);
     } catch (e) {
       toast.error(e.message);
@@ -105,7 +106,7 @@ export default function AdminProductListPage() {
         )
       );
       toast.success(
-        `Đã ${product.isActive ? "ẩn" : "hiển thị"} sản phẩm "${product.name}"`
+        `Đã ${product.isActive ? "ẩn" : "hiển thị"} sản phẩm "${formatProductName(product.name)}"`
       );
     } catch (e) {
       toast.error(e.message);
@@ -500,6 +501,7 @@ export default function AdminProductListPage() {
                     0,
                   );
                   const isOutOfStock = totalStock === 0;
+                  const displayName = formatProductName(product.name);
                   const maxDiscount = Math.max(
                     product.discount || 0,
                     ...(product.variants || []).map(v => (v.discount != null ? v.discount : (product.discount || 0)))
@@ -515,7 +517,7 @@ export default function AdminProductListPage() {
                           <img
                             src={product.images[0]}
                             className="h-full w-full object-cover"
-                            alt={product.name}
+                            alt={displayName}
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-xs text-gray-300">
@@ -533,7 +535,7 @@ export default function AdminProductListPage() {
 
                       <div className="flex flex-col justify-center">
                         <strong className="mb-1 line-clamp-1 text-sm text-gray-900">
-                          {product.name}
+                          {displayName}
                           {!product.isActive && (
                             <span className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">ĐÃ ẨN</span>
                           )}
@@ -741,7 +743,7 @@ export default function AdminProductListPage() {
               </p>
 
               <p className="text-sm font-semibold text-gray-900">
-                {deleteConfirm.name}
+                {formatProductName(deleteConfirm.name)}
               </p>
 
               {deleteConfirm.variants && deleteConfirm.variants.length > 0 && (

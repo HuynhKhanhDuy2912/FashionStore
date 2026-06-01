@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api.js";
+import { formatProductName } from "../lib/productName.js";
 import {
   Search,
   Filter,
@@ -516,14 +517,14 @@ export default function OrdersTab({ token }) {
                                   item.variantId?.image ||
                                   item.productId.images[0]
                                 }
-                                alt={item.productId?.name}
+                                alt={formatProductName(item.productId?.name) || "Sản phẩm"}
                                 className="w-full h-full object-cover"
                               />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 mb-1 line-clamp-1">
-                              {item.productId?.name || "Sản phẩm"}
+                              {formatProductName(item.productId?.name) || "Sản phẩm"}
                             </h4>
                             <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                               <span>{item.variantId?.color || "N/A"}</span>

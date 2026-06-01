@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { sortVariantsBySize } from "../lib/sizes.js";
+import { formatProductName } from "../lib/productName.js";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
 
@@ -253,6 +254,7 @@ export default function CartPage() {
                 const colors = [...new Set(productVariants.map((variant) => variant.color).filter(Boolean))];
                 const currentColor = item.variantId?.color || "";
                 const currentSize = item.variantId?.size || "";
+                const displayName = formatProductName(item.productId?.name);
                 const sizesForColor = sortVariantsBySize(
                   productVariants.filter((variant) => variant.color === currentColor)
                 );
@@ -276,14 +278,14 @@ export default function CartPage() {
                     <div className="h-36 w-28 overflow-hidden bg-gray-100 md:h-40">
                       <img
                         src={imageUrl}
-                        alt={item.productId?.name || "Sản phẩm"}
+                        alt={displayName || "Sản phẩm"}
                         className="h-full w-full object-cover"
                       />
                     </div>
 
                     <div className="min-w-0">
                       <h3 className="mb-2 line-clamp-2 text-base font-bold uppercase tracking-wide text-black">
-                        {item.productId?.name}
+                        {displayName}
                       </h3>
                       <div className="mb-4 grid gap-3 sm:grid-cols-2">
                         <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-500">

@@ -1,4 +1,5 @@
 import { formatCompactCurrency, formatCurrency } from "../../lib/adminStats.js";
+import { formatProductName } from "../../lib/productName.js";
 
 const STATUS_COLORS = {
   pending: "#eab308",
@@ -147,7 +148,7 @@ export function TopProductsList({ data = [] }) {
                   {index + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-black">{item.name}</p>
+                  <p className="text-sm font-semibold text-black">{formatProductName(item.name)}</p>
                   <p className="text-xs text-gray-500">{item.quantity} sản phẩm đã bán</p>
                 </div>
               </div>

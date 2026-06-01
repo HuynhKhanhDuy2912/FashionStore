@@ -21,6 +21,7 @@ import {
 import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { trackBehavior } from "../lib/tracking.js";
+import { formatProductName } from "../lib/productName.js";
 
 function getParentId(category) {
   if (!category?.parentId) return null;
@@ -260,7 +261,7 @@ export default function ProductsPage() {
           next.delete(product._id);
           return next;
         });
-        setMessage(`Đã bỏ ${product.name} khỏi danh sách yêu thích`);
+        setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
         
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
@@ -278,7 +279,7 @@ export default function ProductsPage() {
           },
         });
         setWishlistProductIds((current) => new Set([...current, product._id]));
-        setMessage(`Đã thêm ${product.name} vào danh sách yêu thích`);
+        setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
         
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
@@ -562,7 +563,7 @@ export default function ProductsPage() {
           addedFrom: "product_page",
         },
       });
-      setMessage(`Đã thêm ${product.name} vào danh sách yêu thích`);
+      setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -606,7 +607,7 @@ export default function ProductsPage() {
         },
       });
 
-      setMessage(`Đã thêm ${product.name} vào giỏ hàng`);
+      setMessage(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
       setQuickAddByProduct((current) => {
         const clone = { ...current };
         delete clone[product._id];
@@ -1044,6 +1045,7 @@ export default function ProductsPage() {
                     ) ||
                     activeColorGroup?.variants?.[0] ||
                     null;
+                  const displayName = formatProductName(product.name);
 
                   return (
                     <article
@@ -1059,12 +1061,12 @@ export default function ProductsPage() {
                         >
                           <img
                             src={primaryImage}
-                            alt={product.name}
+                            alt={displayName}
                             className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300 group-hover:opacity-0"
                           />
                           <img
                             src={secondaryImage}
-                            alt={product.name}
+                            alt={displayName}
                             className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                           />
                         </Link>
@@ -1166,7 +1168,7 @@ export default function ProductsPage() {
                             })}
                             className="hover:text-red-600"
                           >
-                            {product.name}
+                            {displayName}
                           </Link>
                         </h2>
 

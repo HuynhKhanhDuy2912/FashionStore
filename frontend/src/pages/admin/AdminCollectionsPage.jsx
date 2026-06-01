@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import ImageUpload from "../../components/ImageUpload.jsx";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
+import { formatProductName } from "../../lib/productName.js";
 import {
   Pencil,
   Trash2,
@@ -309,7 +310,7 @@ export default function AdminCollectionsPage() {
                     typeof p === "string"
                       ? allProducts.find((ap) => ap._id === p)
                       : p;
-                  const name = product?.name || "Sản phẩm";
+                  const name = formatProductName(product?.name) || "Sản phẩm";
                   const img = product?.images?.[0];
                   const id = product?._id || p;
 
@@ -391,7 +392,7 @@ export default function AdminCollectionsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-black m-0 truncate">
-                            {product.name}
+                            {formatProductName(product.name)}
                           </p>
                           <div className="flex items-center gap-2">
                             <p className="text-[10px] text-gray-400 m-0">

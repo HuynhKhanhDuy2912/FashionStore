@@ -4,6 +4,7 @@ import { apiRequest } from "../../lib/api.js";
 import { Link } from "react-router-dom";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { getProductPath } from "../../lib/slug.js";
+import { formatProductName } from "../../lib/productName.js";
 import {
   MessageCircleQuestion,
   Search,
@@ -200,7 +201,7 @@ export default function AdminProductQuestionsPage() {
             <tbody className="divide-y divide-gray-50">
               {questions.map((q) => {
                 const userName = q.userId?.fullname || q.userId?.username || "Người dùng";
-                const productName = q.productId?.name || "Sản phẩm";
+                const productName = formatProductName(q.productId?.name) || "Sản phẩm";
                 const isExpanded = answeringId === q._id;
 
                 return (

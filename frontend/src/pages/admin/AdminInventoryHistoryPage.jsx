@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { apiRequest } from "../../lib/api";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../../components/AdminPageHeader";
+import { formatProductName } from "../../lib/productName";
 import { History, Download, Package, Filter, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
 
 export default function AdminInventoryHistoryPage() {
@@ -300,7 +301,7 @@ export default function AdminInventoryHistoryPage() {
                           </div>
                         )}
                         <span className="text-sm font-medium">
-                          {tx.productId?.name || "N/A"}
+                          {formatProductName(tx.productId?.name) || "N/A"}
                         </span>
                       </div>
                     </td>
