@@ -29,6 +29,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { NotificationProvider } from "../context/NotificationContext.jsx";
 import AdminContactInboxButton from "./AdminContactInboxButton.jsx";
 import AdminNotificationBell from "./AdminNotificationBell.jsx";
+import { getAvatarInitial, getUserDisplayName } from "../lib/avatar.js";
 
 const SIDEBAR_EXPANDED = 260;
 const SIDEBAR_COLLAPSED = 76;
@@ -164,11 +165,11 @@ export default function AdminLayout() {
         {!collapsed ? (
           <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-4">
             <div className="grid h-8 w-8 shrink-0 place-items-center border border-gray-300 bg-gray-100 text-xs font-bold">
-              {(user?.fullname || user?.username || "A").slice(0, 1)}
+              {getAvatarInitial(user, "A")}
             </div>
             <div className="min-w-0">
               <strong className="block truncate text-xs uppercase">
-                {user?.fullname || user?.username}
+                {getUserDisplayName(user, "Admin")}
               </strong>
               <span className="block truncate text-[11px] text-gray-500">
                 {user?.email || "Quản trị viên"}
@@ -178,9 +179,9 @@ export default function AdminLayout() {
         ) : (
           <div
             className="mx-auto my-3 grid h-8 w-8 place-items-center border border-gray-300 bg-gray-100 text-xs font-bold uppercase"
-            title={user?.fullname || user?.username}
+            title={getUserDisplayName(user, "Admin")}
           >
-            {(user?.fullname || user?.username || "A").slice(0, 1)}
+            {getAvatarInitial(user, "A")}
           </div>
         )}
 
@@ -322,11 +323,11 @@ export default function AdminLayout() {
                 title="Hồ sơ"
               >
                 <div className="grid h-8 w-8 place-items-center rounded-full bg-black text-xs font-bold text-white uppercase">
-                  {(user?.fullname || user?.username || "A").slice(0, 1)}
+                  {getAvatarInitial(user, "A")}
                 </div>
                 <div className="hidden min-w-0 pr-1 text-left sm:block">
                   <div className="truncate text-xs font-bold text-black">
-                    {user?.fullname || user?.username || "Admin"}
+                    {getUserDisplayName(user, "Admin")}
                   </div>
                   <div className="truncate text-[11px] text-gray-500">Quản trị viên</div>
                 </div>

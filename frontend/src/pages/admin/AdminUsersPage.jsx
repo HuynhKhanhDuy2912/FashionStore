@@ -21,6 +21,11 @@ import {
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
+import {
+  getAvatarColorClass,
+  getAvatarInitial,
+  getUserDisplayName,
+} from "../../lib/avatar.js";
 import toast from "react-hot-toast";
 
 const ROLES = [
@@ -67,24 +72,20 @@ const formatLastLogin = (val) => {
   return { text, level, date: formatDate(val) };
 };
 
-const getInitials = (name) => {
-  if (!name) return "?";
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) return parts[0][0].toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
+function InitialAvatar({ user, className = "" }) {
+  const displayName = getUserDisplayName(user);
 
-const AVATAR_COLORS = [
-  "bg-violet-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-cyan-500",
-];
-
-const getAvatarColor = (id = "") =>
-  AVATAR_COLORS[id.charCodeAt(id.length - 1) % AVATAR_COLORS.length];
+  return (
+    <div
+      className={`grid shrink-0 place-items-center rounded-full font-bold text-white ${getAvatarColorClass(
+        user?._id || displayName,
+      )} ${className}`}
+      title={displayName}
+    >
+      {getAvatarInitial(displayName)}
+    </div>
+  );
+}
 
 export default function AdminUsersPage() {
   const { token } = useAuth();
@@ -416,22 +417,10 @@ export default function AdminUsersPage() {
                   <tr key={user._id} className="transition hover:bg-gray-50/70">
                     <td className="px-6 py-4 text-left">
                       <div className="flex items-center gap-3">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.fullname}
-                            className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-100"
-                          />
-                        ) : (
-                          <div
-                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${getAvatarColor(user._id)}`}
-                          >
-                            {getInitials(user.fullname || user.username)}
-                          </div>
-                        )}
+                        <InitialAvatar user={user} className="h-10 w-10 text-sm" />
                         <div>
                           <p className="text-sm font-semibold text-gray-900">
-                            {user.fullname || user.username}
+                            {getUserDisplayName(user)}
                           </p>
                           {/* <p className="text-xs text-gray-400">@{user.username}</p> */}
                         </div>
@@ -570,11 +559,7 @@ export default function AdminUsersPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${getAvatarColor(editUser._id)}`}
-                >
-                  {getInitials(editUser.fullname || editUser.username)}
-                </div>
+                <InitialAvatar user={editUser} className="h-10 w-10 text-sm" />
                 <div>
                   <h3 className="text-sm font-bold text-gray-900">
                     Chỉnh sửa người dùng
@@ -698,14 +683,10 @@ export default function AdminUsersPage() {
             </div>
             <div className="px-6 py-5">
               <div className="mb-4 flex items-center gap-3 rounded-xl bg-red-50 p-4">
-                <div
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${getAvatarColor(deleteTarget._id)}`}
-                >
-                  {getInitials(deleteTarget.fullname || deleteTarget.username)}
-                </div>
+                <InitialAvatar user={deleteTarget} className="h-10 w-10 text-sm" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {deleteTarget.fullname || deleteTarget.username}
+                    {getUserDisplayName(deleteTarget)}
                   </p>
                   <p className="text-xs text-gray-500">{deleteTarget.email}</p>
                 </div>

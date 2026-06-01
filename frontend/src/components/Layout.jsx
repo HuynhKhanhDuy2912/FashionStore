@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { apiRequest } from "../lib/api.js";
+import { getAvatarInitial, getUserDisplayName } from "../lib/avatar.js";
 
 function getParentId(category) {
   if (!category?.parentId) return null;
@@ -326,11 +327,11 @@ export default function Layout() {
                       className="flex items-center gap-2 rounded-full border border-gray-200 py-1.5 pl-2 pr-3 text-sm font-medium text-black transition hover:border-black hover:bg-gray-50"
                       onClick={() => setIsAccountOpen((current) => !current)}
                     >
-                      <div className="grid h-7 w-7 place-items-center rounded-full bg-gray-100 text-black">
-                        <User className="h-4 w-4" />
+                      <div className="grid h-7 w-7 place-items-center rounded-full bg-black text-xs font-bold text-white">
+                        {getAvatarInitial(user, "U")}
                       </div>
                       <span className="hidden max-w-[120px] truncate lg:inline">
-                        {user?.fullname || user?.username || "Người dùng"}
+                        {getUserDisplayName(user, "Người dùng")}
                       </span>
                     </button>
 

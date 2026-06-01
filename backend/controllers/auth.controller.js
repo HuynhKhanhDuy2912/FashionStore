@@ -11,6 +11,8 @@ const PHONE_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
 const normalizePhone = (phoneNumber = "") => phoneNumber.replace(/[^\d+]/g, "").trim();
 const uniqueValues = (values = []) => [...new Set(values.filter(Boolean))];
+const isGoogleAvatar = (avatar = "") =>
+  /googleusercontent\.com|ggpht\.com/i.test(avatar);
 const maskPhoneNumber = (phoneNumber = "") => {
   if (phoneNumber.length <= 4) {
     return phoneNumber;
@@ -217,14 +219,15 @@ export const googleAuth = async (req, res) => {
         email: normalizedEmail,
         googleId: payload.sub,
         fullname: fullname || payload.name || "",
-        avatar: payload.picture || "",
         authProviders: ["google"]
       });
     } else {
       user.googleId = user.googleId || payload.sub;
       user.email = user.email || normalizedEmail;
       user.fullname = user.fullname || fullname || payload.name || "";
-      user.avatar = user.avatar || payload.picture || "";
+      if (isGoogleAvatar(user.avatar)) {
+        user.avatar = "";
+      }
       user.authProviders = uniqueValues([...(user.authProviders || []), "google"]);
       await user.save();
     }
