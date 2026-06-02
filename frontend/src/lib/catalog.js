@@ -44,7 +44,20 @@ export function filterProducts(products, filters) {
     const matchesOccasion =
       !filters.occasion || (product.occasion || []).includes(filters.occasion);
     const matchesSoldOnly = !filters.soldOnly || Number(product.soldCount || 0) > 0;
+    const matchesDiscountOnly =
+      !filters.discountOnly ||
+      Number(product.discount || 0) > 0 ||
+      (product.availableVariants || []).some(
+        (variant) => Number(variant.discount || 0) > 0,
+      );
 
-    return matchesSearch && matchesStyle && matchesGender && matchesOccasion && matchesSoldOnly;
+    return (
+      matchesSearch &&
+      matchesStyle &&
+      matchesGender &&
+      matchesOccasion &&
+      matchesSoldOnly &&
+      matchesDiscountOnly
+    );
   });
 }

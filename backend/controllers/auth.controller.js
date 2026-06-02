@@ -2,24 +2,22 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
+import { verifyFirebaseToken } from "../config/firebase.js";
+import NodeCache from "node-cache";
+import { sendOTPEmail } from "../services/mail.service.js";
+
+const otpCache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
+const generateOTP = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const PHONE_OTP_TTL_MS = 5 * 60 * 1000;
-const PHONE_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
-
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
-const normalizePhone = (phoneNumber = "") => phoneNumber.replace(/[^\d+]/g, "").trim();
+const normalizePhone = (phoneNumber = "") =>
+  phoneNumber.replace(/[^\d+]/g, "").trim();
 const uniqueValues = (values = []) => [...new Set(values.filter(Boolean))];
 const isGoogleAvatar = (avatar = "") =>
   /googleusercontent\.com|ggpht\.com/i.test(avatar);
-const maskPhoneNumber = (phoneNumber = "") => {
-  if (phoneNumber.length <= 4) {
-    return phoneNumber;
-  }
-
-  return `${phoneNumber.slice(0, 3)}****${phoneNumber.slice(-3)}`;
-};
 
 const generateUsername = (seed = "user") => {
   const normalized = seed
@@ -31,19 +29,16 @@ const generateUsername = (seed = "user") => {
   return `${normalized || "user"}${Date.now().toString().slice(-6)}`;
 };
 
-const generatePhoneEmail = (phoneNumber) =>
-  `phone_${phoneNumber.replace(/[^\d]/g, "")}@phone.local`;
-
 const signToken = (user) =>
   jwt.sign(
     {
       userId: user._id,
-      role: user.role
+      role: user.role,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d"
-    }
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    },
   );
 
 const sanitizeUser = (user) => ({
@@ -66,7 +61,7 @@ const sanitizeUser = (user) => ({
   height: user.height,
   weight: user.weight,
   createdAt: user.createdAt,
-  updatedAt: user.updatedAt
+  updatedAt: user.updatedAt,
 });
 
 const issueAuthResponse = (res, user, statusCode, message) =>
@@ -75,20 +70,65 @@ const issueAuthResponse = (res, user, statusCode, message) =>
     message,
     data: {
       user: sanitizeUser(user),
-      token: signToken(user)
-    }
+      token: signToken(user),
+    },
   });
+
+export const sendRegisterOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email là bắt buộc" });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ success: false, message: "Email đã tồn tại" });
+    }
+
+    const otp = generateOTP();
+    otpCache.set(`register_${normalizedEmail}`, otp);
+
+    const emailResult = await sendOTPEmail(normalizedEmail, otp, "register");
+    if (!emailResult.sent) {
+      return res.status(500).json({
+        success: false,
+        message: "Không thể gửi OTP. " + emailResult.error,
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: "OTP đã được gửi đến email" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password, phone_number } = req.body;
+    const { username, email, password, phone_number, otp } = req.body;
     const normalizedEmail = normalizeEmail(email);
     const normalizedPhone = normalizePhone(phone_number);
 
-    if (!username || !normalizedEmail || !password) {
+    if (!username || !normalizedEmail || !password || !otp) {
       return res.status(400).json({
         success: false,
-        message: "username, email and password are required"
+        message: "Username, email, mật khẩu và OTP là bắt buộc",
+      });
+    }
+
+    const cachedOtp = otpCache.get(`register_${normalizedEmail}`);
+    if (!cachedOtp || cachedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã OTP không hợp lệ hoặc đã hết hạn",
       });
     }
 
@@ -97,7 +137,7 @@ export const register = async (req, res) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "Email already exists"
+        message: "Email đã tồn tại",
       });
     }
 
@@ -107,7 +147,7 @@ export const register = async (req, res) => {
       if (phoneExists) {
         return res.status(409).json({
           success: false,
-          message: "Phone number already exists"
+          message: "Số điện thoại đã tồn tại",
         });
       }
     }
@@ -116,14 +156,16 @@ export const register = async (req, res) => {
       ...req.body,
       email: normalizedEmail,
       phone_number: normalizedPhone || undefined,
-      authProviders: ["email"]
+      authProviders: ["email"],
     });
 
-    return issueAuthResponse(res, user, 201, "Register successful");
+    otpCache.del(`register_${normalizedEmail}`);
+
+    return issueAuthResponse(res, user, 201, "Đăng ký thành công");
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -136,16 +178,18 @@ export const login = async (req, res) => {
     if (!normalizedEmail || !password) {
       return res.status(400).json({
         success: false,
-        message: "email and password are required"
+        message: "Email và mật khẩu là bắt buộc",
       });
     }
 
-    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    );
 
     if (!user || !user.password) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Email hoặc mật khẩu không chính xác",
       });
     }
 
@@ -154,16 +198,16 @@ export const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password"
+        message: "Email hoặc mật khẩu không chính xác",
       });
     }
 
     await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
-    return issueAuthResponse(res, user, 200, "Login successful");
+    return issueAuthResponse(res, user, 200, "Đăng nhập thành công");
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -171,8 +215,8 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   return res.status(200).json({
     success: true,
-    message: "Current user fetched successfully",
-    data: req.user
+    message: "Đã lấy được thông tin người dùng hiện tại",
+    data: req.user,
   });
 };
 
@@ -183,20 +227,20 @@ export const googleAuth = async (req, res) => {
     if (!process.env.GOOGLE_CLIENT_ID) {
       return res.status(500).json({
         success: false,
-        message: "GOOGLE_CLIENT_ID is not configured"
+        message: "GOOGLE_CLIENT_ID chưa được cấu hình",
       });
     }
 
     if (!credential) {
       return res.status(400).json({
         success: false,
-        message: "Google credential is required"
+        message: "Thiếu mã xác thực Google",
       });
     }
 
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -204,7 +248,7 @@ export const googleAuth = async (req, res) => {
     if (!payload?.email) {
       return res.status(400).json({
         success: false,
-        message: "Unable to verify Google account email"
+        message: "Không thể xác minh email tài khoản Google",
       });
     }
 
@@ -219,7 +263,7 @@ export const googleAuth = async (req, res) => {
         email: normalizedEmail,
         googleId: payload.sub,
         fullname: fullname || payload.name || "",
-        authProviders: ["google"]
+        authProviders: ["google"],
       });
     } else {
       user.googleId = user.googleId || payload.sub;
@@ -228,158 +272,91 @@ export const googleAuth = async (req, res) => {
       if (isGoogleAvatar(user.avatar)) {
         user.avatar = "";
       }
-      user.authProviders = uniqueValues([...(user.authProviders || []), "google"]);
+      user.authProviders = uniqueValues([
+        ...(user.authProviders || []),
+        "google",
+      ]);
       await user.save();
     }
 
     await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
-    return issueAuthResponse(res, user, 200, "Google login successful");
+    return issueAuthResponse(res, user, 200, "Đăng nhập thành công");
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: error.message || "Google authentication failed"
+      message: error.message || "Đăng nhập thất bại",
     });
   }
 };
 
-export const requestPhoneOtp = async (req, res) => {
+export const firebasePhoneAuth = async (req, res) => {
   try {
-    const { phone_number, fullname } = req.body;
-    const normalizedPhone = normalizePhone(phone_number);
+    const { idToken, phoneNumber, fullname } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu Firebase ID token",
+      });
+    }
+
+    // Xác thực Firebase ID Token
+    let decodedToken;
+    try {
+      decodedToken = await verifyFirebaseToken(idToken);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Firebase không hợp lệ",
+      });
+    }
+
+    // Lấy số điện thoại từ token hoặc từ request body
+    const firebasePhone = decodedToken.phone_number || phoneNumber;
+    const normalizedPhone = normalizePhone(firebasePhone);
 
     if (!normalizedPhone) {
       return res.status(400).json({
         success: false,
-        message: "phone_number is required"
+        message: "Không tìm thấy số điện thoại trong Firebase token",
       });
     }
 
-    let user = await User.findOne({ phone_number: normalizedPhone }).select(
-      "+phoneOtpCode +phoneOtpExpiresAt +phoneOtpLastSentAt"
-    );
+    // Tìm hoặc tạo user
+    let user = await User.findOne({ phone_number: normalizedPhone });
 
     if (!user) {
+      // Tạo user mới với Firebase UID
       user = await User.create({
         username: generateUsername(normalizedPhone.slice(-4)),
-        email: generatePhoneEmail(normalizedPhone),
         phone_number: normalizedPhone,
-        fullname: fullname || "",
-        authProviders: ["phone"]
+        fullname: fullname || "Người dùng",
+        firebaseUid: decodedToken.uid,
+        isPhoneVerified: true,
+        authProviders: ["firebase_phone"],
       });
-      user = await User.findById(user._id).select(
-        "+phoneOtpCode +phoneOtpExpiresAt +phoneOtpLastSentAt"
-      );
-    }
+    } else {
+      // Cập nhật user hiện có
+      user.firebaseUid = user.firebaseUid || decodedToken.uid;
+      user.isPhoneVerified = true;
+      user.authProviders = uniqueValues([
+        ...(user.authProviders || []),
+        "firebase_phone",
+      ]);
 
-    if (user.phoneOtpLastSentAt) {
-      const elapsedMs = Date.now() - user.phoneOtpLastSentAt.getTime();
-
-      if (elapsedMs < PHONE_OTP_RESEND_COOLDOWN_MS) {
-        const retryAfterSeconds = Math.ceil(
-          (PHONE_OTP_RESEND_COOLDOWN_MS - elapsedMs) / 1000
-        );
-
-        return res.status(429).json({
-          success: false,
-          message: `Please wait ${retryAfterSeconds}s before requesting a new OTP`
-        });
+      if (fullname && !user.fullname) {
+        user.fullname = fullname;
       }
+
+      user.lastLoginAt = new Date();
+      await user.save();
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedOtp = crypto.createHash("sha256").update(otpCode).digest("hex");
-
-    user.phoneOtpCode = hashedOtp;
-    user.phoneOtpExpiresAt = new Date(Date.now() + PHONE_OTP_TTL_MS);
-    user.phoneOtpLastSentAt = new Date();
-    user.authProviders = uniqueValues([...(user.authProviders || []), "phone"]);
-
-    if (fullname && !user.fullname) {
-      user.fullname = fullname;
-    }
-
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "OTP sent successfully",
-      data: {
-        phone_number: normalizedPhone,
-        maskedPhoneNumber: maskPhoneNumber(normalizedPhone),
-        deliveryChannel: process.env.NODE_ENV === "production" ? "sms" : "demo_inbox",
-        expiresInSeconds: PHONE_OTP_TTL_MS / 1000,
-        resendCooldownSeconds: PHONE_OTP_RESEND_COOLDOWN_MS / 1000,
-        ...(process.env.NODE_ENV !== "production"
-          ? {
-              demoOtp: otpCode,
-              demoMessage: `Ma xac thuc FashionStore cua ban la ${otpCode}. Hieu luc trong 5 phut.`
-            }
-          : {})
-      }
-    });
+    return issueAuthResponse(res, user, 200, "Đăng nhập thành công");
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message: error.message
-    });
-  }
-};
-
-export const verifyPhoneOtp = async (req, res) => {
-  try {
-    const { phone_number, otp, fullname } = req.body;
-    const normalizedPhone = normalizePhone(phone_number);
-
-    if (!normalizedPhone || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "phone_number and otp are required"
-      });
-    }
-
-    const user = await User.findOne({ phone_number: normalizedPhone }).select(
-      "+phoneOtpCode +phoneOtpExpiresAt +phoneOtpLastSentAt"
-    );
-
-    if (!user || !user.phoneOtpCode || !user.phoneOtpExpiresAt) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP request not found"
-      });
-    }
-
-    if (user.phoneOtpExpiresAt.getTime() < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP has expired"
-      });
-    }
-
-    const hashedOtp = crypto.createHash("sha256").update(String(otp)).digest("hex");
-
-    if (hashedOtp !== user.phoneOtpCode) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid OTP"
-      });
-    }
-
-    user.phoneOtpCode = "";
-    user.phoneOtpExpiresAt = null;
-    user.isPhoneVerified = true;
-    user.authProviders = uniqueValues([...(user.authProviders || []), "phone"]);
-
-    if (fullname && !user.fullname) {
-      user.fullname = fullname;
-    }
-
-    user.lastLoginAt = new Date();
-    await user.save();
-    return issueAuthResponse(res, user, 200, "Phone login successful");
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: error.message
+      message: error.message || "Đăng nhập thất bại",
     });
   }
 };
@@ -388,6 +365,7 @@ export const updateProfile = async (req, res) => {
   try {
     const {
       fullname,
+      email,
       gender,
       favoriteStyles,
       favoriteColors,
@@ -396,7 +374,7 @@ export const updateProfile = async (req, res) => {
       city,
       dateOfBirth,
       height,
-      weight
+      weight,
     } = req.body;
 
     const user = await User.findById(req.user._id);
@@ -404,7 +382,7 @@ export const updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "Không tìm thấy người dùng",
       });
     }
 
@@ -412,13 +390,13 @@ export const updateProfile = async (req, res) => {
       const normalizedPhone = normalizePhone(phone_number);
       const phoneExists = await User.findOne({
         phone_number: normalizedPhone,
-        _id: { $ne: user._id }
+        _id: { $ne: user._id },
       });
 
       if (phoneExists) {
         return res.status(409).json({
           success: false,
-          message: "Phone number already exists"
+          message: "Số điện thoại đã tồn tại",
         });
       }
 
@@ -435,17 +413,42 @@ export const updateProfile = async (req, res) => {
     if (height !== undefined) user.height = height;
     if (weight !== undefined) user.weight = weight;
 
+    // Cho phép user đăng nhập bằng phone cập nhật email
+    if (
+      email !== undefined &&
+      user.authProviders?.includes("firebase_phone") &&
+      !user.authProviders?.includes("email") &&
+      !user.authProviders?.includes("google")
+    ) {
+      const normalizedEmail = normalizeEmail(email);
+      if (normalizedEmail) {
+        const emailExists = await User.findOne({
+          email: normalizedEmail,
+          _id: { $ne: user._id },
+        });
+        if (emailExists) {
+          return res.status(409).json({
+            success: false,
+            message: "Email đã tồn tại",
+          });
+        }
+        user.email = normalizedEmail;
+      } else {
+        user.email = undefined;
+      }
+    }
+
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
-      data: sanitizeUser(user)
+      message: "Cập nhật thông tin thành công",
+      data: sanitizeUser(user),
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -457,14 +460,14 @@ export const changePassword = async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "currentPassword and newPassword are required"
+        message: "Mật khẩu hiện tại và mật khẩu mới là bắt buộc",
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "New password must be at least 6 characters"
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự",
       });
     }
 
@@ -473,14 +476,14 @@ export const changePassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "Không tìm thấy người dùng",
       });
     }
 
     if (!user.password) {
       return res.status(400).json({
         success: false,
-        message: "This account does not have a password set"
+        message: "Tài khoản này chưa được đặt mật khẩu",
       });
     }
 
@@ -489,7 +492,7 @@ export const changePassword = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "Current password is incorrect"
+        message: "Mật khẩu hiện tại không chính xác",
       });
     }
 
@@ -498,12 +501,108 @@ export const changePassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password changed successfully"
+      message: "Đổi mật khẩu thành công",
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
+  }
+};
+
+export const sendResetPasswordOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email là bắt buộc" });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng với email này",
+      });
+    }
+
+    if (!user.authProviders?.includes("email")) {
+      return res.status(400).json({
+        success: false,
+        message: "Tài khoản này không đăng nhập bằng email/mật khẩu",
+      });
+    }
+
+    const otp = generateOTP();
+    otpCache.set(`reset_${normalizedEmail}`, otp);
+
+    const emailResult = await sendOTPEmail(
+      normalizedEmail,
+      otp,
+      "reset_password",
+    );
+    if (!emailResult.sent) {
+      return res.status(500).json({
+        success: false,
+        message: "Không thể gửi OTP. " + emailResult.error,
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: "OTP đã được gửi đến email" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP và mật khẩu mới là bắt buộc",
+      });
+    }
+
+    const cachedOtp = otpCache.get(`reset_${normalizedEmail}`);
+    if (!cachedOtp || cachedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã OTP không hợp lệ hoặc đã hết hạn",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự",
+      });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    otpCache.del(`reset_${normalizedEmail}`);
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Đặt lại mật khẩu thành công" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

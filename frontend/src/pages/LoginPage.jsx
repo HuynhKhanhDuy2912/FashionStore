@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useFirebasePhone } from "../hooks/useFirebasePhone.js";
 
 const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -12,9 +13,13 @@ const loginModes = [
 ];
 
 export default function LoginPage() {
-  const { login, loginWithGoogle, requestPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { login, loginWithGoogle, loginWithFirebasePhone } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Firebase Phone Authentication Hook
+  const { sendOTP, verifyOTP, resetState: resetFirebase, loading: firebaseLoading, error: firebaseError } = useFirebasePhone();
+
   const [mode, setMode] = useState("email");
   const [emailForm, setEmailForm] = useState({
     email: "",
@@ -25,7 +30,6 @@ export default function LoginPage() {
     otp: ""
   });
   const [phoneStep, setPhoneStep] = useState("request");
-  const [otpPreview, setOtpPreview] = useState(null);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -106,22 +110,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await requestPhoneOtp({
-        phone_number: phoneForm.phone_number
-      });
+      // Chuẩn hóa số điện thoại: Nếu bắt đầu bằng 0, thay bằng +84
+      let formattedPhone = phoneForm.phone_number.trim();
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+84' + formattedPhone.slice(1);
+      } else if (!formattedPhone.startsWith('+')) {
+        formattedPhone = '+84' + formattedPhone;
+      }
 
+      // Gửi OTP THẬT qua Firebase
+      await sendOTP(formattedPhone);
+
+      // Chuyển sang bước nhập OTP
       setPhoneStep("verify");
-      setOtpPreview({
-        maskedPhoneNumber: response.maskedPhoneNumber,
-        demoOtp: response.demoOtp || "",
-        demoMessage: response.demoMessage || "",
-        expiresInSeconds: response.expiresInSeconds || 300,
-        deliveryChannel: response.deliveryChannel || "demo_inbox"
-      });
-      setResendCountdown(response.resendCooldownSeconds || 60);
-      setSuccess("Mã OTP đã được gửi tới khu vực mô phỏng. Nhập mã để tiếp tục đăng nhập.");
+      setPhoneForm((current) => ({ ...current, phone_number: formattedPhone }));
+      setResendCountdown(60); // Chờ 60 giây trước khi gửi lại
+      setSuccess("Mã OTP đã được gửi đến số điện thoại của bạn qua SMS. Vui lòng kiểm tra tin nhắn.");
     } catch (submitError) {
-      setError(submitError.message);
+      setError(submitError.message || firebaseError);
     } finally {
       setLoading(false);
     }
@@ -133,14 +139,23 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const authData = await verifyPhoneOtp(phoneForm);
+      // Xác thực OTP với Firebase
+      const firebaseResult = await verifyOTP(phoneForm.otp);
+
+      // Gửi Firebase ID Token lên backend để tạo/đăng nhập tài khoản
+      const authData = await loginWithFirebasePhone({
+        idToken: firebaseResult.user.idToken,
+        phoneNumber: firebaseResult.user.phoneNumber
+      });
+
+      // Chuyển hướng dựa trên role
       if (authData?.user?.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
         navigate(redirectTo, { replace: true });
       }
     } catch (submitError) {
-      setError(submitError.message);
+      setError(submitError.message || firebaseError);
     } finally {
       setLoading(false);
     }
@@ -259,6 +274,16 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs font-bold text-gray-500 hover:text-black hover:underline"
+                >
+                  Quên mật khẩu?
+                </button>
+              </div>
+
               <div className="pt-2">
                 <button
                   className="w-full border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
@@ -301,6 +326,9 @@ export default function LoginPage() {
               className="space-y-5"
               onSubmit={phoneStep === "request" ? handleRequestOtp : handleVerifyOtp}
             >
+              {/* Container cho Invisible reCAPTCHA - KHÔNG XÓA */}
+              <div id="recaptcha-container"></div>
+
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
                   Số điện thoại
@@ -311,8 +339,12 @@ export default function LoginPage() {
                   onChange={(event) =>
                     setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
                   }
-                  placeholder="Ví dụ: 0987654321"
+                  placeholder="Ví dụ: 0987654321 hoặc +84987654321"
+                  disabled={phoneStep === "verify"}
                 />
+                <p className="mt-2 text-xs text-gray-500">
+                  Nhập số điện thoại Việt Nam. Hệ thống sẽ tự thêm mã +84 nếu bạn bắt đầu bằng số 0.
+                </p>
               </div>
 
               {phoneStep === "verify" ? (
@@ -327,30 +359,11 @@ export default function LoginPage() {
                       setPhoneForm((current) => ({ ...current, otp: event.target.value }))
                     }
                     placeholder="Nhập mã 6 số"
+                    maxLength={6}
+                    autoComplete="one-time-code"
                   />
-                </div>
-              ) : null}
-
-              {otpPreview ? (
-                <div className="space-y-3 border border-dashed border-black bg-gray-50 px-4 py-4 text-sm text-black">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-bold uppercase tracking-widest">Tin nhắn mô phỏng</p>
-                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                      {otpPreview.deliveryChannel === "demo_inbox" ? "Demo inbox" : "SMS"}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">
-                    Mã xác thực đã được gửi tới số <strong>{otpPreview.maskedPhoneNumber}</strong>.
-                  </p>
-                  <div className="border border-gray-200 bg-white px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-widest text-gray-500">Nội dung tin nhắn</p>
-                    <p className="mt-2 leading-6">{otpPreview.demoMessage || "OTP demo đã sẵn sàng để kiểm thử."}</p>
-                    {otpPreview.demoOtp ? (
-                      <p className="mt-3 text-lg font-extrabold tracking-[0.3em]">{otpPreview.demoOtp}</p>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Mã có hiệu lực trong {Math.ceil((otpPreview.expiresInSeconds || 300) / 60)} phút.
+                  <p className="mt-2 text-xs text-gray-500">
+                    Mã OTP đã được gửi qua SMS đến số điện thoại của bạn.
                   </p>
                 </div>
               ) : null}
@@ -359,15 +372,15 @@ export default function LoginPage() {
                 <button
                   className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
-                  disabled={loading || (phoneStep === "request" && resendCountdown > 0)}
+                  disabled={loading || firebaseLoading || (phoneStep === "request" && resendCountdown > 0)}
                 >
                   {phoneStep === "request"
-                    ? loading
+                    ? loading || firebaseLoading
                       ? "Đang gửi OTP..."
                       : resendCountdown > 0
                         ? `Gửi lại sau ${resendCountdown}s`
                         : "Gửi mã OTP"
-                    : loading
+                    : loading || firebaseLoading
                       ? "Đang xác thực..."
                       : "Xác thực và đăng nhập"}
                 </button>
@@ -378,12 +391,12 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => {
                       setPhoneStep("request");
-                      setPhoneForm((current) => ({ ...current, otp: "" }));
-                      setOtpPreview(null);
+                      setPhoneForm({ phone_number: "", otp: "" });
+                      resetFirebase();
                       resetMessages();
                     }}
                   >
-                    Chỉnh số
+                    Đổi số
                   </button>
                 ) : null}
               </div>

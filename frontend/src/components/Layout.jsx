@@ -441,7 +441,7 @@ export default function Layout() {
                     className="flex items-center gap-4 text-left"
                     onClick={() => {
                       if (item.key === "stores") navigate("/products");
-                      if (item.key === "sale") navigate("/products?tag=uu-dai");
+                      if (item.key === "sale") navigate("/products?sale=1");
                       if (item.key === "new") navigate("/products?newArrivals=1");
                       if (item.key === "easy-buy")
                         navigate("/products?tag=easy-buy");

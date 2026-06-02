@@ -72,18 +72,18 @@ function SectionHeader({
   linkLabel = "Xem tất cả",
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
+    <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div>
         {eyebrow ? (
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-gray-500">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
+        <h2 className="text-3xl font-light tracking-tight text-black md:text-4xl">
           {title}
         </h2>
         {description ? (
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
+          <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-gray-500">
             {description}
           </p>
         ) : null}
@@ -91,10 +91,10 @@ function SectionHeader({
       {linkTo ? (
         <Link
           to={linkTo}
-          className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-black transition hover:gap-3"
+          className="group inline-flex shrink-0 items-center gap-2 border-b border-black pb-1 text-xs font-bold uppercase tracking-widest text-black transition-all hover:gap-3"
         >
           {linkLabel}
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       ) : null}
     </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
           return next;
         });
         setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
-        
+
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
           actionType: "remove_from_wishlist",
@@ -296,7 +296,7 @@ export default function HomePage() {
           return next;
         });
         setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
-        
+
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
         trackBehavior(token, {
@@ -404,7 +404,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <section
-        className="relative h-[min(78vh,720px)] min-h-[480px] overflow-hidden bg-neutral-900 text-white"
+        className="relative h-[85vh] min-h-[630px] overflow-hidden bg-neutral-900 text-white"
         onMouseEnter={() => setIsHeroPaused(true)}
         onMouseLeave={() => setIsHeroPaused(false)}
       >
@@ -415,29 +415,29 @@ export default function HomePage() {
               alt={bannerTitle}
               className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-black/20" />
-            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-end px-4 pb-16 pt-24 md:px-8 md:pb-20">
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-end px-6 pb-20 pt-24 md:px-12 md:pb-24">
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.4em] text-white/80">
                 Bộ sưu tập nổi bật
               </p>
-              <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-light leading-tight tracking-tight md:text-6xl lg:text-7xl">
                 {bannerTitle}
               </h1>
-              <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
+              <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-white/80 md:text-base">
                 Khám phá phong cách mới nhất - thiết kế tinh gọn, chất liệu cao
                 cấp, dễ phối mọi dịp.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-10 flex flex-wrap gap-4">
                 <Link
                   to={bannerLink}
-                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                  className="inline-flex items-center justify-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
                 >
                   Khám phá ngay
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-2 border border-white/80 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
+                  className="inline-flex items-center justify-center gap-2 border border-white/40 px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black"
                 >
                   Tất cả sản phẩm
                 </Link>
@@ -451,31 +451,29 @@ export default function HomePage() {
               alt="Fashion hero"
               className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-center px-4 md:px-8">
-              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col justify-end px-6 pb-20 pt-24 md:px-12 md:pb-24">
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.4em] text-white/80">
                 Spring Summer 2026
               </p>
-              <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
-                Thời trang tối giản,
-                <br />
-                phong cách của bạn
+              <h1 className="max-w-3xl text-4xl font-light leading-tight tracking-tight md:text-6xl lg:text-7xl">
+                Thời trang tối giản,<br />phong cách của bạn
               </h1>
-              <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
+              <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-white/80 md:text-base">
                 Trải nghiệm mua sắm hiện đại với bộ sưu tập độc quyền - tinh tế,
                 bền vững và dễ phối đồ hàng ngày.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-10 flex flex-wrap gap-4">
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                  className="inline-flex items-center justify-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
                 >
                   Mua ngay
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to={token ? "/recommendations" : "/login"}
-                  className="inline-flex items-center gap-2 border border-white/80 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
+                  className="inline-flex items-center justify-center gap-2 border border-white/40 px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black"
                 >
                   {token ? "Gợi ý cho bạn" : "Đăng nhập"}
                 </Link>
@@ -489,18 +487,18 @@ export default function HomePage() {
             <button
               type="button"
               onClick={handlePrevBanner}
-              className="absolute left-4 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:left-8"
+              className="absolute left-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center bg-black/10 text-white backdrop-blur-md transition hover:bg-black/30 md:left-8"
               aria-label="Banner trước"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.5} />
             </button>
             <button
               type="button"
               onClick={handleNextBanner}
-              className="absolute right-4 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-sm transition hover:bg-black/50 md:right-8"
+              className="absolute right-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center bg-black/10 text-white backdrop-blur-md transition hover:bg-black/30 md:right-8"
               aria-label="Banner sau"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-6 w-6" strokeWidth={1.5} />
             </button>
             <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
               {banners.map((banner, index) => (
@@ -521,18 +519,16 @@ export default function HomePage() {
       </section>
 
       {/* Trust bar */}
-      <section className="border-b border-gray-200 bg-gray-50">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-4 px-4 py-5 md:grid-cols-4 md:gap-6 md:px-8 md:py-6">
+      <section className="border-b border-gray-200 bg-white">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-2 divide-x divide-y divide-gray-100 md:grid-cols-4 md:divide-y-0">
           {trustItems.map((item) => (
-            <div key={item.title} className="flex items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-black shadow-sm">
-                <item.icon className="h-5 w-5" strokeWidth={1.5} />
-              </div>
+            <div key={item.title} className="flex flex-col items-center justify-center gap-3 p-6 text-center md:p-8">
+              <item.icon className="h-6 w-6 text-black" strokeWidth={1} />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-black">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-black">
                   {item.title}
                 </p>
-                <p className="mt-0.5 text-xs text-gray-500">{item.copy}</p>
+                <p className="mt-1.5 text-[13px] text-gray-500">{item.copy}</p>
               </div>
             </div>
           ))}
@@ -568,22 +564,22 @@ export default function HomePage() {
             <Link
               key={item.title}
               to={item.link}
-              className="group relative flex min-h-[320px] flex-col justify-end overflow-hidden rounded-sm md:min-h-[380px]"
+              className="group relative flex min-h-[400px] flex-col justify-end overflow-hidden rounded-none md:min-h-[500px]"
             >
               <img
                 src={item.image}
                 alt={item.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-              <div className="relative z-10 p-6 text-white md:p-8">
-                <h3 className="text-xl font-bold md:text-2xl">{item.title}</h3>
-                <p className="mt-2 max-w-[90%] text-sm leading-relaxed text-white/80">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="relative z-10 p-8 text-white">
+                <h3 className="text-2xl font-light tracking-wide md:text-3xl">{item.title}</h3>
+                <p className="mt-3 max-w-[90%] text-sm leading-relaxed text-white/80">
                   {item.copy}
                 </p>
-                <span className="mt-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+                <span className="mt-6 inline-flex items-center gap-2 border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest transition-all group-hover:gap-3">
                   Khám phá
-                  <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                  <ArrowRight className="h-3 w-3" />
                 </span>
               </div>
             </Link>
@@ -613,10 +609,10 @@ export default function HomePage() {
                         prev === 0 ? newArrivalsPageCount - 1 : prev - 1,
                       )
                     }
-                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-left-5"
+                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-left-6"
                     aria-label="Xem sản phẩm mới trước"
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
                   </button>
                   <button
                     type="button"
@@ -625,10 +621,10 @@ export default function HomePage() {
                         prev === newArrivalsPageCount - 1 ? 0 : prev + 1,
                       )
                     }
-                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center border border-gray-300 bg-white/90 text-black shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:border-black md:-right-5"
+                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-right-6"
                     aria-label="Xem sản phẩm mới tiếp theo"
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
                   </button>
                 </>
               ) : null}
@@ -662,33 +658,33 @@ export default function HomePage() {
                 <Link
                   key={collection._id}
                   to={`/collections/${collection.slug || collection._id}`}
-                  className="group relative min-h-[280px] overflow-hidden rounded-sm bg-gray-100 md:min-h-[360px]"
+                  className="group relative min-h-[350px] overflow-hidden bg-gray-100 md:min-h-[450px]"
                 >
                   {collection.coverImage ? (
                     <img
                       src={collection.coverImage}
                       alt={collection.name}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
                     />
                   ) : (
                     <div className="absolute inset-0 bg-neutral-200" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  <span className="absolute left-4 top-4 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-black">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <span className="absolute left-6 top-6 text-2xl font-light text-white/50">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <div className="absolute inset-x-0 bottom-0 p-5 text-white md:p-6">
-                    <h3 className="text-lg font-bold md:text-xl">
+                  <div className="absolute inset-x-0 bottom-0 p-6 text-white md:p-8">
+                    <h3 className="text-2xl font-light tracking-wide md:text-3xl">
                       {collection.name}
                     </h3>
                     {collection.description ? (
-                      <p className="mt-1 line-clamp-2 text-sm text-white/75">
+                      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-white/80">
                         {collection.description}
                       </p>
                     ) : null}
-                    <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest">
+                    <span className="mt-6 inline-flex items-center gap-2 border-b border-white pb-1 text-[11px] font-bold uppercase tracking-widest transition-all group-hover:gap-3">
                       Xem bộ sưu tập
-                      <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                      <ArrowRight className="h-3 w-3" />
                     </span>
                   </div>
                 </Link>
@@ -716,23 +712,15 @@ export default function HomePage() {
         />
 
         {/* CTA banner */}
-        <section className="relative overflow-hidden rounded-sm bg-neutral-900 px-6 text-center text-white md:px-12 md:py-16">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-20"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 50%, white 1px, transparent 1px)",
-              backgroundSize: "24px 24px",
-            }}
-          />
+        <section className="relative overflow-hidden bg-[#111] px-6 text-center text-white md:px-12 md:py-20">
           <div className="relative z-10 mx-auto max-w-2xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/60">
+            <p className="text-[11px] font-bold uppercase tracking-[0.4em] text-white/60">
               FashionStore
             </p>
-            <h2 className="mt-3 text-2xl font-bold md:text-3xl">
+            <h2 className="mt-4 text-3xl font-light tracking-tight md:text-4xl">
               Gợi ý sản phẩm dành riêng cho bạn
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-white/75">
+            <p className="mt-6 text-[15px] leading-relaxed text-white/80">
               Hệ thống học từ lịch sử xem và mua hàng của bạn để đề xuất sản phẩm phù
               hợp nhất.
             </p>
@@ -740,7 +728,7 @@ export default function HomePage() {
               {token ? (
                 <Link
                   to="/recommendations"
-                  className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                  className="inline-flex items-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
                 >
                   Xem gợi ý
                   <ArrowRight className="h-4 w-4" />
@@ -749,13 +737,13 @@ export default function HomePage() {
                 <>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 bg-white px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-black transition hover:bg-gray-100"
+                    className="inline-flex items-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
                   >
                     Đăng ký ngay
                   </Link>
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-2 border border-white/60 px-8 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-white hover:text-black"
+                    className="inline-flex items-center gap-2 border border-white/40 px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black"
                   >
                     Đăng nhập
                   </Link>

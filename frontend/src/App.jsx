@@ -35,6 +35,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import CollectionsPage from "./pages/CollectionsPage.jsx";
 import CollectionDetailPage from "./pages/CollectionDetailPage.jsx";
 import ContactPage from "./pages/ContactPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage.jsx";
 import PaymentFailedPage from "./pages/PaymentFailedPage.jsx";
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:productId" element={<ProductDetailPage />} />
           <Route path="/collections" element={<CollectionsPage />} />

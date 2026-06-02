@@ -183,11 +183,15 @@ export default function ProductsPage() {
     gender: searchParams.get("gender") || "",
     occasion: "",
     soldOnly: searchParams.get("bestSeller") === "1",
+    discountOnly:
+      searchParams.get("sale") === "1" || searchParams.get("tag") === "uu-dai",
   });
 
   const selectedCategoryId = searchParams.get("categoryId") || "";
   const isBestSellerContext = searchParams.get("bestSeller") === "1";
   const isNewArrivalsContext = searchParams.get("newArrivals") === "1";
+  const isSaleContext =
+    searchParams.get("sale") === "1" || searchParams.get("tag") === "uu-dai";
   const isCategoryContext = Boolean(selectedCategoryId);
   const useNewAllProductsLayout = !isCategoryContext;
 
@@ -262,7 +266,7 @@ export default function ProductsPage() {
           return next;
         });
         setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
-        
+
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
           actionType: "remove_from_wishlist",
@@ -280,7 +284,7 @@ export default function ProductsPage() {
         });
         setWishlistProductIds((current) => new Set([...current, product._id]));
         setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
-        
+
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
         trackBehavior(token, {
@@ -304,6 +308,9 @@ export default function ProductsPage() {
       search: searchParams.get("search") || "",
       gender: searchParams.get("gender") || "",
       soldOnly: searchParams.get("bestSeller") === "1",
+      discountOnly:
+        searchParams.get("sale") === "1" ||
+        searchParams.get("tag") === "uu-dai",
     }));
 
     if (searchParams.get("newArrivals") === "1") {
@@ -318,7 +325,7 @@ export default function ProductsPage() {
     // Only track if at least one filter is active
     const hasSearch = filters.search.trim().length > 0;
     const hasFilters = filters.style || filters.gender || filters.occasion || selectedCategoryId;
-    
+
     if (!hasSearch && !hasFilters) return;
 
     const timer = setTimeout(() => {
@@ -508,7 +515,14 @@ export default function ProductsPage() {
   }
 
   const clearFiltersKeepCategory = () => {
-    setFilters({ search: "", style: "", gender: "", occasion: "", soldOnly: isBestSellerContext });
+    setFilters({
+      search: "",
+      style: "",
+      gender: "",
+      occasion: "",
+      soldOnly: isBestSellerContext,
+      discountOnly: isSaleContext,
+    });
     setSortBy("newest");
   };
 
@@ -534,6 +548,9 @@ export default function ProductsPage() {
     sortBy !== "newest"
       ? { key: "sort", label: `Sắp xếp: ${sortLabelMap[sortBy]}` }
       : null,
+    isNewArrivalsContext ? { key: "newArrivals", label: "Hàng mới" } : null,
+    isBestSellerContext ? { key: "bestSeller", label: "Bán chạy" } : null,
+    isSaleContext ? { key: "sale", label: "Ưu đãi" } : null,
   ].filter(Boolean);
 
   const clearSingleChip = (key) => {
@@ -543,6 +560,27 @@ export default function ProductsPage() {
     }
     if (key === "sort") {
       setSortBy("newest");
+      return;
+    }
+    if (key === "newArrivals") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("newArrivals");
+      setSearchParams(next);
+      return;
+    }
+    if (key === "bestSeller") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("bestSeller");
+      setSearchParams(next);
+      setFilters((current) => ({ ...current, soldOnly: false }));
+      return;
+    }
+    if (key === "sale") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("sale");
+      if (next.get("tag") === "uu-dai") next.delete("tag");
+      setSearchParams(next);
+      setFilters((current) => ({ ...current, discountOnly: false }));
       return;
     }
     setFilters((current) => ({ ...current, [key]: "" }));
@@ -626,7 +664,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, sortBy, selectedCategoryId, isBestSellerContext, isNewArrivalsContext]);
+  }, [filters, sortBy, selectedCategoryId, isBestSellerContext, isNewArrivalsContext, isSaleContext]);
 
   const inputClass =
     "w-full appearance-none border border-gray-200 bg-white px-4 py-2.5 text-sm text-black transition-colors focus:border-black focus:outline-none";
@@ -681,7 +719,13 @@ export default function ProductsPage() {
                   {isBestSellerContext ? (
                     <>
                       <span className="text-gray-400">&gt;</span>
-                      <span className="font-semibold text-black">Sản phẩm bán chạy nhất</span>
+                      <span className="font-semibold text-black">Sản phẩm bán chạy</span>
+                    </>
+                  ) : null}
+                  {isSaleContext ? (
+                    <>
+                      <span className="text-gray-400">&gt;</span>
+                      <span className="font-semibold text-black">Sản phẩm ưu đãi</span>
                     </>
                   ) : null}
                 </>
@@ -1046,6 +1090,23 @@ export default function ProductsPage() {
                     activeColorGroup?.variants?.[0] ||
                     null;
                   const displayName = formatProductName(product.name);
+                  const basePrice = Number(product.price || 0);
+                  const priceAdjustment = Number(
+                    selectedVariant?.priceAdjustment || 0,
+                  );
+                  const priceBeforeDiscount = basePrice + priceAdjustment;
+                  const productDiscount = product.discount || 0;
+                  const variantDiscount = selectedVariant?.discount;
+                  const effectiveDiscount =
+                    variantDiscount !== null && variantDiscount !== undefined
+                      ? variantDiscount
+                      : productDiscount;
+                  const displayPrice =
+                    effectiveDiscount > 0
+                      ? Math.round(
+                        priceBeforeDiscount * (1 - effectiveDiscount / 100),
+                      )
+                      : priceBeforeDiscount;
 
                   return (
                     <article
@@ -1103,7 +1164,7 @@ export default function ProductsPage() {
                             </div>
 
                             {quickAdd ? (
-                              <div className="absolute bottom-14 right-2 z-10 w-44 border border-gray-200 bg-white p-3 shadow-xl">
+                              <div className="absolute bottom-14 right-2 z-10 w-50 border border-gray-200 bg-white p-3 shadow-xl">
                                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
                                   Chọn size
                                 </p>
@@ -1211,13 +1272,28 @@ export default function ProductsPage() {
                         </div>
 
                         {viewMode !== "list" ? (
-                          <div className="mt-3 flex items-center justify-between">
-                            <p className="text-[16px] font-semibold text-black">
-                              {formatPrice(
-                                product.price +
-                                (selectedVariant?.priceAdjustment || 0),
-                              )}
-                            </p>
+                          <div className="mt-3 flex items-start justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <p className="m-0 text-[16px] font-semibold text-black">
+                                {formatPrice(displayPrice)}
+                              </p>
+                              {effectiveDiscount > 0 ? (
+                                <>
+                                  <p className="m-0 text-[16px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
+                                    {formatPrice(priceBeforeDiscount)}
+                                  </p>
+                                  <span
+                                    className="inline-flex items-center bg-red-600 py-0.5 pl-2 pr-1.5 text-[12px] font-bold leading-none text-white"
+                                    style={{
+                                      clipPath:
+                                        "polygon(18% 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%)",
+                                    }}
+                                  >
+                                    -{effectiveDiscount}%
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
                             <button
                               type="button"
                               onClick={() => toggleWishlist(product)}
@@ -1243,9 +1319,27 @@ export default function ProductsPage() {
 
                       {viewMode === "list" ? (
                         <div className="border-t border-gray-200 pt-3 md:border-t-0 md:border-l md:border-gray-200 md:pl-4 md:pt-0">
-                          <p className="text-right text-xl font-bold text-black md:text-2xl">
-                            {formatPrice(product.price + (selectedVariant?.priceAdjustment || 0))}
-                          </p>
+                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                            <p className="m-0 text-right text-xl font-bold text-black md:text-2xl">
+                              {formatPrice(displayPrice)}
+                            </p>
+                            {effectiveDiscount > 0 ? (
+                              <>
+                                <p className="m-0 text-right text-base font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
+                                  {formatPrice(priceBeforeDiscount)}
+                                </p>
+                                <span
+                                  className="inline-flex items-center bg-red-600 py-0.5 pl-2 pr-1.5 text-[12px] font-bold leading-none text-white"
+                                  style={{
+                                    clipPath:
+                                      "polygon(18% 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%)",
+                                  }}
+                                >
+                                  -{effectiveDiscount}%
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
 
                           <div className="mt-3 flex justify-end">
                             <button

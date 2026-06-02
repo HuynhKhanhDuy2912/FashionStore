@@ -116,11 +116,7 @@ export default function ProductCard({
         <div className="aspect-[4/5]" />
 
         <div
-          className="absolute inset-x-0 bottom-0 h-[52px] border-t border-gray-200 bg-white/95 px-3 py-1"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, rgba(219,231,245,0.55) 0px, rgba(219,231,245,0.55) 2px, rgba(255,255,255,0.9) 2px, rgba(255,255,255,0.9) 4px)"
-          }}
+          className="absolute inset-x-0 bottom-0 h-[48px] border-t border-gray-100 bg-white/95 px-3 py-1"
         >
           <div className="flex h-full items-center justify-center gap-3">
             {product.collectionName || product.collectionId?.name ? (
@@ -132,7 +128,7 @@ export default function ProductCard({
               <button
                 type="button"
                 onClick={handleQuickAddToggle}
-                className="grid h-8 w-8 place-items-center rounded-full border border-gray-300 bg-white text-black transition hover:border-black"
+                className="grid h-8 w-8 place-items-center rounded-none border border-gray-300 bg-white text-black transition hover:border-black hover:bg-black hover:text-white"
                 aria-label="Thêm nhanh vào giỏ"
               >
                 {quickAdd ? <X size={14} /> : <Plus size={16} />}
@@ -142,7 +138,7 @@ export default function ProductCard({
         </div>
 
         {quickAdd ? (
-          <div className="absolute bottom-14 right-2 z-10 w-44 border border-gray-200 bg-white p-3 shadow-xl">
+          <div className="absolute bottom-14 right-2 z-10 w-50 border border-gray-200 bg-white p-3 shadow-xl">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Chọn size</p>
             <div className="mb-3 flex flex-wrap gap-2">
               {(sizes.length ? sizes : ["M"]).map((size) => {
@@ -218,18 +214,15 @@ export default function ProductCard({
 
         <div className="mt-3 flex items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <p className="m-0 text-[16px] font-semibold text-black">
+            <p className="m-0 text-[14px] font-medium text-black">
               {formatPrice(price)}
             </p>
             {effectiveDiscount > 0 && (
               <>
-                <p className="m-0 text-[16px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
+                <p className="m-0 text-[13px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
                   {formatPrice(priceBeforeDiscount)}
                 </p>
-                <span
-                  className="inline-flex items-center bg-red-600 py-0.5 pr-1.5 pl-2 text-[12px] font-bold text-white leading-none"
-                  style={{ clipPath: "polygon(18% 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%)" }}
-                >
+                <span className="inline-flex items-center bg-[#b91c1c] px-1.5 py-0.5 text-[10px] font-bold text-white tracking-wider">
                   -{effectiveDiscount}%
                 </span>
               </>

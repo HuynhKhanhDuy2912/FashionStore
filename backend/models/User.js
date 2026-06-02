@@ -9,130 +9,117 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
       minlength: 3,
-      maxlength: 50
+      maxlength: 50,
     },
 
     email: {
       type: String,
       trim: true,
-      lowercase: true
+      lowercase: true,
     },
 
     password: {
       type: String,
       minlength: 6,
-      select: false
+      select: false,
     },
 
     googleId: {
       type: String,
-      trim: true
+      trim: true,
+    },
+
+    firebaseUid: {
+      type: String,
+      trim: true,
     },
 
     authProviders: {
       type: [String],
-      enum: ["email", "google", "phone"],
-      default: ["email"]
+      enum: ["email", "google", "phone", "firebase_phone"],
+      default: ["email"],
     },
 
     isPhoneVerified: {
       type: Boolean,
-      default: false
-    },
-
-    phoneOtpCode: {
-      type: String,
-      select: false,
-      default: ""
-    },
-
-    phoneOtpExpiresAt: {
-      type: Date,
-      select: false,
-      default: null
-    },
-
-    phoneOtpLastSentAt: {
-      type: Date,
-      select: false,
-      default: null
+      default: false,
     },
 
     avatar: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     fullname: {
       type: String,
       trim: true,
       maxlength: 100,
-      default: ""
+      default: "",
     },
 
     gender: {
       type: String,
       trim: true,
-      enum: ["male", "female", "other"]
+      enum: ["male", "female", ""],
     },
 
     favoriteStyles: {
       type: [String],
-      default: []
+      default: [],
     },
 
     favoriteColors: {
       type: [String],
-      default: []
+      default: [],
     },
 
     role: {
       type: String,
       trim: true,
       enum: ["user", "admin"],
-      default: "user"
+      default: "user",
     },
 
     city: {
       type: String,
       trim: true,
-      default: ""
+      default: "",
     },
 
     dateOfBirth: {
       type: Date,
-      default: null
+      default: null,
     },
 
     height: {
       type: Number,
       min: 0,
-      default: 0
+      default: 0,
     },
 
     weight: {
       type: Number,
       min: 0,
-      default: 0
+      default: 0,
     },
 
     phone_number: {
       type: String,
-      trim: true
+      trim: true,
     },
 
     lastLoginAt: {
       type: Date,
-      default: null
+      default: null,
     },
 
     isActive: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.index({ username: 1 });
@@ -162,7 +149,10 @@ userSchema.pre("save", async function cleanupOldAvatarOnSave(next) {
   }
 
   try {
-    const current = await this.constructor.findById(this._id).select("avatar").lean();
+    const current = await this.constructor
+      .findById(this._id)
+      .select("avatar")
+      .lean();
     if (current?.avatar && current.avatar !== this.avatar) {
       this.$locals.removedMediaUrls = [current.avatar];
     }
@@ -178,7 +168,9 @@ userSchema.post("save", async function cleanupOldAvatarAfterSave(doc) {
   }
 });
 
-userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+userSchema.methods.comparePassword = function comparePassword(
+  candidatePassword,
+) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -201,8 +193,10 @@ userSchema.pre("findOneAndUpdate", async function hashPasswordOnUpdate(next) {
 
 const getUpdatedValue = (update = {}, field) => {
   if (Object.prototype.hasOwnProperty.call(update, field)) return update[field];
-  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field)) return update.$set[field];
-  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field)) return "";
+  if (Object.prototype.hasOwnProperty.call(update.$set || {}, field))
+    return update.$set[field];
+  if (Object.prototype.hasOwnProperty.call(update.$unset || {}, field))
+    return "";
   return undefined;
 };
 
@@ -210,21 +204,23 @@ userSchema.pre("findOneAndUpdate", async function cleanupOldAvatarOnUpdate() {
   const nextAvatar = getUpdatedValue(this.getUpdate() || {}, "avatar");
 
   if (nextAvatar !== undefined) {
-    const current = await this.model.findOne(this.getQuery()).select("avatar").lean();
+    const current = await this.model
+      .findOne(this.getQuery())
+      .select("avatar")
+      .lean();
     if (current?.avatar && current.avatar !== nextAvatar) {
       this._removedMediaUrls = [current.avatar];
     }
   }
-
 });
 
-userSchema.post("findOneAndUpdate", async function() {
+userSchema.post("findOneAndUpdate", async function () {
   for (const mediaUrl of this._removedMediaUrls || []) {
     await deleteMediaFromCloudinaryIfUnused(mediaUrl);
   }
 });
 
-userSchema.post("findOneAndDelete", async function(docToUpdate) {
+userSchema.post("findOneAndDelete", async function (docToUpdate) {
   if (docToUpdate?.avatar) {
     await deleteMediaFromCloudinaryIfUnused(docToUpdate.avatar);
   }

@@ -58,17 +58,8 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
-  const requestPhoneOtp = async (payload) => {
-    const response = await apiRequest("/auth/phone/request-otp", {
-      method: "POST",
-      body: payload
-    });
-
-    return response.data;
-  };
-
-  const verifyPhoneOtp = async (payload) => {
-    const response = await apiRequest("/auth/phone/verify-otp", {
+  const loginWithFirebasePhone = async (payload) => {
+    const response = await apiRequest("/auth/firebase-phone", {
       method: "POST",
       body: payload
     });
@@ -115,9 +106,8 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(auth.token),
       login,
       loginWithGoogle,
+      loginWithFirebasePhone,
       register,
-      requestPhoneOtp,
-      verifyPhoneOtp,
       refreshMe,
       logout
     }),

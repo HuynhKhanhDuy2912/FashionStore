@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Camera, Check, Eye, EyeOff, Heart, Loader2, MapPin, User as UserIcon, Package } from "lucide-react";
+import { Camera, Check, Eye, EyeOff, Heart, Loader2, MapPin, User as UserIcon, History } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import AddressManager from "../components/AddressManager.jsx";
@@ -9,15 +9,14 @@ import WishlistTab from "../components/WishlistTab.jsx";
 
 const TABS = [
   { id: "account", label: "Tài khoản", icon: UserIcon },
-  { id: "orders", label: "Đơn hàng", icon: Package },
+  { id: "orders", label: "Lịch sử đặt hàng", icon: History },
+  { id: "address", label: "Địa chỉ giao nhận", icon: MapPin },
   { id: "wishlist", label: "Sản phẩm yêu thích", icon: Heart },
-  { id: "address", label: "Địa chỉ giao nhận", icon: MapPin }
 ];
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Nam" },
-  { value: "female", label: "Nữ" },
-  { value: "other", label: "Khác" }
+  { value: "female", label: "Nữ" }
 ];
 
 const COLOR_OPTIONS = [
@@ -90,7 +89,7 @@ export default function ProfilePage() {
     setFormData({
       fullname: user.fullname || "",
       email: user.email || "",
-      phone_number: user.phone_number || "",
+      phone_number: (user.phone_number || "").replace(/^\+84/, "0"),
       gender: user.gender || "",
       address: user.address || "",
       avatar: user.avatar || "",
@@ -276,7 +275,7 @@ export default function ProfilePage() {
                     : "text-gray-700 hover:bg-gray-50"
                     }`}
                 >
-                  {tab.label}
+                  {<Icon className="h-5 w-5" />} {tab.label}
                 </button>
               );
             })}
@@ -336,13 +335,24 @@ export default function ProfilePage() {
 
                     <div className="md:col-span-2">
                       <label className="mb-2 block text-sm font-medium">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        disabled
-                        className="w-full border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none"
-                      />
+                      {user.authProviders?.includes("firebase_phone") && !user.authProviders?.includes("email") && !user.authProviders?.includes("google") ? (
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="Nhập email của bạn"
+                          className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
+                        />
+                      ) : (
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          disabled
+                          className="w-full border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none"
+                        />
+                      )}
                     </div>
 
                     <div className="md:col-span-2">

@@ -2,29 +2,51 @@ import Address from "../models/Address.js";
 
 export const getMyAddresses = async (req, res) => {
   try {
-    const addresses = await Address.find({ userId: req.user._id }).sort({ isDefault: -1, createdAt: -1 });
+    const addresses = await Address.find({ userId: req.user._id }).sort({
+      isDefault: -1,
+      createdAt: -1,
+    });
 
     return res.status(200).json({
       success: true,
-      message: "Addresses fetched successfully",
-      data: addresses
+      message: "Lấy địa chỉ thành công",
+      data: addresses,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 export const createAddress = async (req, res) => {
   try {
-    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault, provinceId, districtId, wardCode } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      province,
+      district,
+      ward,
+      street,
+      addressDetail,
+      isDefault,
+      provinceId,
+      districtId,
+      wardCode,
+    } = req.body;
 
-    if (!fullName || !phoneNumber || !province || !district || !ward || !street) {
+    if (
+      !fullName ||
+      !phoneNumber ||
+      !province ||
+      !district ||
+      !ward ||
+      !street
+    ) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required"
+        message: "Vui lòng nhập đầy đủ thông tin",
       });
     }
 
@@ -40,18 +62,18 @@ export const createAddress = async (req, res) => {
       isDefault: isDefault || false,
       provinceId: provinceId || null,
       districtId: districtId || null,
-      wardCode: wardCode || null
+      wardCode: wardCode || null,
     });
 
     return res.status(201).json({
       success: true,
-      message: "Address created successfully",
-      data: address
+      message: "Thêm địa chỉ thành công",
+      data: address,
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -59,14 +81,26 @@ export const createAddress = async (req, res) => {
 export const updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { fullName, phoneNumber, province, district, ward, street, addressDetail, isDefault, provinceId, districtId, wardCode } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      province,
+      district,
+      ward,
+      street,
+      addressDetail,
+      isDefault,
+      provinceId,
+      districtId,
+      wardCode,
+    } = req.body;
 
     const address = await Address.findOne({ _id: id, userId: req.user._id });
 
     if (!address) {
       return res.status(404).json({
         success: false,
-        message: "Address not found"
+        message: "Không tìm thấy địa chỉ",
       });
     }
 
@@ -86,13 +120,13 @@ export const updateAddress = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Address updated successfully",
-      data: address
+      message: "Cập nhật địa chỉ thành công",
+      data: address,
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -101,23 +135,26 @@ export const deleteAddress = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const address = await Address.findOneAndDelete({ _id: id, userId: req.user._id });
+    const address = await Address.findOneAndDelete({
+      _id: id,
+      userId: req.user._id,
+    });
 
     if (!address) {
       return res.status(404).json({
         success: false,
-        message: "Address not found"
+        message: "Không tìm thấy địa chỉ",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Address deleted successfully"
+      message: "Xóa địa chỉ thành công",
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -131,7 +168,7 @@ export const setDefaultAddress = async (req, res) => {
     if (!address) {
       return res.status(404).json({
         success: false,
-        message: "Address not found"
+        message: "Không tìm thấy địa chỉ",
       });
     }
 
@@ -140,13 +177,13 @@ export const setDefaultAddress = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Default address set successfully",
-      data: address
+      message: "Đặt làm địa chỉ mặc định thành công",
+      data: address,
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

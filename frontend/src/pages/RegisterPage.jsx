@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useFirebasePhone } from "../hooks/useFirebasePhone.js";
+import { apiRequest } from "../lib/api.js";
 
 const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -12,13 +14,19 @@ const registerModes = [
 ];
 
 export default function RegisterPage() {
-  const { register, loginWithGoogle, requestPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { register, loginWithGoogle, loginWithFirebasePhone } = useAuth();
   const navigate = useNavigate();
+
+  // Firebase Phone Authentication Hook
+  const { sendOTP, verifyOTP, resetState: resetFirebase, loading: firebaseLoading, error: firebaseError } = useFirebasePhone();
+
   const [mode, setMode] = useState("email");
+  const [emailStep, setEmailStep] = useState("request"); // request | verify
   const [emailForm, setEmailForm] = useState({
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    otp: ""
   });
   const [phoneForm, setPhoneForm] = useState({
     fullname: "",
@@ -26,7 +34,6 @@ export default function RegisterPage() {
     otp: ""
   });
   const [phoneStep, setPhoneStep] = useState("request");
-  const [otpPreview, setOtpPreview] = useState(null);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -61,22 +68,52 @@ export default function RegisterPage() {
     return () => window.clearInterval(timer);
   }, [resendCountdown]);
 
-  const handleEmailRegister = async (event) => {
+  const handleRequestEmailOtp = async (event) => {
     event.preventDefault();
     resetMessages();
+
+    if (!emailForm.email || !emailForm.password || !emailForm.confirmPassword) {
+      setError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
 
     if (emailForm.password !== emailForm.confirmPassword) {
       setError("Mật khẩu xác nhận không khớp");
       return;
     }
 
+    if (emailForm.password.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiRequest("/auth/send-register-otp", {
+        method: "POST",
+        body: { email: emailForm.email }
+      });
+      setEmailStep("verify");
+      setResendCountdown(60);
+      setSuccess("Mã OTP đã được gửi đến email của bạn.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailRegister = async (event) => {
+    event.preventDefault();
+    resetMessages();
     setLoading(true);
 
     try {
       await register({
         username: emailForm.email.split("@")[0],
         email: emailForm.email,
-        password: emailForm.password
+        password: emailForm.password,
+        otp: emailForm.otp
       });
       navigate("/", { replace: true });
     } catch (submitError) {
@@ -107,23 +144,24 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await requestPhoneOtp({
-        fullname: phoneForm.fullname,
-        phone_number: phoneForm.phone_number
-      });
+      // Chuẩn hóa số điện thoại: Nếu bắt đầu bằng 0, thay bằng +84
+      let formattedPhone = phoneForm.phone_number.trim();
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+84' + formattedPhone.slice(1);
+      } else if (!formattedPhone.startsWith('+')) {
+        formattedPhone = '+84' + formattedPhone;
+      }
 
+      // Gửi OTP THẬT qua Firebase
+      await sendOTP(formattedPhone);
+
+      // Chuyển sang bước nhập OTP
       setPhoneStep("verify");
-      setOtpPreview({
-        maskedPhoneNumber: response.maskedPhoneNumber,
-        demoOtp: response.demoOtp || "",
-        demoMessage: response.demoMessage || "",
-        expiresInSeconds: response.expiresInSeconds || 300,
-        deliveryChannel: response.deliveryChannel || "demo_inbox"
-      });
-      setResendCountdown(response.resendCooldownSeconds || 60);
-      setSuccess("Mã OTP đã được gửi tới khu vực mô phỏng. Nhập mã để hoàn tất đăng ký.");
+      setPhoneForm((current) => ({ ...current, phone_number: formattedPhone }));
+      setResendCountdown(60); // Chờ 60 giây trước khi gửi lại
+      setSuccess("Mã OTP đã được gửi đến số điện thoại của bạn qua SMS. Vui lòng kiểm tra tin nhắn.");
     } catch (submitError) {
-      setError(submitError.message);
+      setError(submitError.message || firebaseError);
     } finally {
       setLoading(false);
     }
@@ -135,10 +173,19 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await verifyPhoneOtp(phoneForm);
+      // Xác thực OTP với Firebase
+      const firebaseResult = await verifyOTP(phoneForm.otp);
+
+      // Gửi Firebase ID Token lên backend để tạo tài khoản
+      await loginWithFirebasePhone({
+        idToken: firebaseResult.user.idToken,
+        phoneNumber: firebaseResult.user.phoneNumber,
+        fullname: phoneForm.fullname
+      });
+
       navigate("/", { replace: true });
     } catch (submitError) {
-      setError(submitError.message);
+      setError(submitError.message || firebaseError);
     } finally {
       setLoading(false);
     }
@@ -227,7 +274,7 @@ export default function RegisterPage() {
           ) : null}
 
           {mode === "email" ? (
-            <form className="space-y-5" onSubmit={handleEmailRegister}>
+            <form className="space-y-5" onSubmit={emailStep === "request" ? handleRequestEmailOtp : handleEmailRegister}>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
                   Email
@@ -239,6 +286,7 @@ export default function RegisterPage() {
                     setEmailForm((current) => ({ ...current, email: event.target.value }))
                   }
                   placeholder="abc@gmail.com"
+                  disabled={emailStep === "verify"}
                 />
               </div>
 
@@ -254,6 +302,7 @@ export default function RegisterPage() {
                     setEmailForm((current) => ({ ...current, password: event.target.value }))
                   }
                   placeholder="Ít nhất 6 ký tự"
+                  disabled={emailStep === "verify"}
                 />
               </div>
 
@@ -272,17 +321,61 @@ export default function RegisterPage() {
                     }))
                   }
                   placeholder="Nhập lại mật khẩu"
+                  disabled={emailStep === "verify"}
                 />
               </div>
 
-              <div className="pt-2">
+              {emailStep === "verify" ? (
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                    Mã OTP
+                  </label>
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={emailForm.otp}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({ ...current, otp: event.target.value }))
+                    }
+                    placeholder="Nhập mã 6 số từ email"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    Mã OTP đã được gửi đến email của bạn.
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="flex gap-3 pt-2">
                 <button
-                  className="w-full border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (emailStep === "request" && resendCountdown > 0)}
                 >
-                  {loading ? "Đang tạo tài khoản..." : "Đăng ký bằng email"}
+                  {emailStep === "request"
+                    ? loading
+                      ? "Đang gửi OTP..."
+                      : resendCountdown > 0
+                        ? `Gửi lại sau ${resendCountdown}s`
+                        : "Nhận mã xác nhận"
+                    : loading
+                      ? "Đang tạo tài khoản..."
+                      : "Xác thực và đăng ký"}
                 </button>
+
+                {emailStep === "verify" ? (
+                  <button
+                    className="border border-gray-300 bg-white px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-black transition hover:border-black"
+                    type="button"
+                    onClick={() => {
+                      setEmailStep("request");
+                      setEmailForm((current) => ({ ...current, otp: "" }));
+                      resetMessages();
+                    }}
+                  >
+                    Đổi email
+                  </button>
+                ) : null}
               </div>
             </form>
           ) : null}
@@ -317,6 +410,9 @@ export default function RegisterPage() {
               className="space-y-5"
               onSubmit={phoneStep === "request" ? handleRequestOtp : handleVerifyOtp}
             >
+              {/* Container cho Invisible reCAPTCHA - KHÔNG XÓA */}
+              <div id="recaptcha-container"></div>
+
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
                   Họ và tên
@@ -328,6 +424,7 @@ export default function RegisterPage() {
                     setPhoneForm((current) => ({ ...current, fullname: event.target.value }))
                   }
                   placeholder="Nguyễn Văn A"
+                  disabled={phoneStep === "verify"}
                 />
               </div>
 
@@ -341,8 +438,12 @@ export default function RegisterPage() {
                   onChange={(event) =>
                     setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
                   }
-                  placeholder="0987654321"
+                  placeholder="Ví dụ: 0987654321 hoặc +84987654321"
+                  disabled={phoneStep === "verify"}
                 />
+                <p className="mt-2 text-xs text-gray-500">
+                  Nhập số điện thoại Việt Nam. Hệ thống sẽ tự thêm mã +84 nếu bạn bắt đầu bằng số 0.
+                </p>
               </div>
 
               {phoneStep === "verify" ? (
@@ -357,30 +458,11 @@ export default function RegisterPage() {
                       setPhoneForm((current) => ({ ...current, otp: event.target.value }))
                     }
                     placeholder="Nhập mã 6 số"
+                    maxLength={6}
+                    autoComplete="one-time-code"
                   />
-                </div>
-              ) : null}
-
-              {otpPreview ? (
-                <div className="space-y-3 border border-dashed border-black bg-gray-50 px-4 py-4 text-sm text-black">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-bold uppercase tracking-widest">Tin nhắn mô phỏng</p>
-                    <span className="text-[11px] uppercase tracking-widest text-gray-500">
-                      {otpPreview.deliveryChannel === "demo_inbox" ? "Demo inbox" : "SMS"}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">
-                    Mã xác thực đã được gửi tới số <strong>{otpPreview.maskedPhoneNumber}</strong>.
-                  </p>
-                  <div className="border border-gray-200 bg-white px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-widest text-gray-500">Nội dung tin nhắn</p>
-                    <p className="mt-2 leading-6">{otpPreview.demoMessage || "OTP demo đã sẵn sàng để kiểm thử."}</p>
-                    {otpPreview.demoOtp ? (
-                      <p className="mt-3 text-lg font-extrabold tracking-[0.3em]">{otpPreview.demoOtp}</p>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Mã có hiệu lực trong {Math.ceil((otpPreview.expiresInSeconds || 300) / 60)} phút.
+                  <p className="mt-2 text-xs text-gray-500">
+                    Mã OTP đã được gửi qua SMS đến số điện thoại của bạn.
                   </p>
                 </div>
               ) : null}
@@ -389,17 +471,17 @@ export default function RegisterPage() {
                 <button
                   className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
-                  disabled={loading || (phoneStep === "request" && resendCountdown > 0)}
+                  disabled={loading || firebaseLoading || (phoneStep === "request" && resendCountdown > 0)}
                 >
                   {phoneStep === "request"
-                    ? loading
+                    ? loading || firebaseLoading
                       ? "Đang gửi OTP..."
                       : resendCountdown > 0
                         ? `Gửi lại sau ${resendCountdown}s`
-                        : "Gửi OTP đăng ký"
-                    : loading
+                        : "Gửi mã OTP"
+                    : loading || firebaseLoading
                       ? "Đang xác thực..."
-                      : "Xác thực và tạo tài khoản"}
+                      : "Xác thực và đăng ký"}
                 </button>
 
                 {phoneStep === "verify" ? (
@@ -408,12 +490,12 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => {
                       setPhoneStep("request");
-                      setPhoneForm((current) => ({ ...current, otp: "" }));
-                      setOtpPreview(null);
+                      setPhoneForm((current) => ({ ...current, phone_number: "", otp: "" }));
+                      resetFirebase();
                       resetMessages();
                     }}
                   >
-                    Chỉnh số
+                    Đổi số
                   </button>
                 ) : null}
               </div>

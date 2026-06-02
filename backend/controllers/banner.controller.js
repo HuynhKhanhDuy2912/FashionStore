@@ -4,7 +4,7 @@ import { createCrudControllers } from "./base.controller.js";
 
 const baseBannerController = createCrudControllers(Banner, {
   modelName: "Banner",
-  defaultSort: { order: 1, createdAt: -1 }
+  defaultSort: { order: 1, createdAt: -1 },
 });
 
 export const getAdminBanners = async (_req, res) => {
@@ -15,13 +15,13 @@ export const getAdminBanners = async (_req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Banners fetched successfully",
-      data: banners
+      message: "Lấy danh sách banner thành công",
+      data: banners,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -34,13 +34,13 @@ export const getActiveBanners = async (_req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Active banners fetched successfully",
-      data: banners
+      message: "Lấy danh sách banner thành công",
+      data: banners,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -52,17 +52,20 @@ export const createBanner = async (req, res) => {
     if (!imageUrl) {
       return res.status(400).json({
         success: false,
-        message: "Banner image is required"
+        message: "Banner image is required",
       });
     }
 
     const collectionId = req.body?.collectionId || null;
     if (collectionId) {
-      const collectionExists = await Collection.exists({ _id: collectionId, isActive: true });
+      const collectionExists = await Collection.exists({
+        _id: collectionId,
+        isActive: true,
+      });
       if (!collectionExists) {
         return res.status(400).json({
           success: false,
-          message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn"
+          message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn",
         });
       }
     }
@@ -71,15 +74,16 @@ export const createBanner = async (req, res) => {
       title: (req.body?.title || "").trim(),
       imageUrl,
       collectionId,
-      isActive: req.body?.isActive !== undefined ? Boolean(req.body.isActive) : true,
-      order: Number(req.body?.order) || 0
+      isActive:
+        req.body?.isActive !== undefined ? Boolean(req.body.isActive) : true,
+      order: Number(req.body?.order) || 0,
     };
 
     return baseBannerController.create(req, res);
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -88,30 +92,37 @@ export const updateBanner = async (req, res) => {
   try {
     const payload = {};
 
-    if (req.body?.title !== undefined) payload.title = String(req.body.title).trim();
-    if (req.body?.imageUrl !== undefined) payload.imageUrl = String(req.body.imageUrl).trim();
+    if (req.body?.title !== undefined)
+      payload.title = String(req.body.title).trim();
+    if (req.body?.imageUrl !== undefined)
+      payload.imageUrl = String(req.body.imageUrl).trim();
     if (req.body?.collectionId !== undefined) {
       const collectionId = req.body.collectionId || null;
       if (collectionId) {
-        const collectionExists = await Collection.exists({ _id: collectionId, isActive: true });
+        const collectionExists = await Collection.exists({
+          _id: collectionId,
+          isActive: true,
+        });
         if (!collectionExists) {
           return res.status(400).json({
             success: false,
-            message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn"
+            message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn",
           });
         }
       }
       payload.collectionId = collectionId;
     }
-    if (req.body?.isActive !== undefined) payload.isActive = Boolean(req.body.isActive);
-    if (req.body?.order !== undefined) payload.order = Number(req.body.order) || 0;
+    if (req.body?.isActive !== undefined)
+      payload.isActive = Boolean(req.body.isActive);
+    if (req.body?.order !== undefined)
+      payload.order = Number(req.body.order) || 0;
 
     req.body = payload;
     return baseBannerController.update(req, res);
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -124,7 +135,7 @@ export const toggleBannerStatus = async (req, res) => {
     if (!banner) {
       return res.status(404).json({
         success: false,
-        message: "Banner not found"
+        message: "Banner not found",
       });
     }
 
@@ -134,12 +145,12 @@ export const toggleBannerStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `Banner ${banner.isActive ? "activated" : "deactivated"} successfully`,
-      data: banner
+      data: banner,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -152,28 +163,32 @@ export const updateBannerOrder = async (req, res) => {
     if (typeof order !== "number") {
       return res.status(400).json({
         success: false,
-        message: "Order must be a number"
+        message: "Order must be a number",
       });
     }
 
-    const banner = await Banner.findByIdAndUpdate(bannerId, { order }, { new: true });
+    const banner = await Banner.findByIdAndUpdate(
+      bannerId,
+      { order },
+      { new: true },
+    );
 
     if (!banner) {
       return res.status(404).json({
         success: false,
-        message: "Banner not found"
+        message: "Banner not found",
       });
     }
 
     return res.status(200).json({
       success: true,
       message: "Banner order updated successfully",
-      data: banner
+      data: banner,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -185,5 +200,5 @@ export default {
   getAdminBanners,
   getActiveBanners,
   toggleBannerStatus,
-  updateBannerOrder
+  updateBannerOrder,
 };
