@@ -12,8 +12,8 @@ function formatProductStyles(style) {
   const styles = Array.isArray(style)
     ? style
     : String(style || "")
-        .split(",")
-        .map((item) => item.trim());
+      .split(",")
+      .map((item) => item.trim());
 
   return styles.filter(Boolean).map(formatStyleName).join(", ");
 }

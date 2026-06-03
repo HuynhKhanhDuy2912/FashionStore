@@ -45,7 +45,7 @@ export default function MultiImageUpload({ values = [], onChange, label = "ẢNH
 
       const newValues = [...values, ...uploadedUrls];
       onChange(newValues);
-      
+
       // Auto set main image if none is selected
       if (!mainImage && uploadedUrls.length > 0 && onSetMain) {
         onSetMain(uploadedUrls[0]);
@@ -83,7 +83,7 @@ export default function MultiImageUpload({ values = [], onChange, label = "ẢNH
       <div className="flex justify-between items-end">
         <span className="text-xs font-bold uppercase tracking-widest text-black">{label}</span>
       </div>
-      
+
       {error && <p className="text-red-600 bg-red-50 px-3 py-2 font-bold text-xs uppercase tracking-widest border-l-2 border-red-600 m-0">{error}</p>}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
@@ -93,7 +93,7 @@ export default function MultiImageUpload({ values = [], onChange, label = "ẢNH
             {mainImage === url && (
               <span className="absolute top-1 left-1 bg-black text-white text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5">CHÍNH</span>
             )}
-            
+
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               {mainImage !== url && onSetMain && (
                 <button

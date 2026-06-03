@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Camera, Check, Eye, EyeOff, Heart, Loader2, MapPin, User as UserIcon, History } from "lucide-react";
+import { Camera, Check, Eye, EyeOff, Heart, Loader2, MapPin, User as UserIcon, History, Ticket } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import AddressManager from "../components/AddressManager.jsx";
 import OrdersTab from "../components/OrdersTab.jsx";
 import WishlistTab from "../components/WishlistTab.jsx";
+import CouponsTab from "../components/CouponsTab.jsx";
 
 const TABS = [
   { id: "account", label: "Tài khoản", icon: UserIcon },
   { id: "orders", label: "Lịch sử đặt hàng", icon: History },
   { id: "address", label: "Địa chỉ giao nhận", icon: MapPin },
   { id: "wishlist", label: "Sản phẩm yêu thích", icon: Heart },
+  { id: "coupons", label: "Ưu đãi của tôi", icon: Ticket },
 ];
 
 const GENDER_OPTIONS = [
@@ -255,12 +257,14 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-6xl mt-4">
-      <h1 className="mb-2 text-2xl font-bold uppercase tracking-wide">
-        {user.fullname || user.username}
-      </h1>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-        <aside className="lg:col-span-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4 items-start">
+        <aside className="lg:col-span-1 lg:sticky lg:top-24">
+          <div className="mb-6">
+            <h1 className="text-xl font-bold uppercase tracking-wide text-black">
+              {user.fullname || user.username}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">Khách hàng thành viên</p>
+          </div>
           <nav className="space-y-1 border border-gray-200 bg-white">
             {TABS.map((tab) => {
               const Icon = tab.icon;
@@ -608,6 +612,10 @@ export default function ProfilePage() {
 
             {activeTab === "address" && (
               <AddressManager token={token} />
+            )}
+
+            {activeTab === "coupons" && (
+              <CouponsTab token={token} />
             )}
           </div>
         </main>

@@ -135,7 +135,7 @@ export default function AdminReviewsPage() {
         description={`Tổng cộng ${total} đánh giá`}
       />
 
-      <div className="bg-white border border-gray-200 p-6">
+      <div className="bg-white border border-gray-200 p-6 rounded-md">
         <div className="grid gap-4">
           <form onSubmit={handleSearch} className="flex gap-3">
             <div className="flex-1 flex items-center border border-gray-200 px-3 py-2 bg-white rounded-lg">
@@ -198,7 +198,7 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200">
+      <div className="bg-white border border-gray-200 rounded-md">
         {loading ? (
           <div className="py-12 text-center">
             <p className="text-sm text-gray-400">Đang tải...</p>
@@ -266,22 +266,22 @@ export default function AdminReviewsPage() {
                     {(review.imageUrls?.length > 0 ||
                       review.videoUrls?.length > 0 ||
                       review.comment?.length > 100) && (
-                      <button
-                        type="button"
-                        onClick={() => toggleReviewDetail(review._id)}
-                        className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer p-0"
-                      >
-                        {expandedReviewId === review._id ? (
-                          <>
-                            <ChevronUp size={14} /> Thu gọn
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown size={14} /> Xem chi tiết
-                          </>
-                        )}
-                      </button>
-                    )}
+                        <button
+                          type="button"
+                          onClick={() => toggleReviewDetail(review._id)}
+                          className="mt-2 flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer p-0"
+                        >
+                          {expandedReviewId === review._id ? (
+                            <>
+                              <ChevronUp size={14} /> Thu gọn
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={14} /> Xem chi tiết
+                            </>
+                          )}
+                        </button>
+                      )}
                   </div>
 
                   <div className="text-center">
@@ -292,11 +292,10 @@ export default function AdminReviewsPage() {
 
                   <div className="text-center">
                     <span
-                      className={`inline-block px-3 py-1 text-[13px] font-bold rounded-lg ${
-                        review.isHidden
-                          ? "bg-red-100 text-red-600"
-                          : "bg-green-100 text-green-600"
-                      }`}
+                      className={`inline-block px-3 py-1 text-[13px] font-bold rounded-lg ${review.isHidden
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-600"
+                        }`}
                     >
                       {review.isHidden ? "Đã ẩn" : "Đang hiện"}
                     </span>
@@ -308,11 +307,10 @@ export default function AdminReviewsPage() {
                       onClick={() =>
                         handleToggleVisibility(review._id, review.isHidden)
                       }
-                      className={`px-3 py-2 text-xs font-bold uppercase tracking-widest border cursor-pointer transition-colors ${
-                        review.isHidden
-                          ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white rounded-lg"
-                          : "text-red-600 border-red-400 hover:bg-red-600 hover:text-white rounded-lg"
-                      }`}
+                      className={`px-3 py-2 text-xs font-bold uppercase tracking-widest border cursor-pointer transition-colors ${review.isHidden
+                        ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white rounded-lg"
+                        : "text-red-600 border-red-400 hover:bg-red-600 hover:text-white rounded-lg"
+                        }`}
                       title={
                         review.isHidden ? "Hiển thị đánh giá" : "Ẩn đánh giá"
                       }
@@ -345,49 +343,49 @@ export default function AdminReviewsPage() {
 
                     {(review.imageUrls?.length > 0 ||
                       review.videoUrls?.length > 0) && (
-                      <div>
-                        <p className="text-[13px] font-bold text-gray-500 mb-2">
-                          Hình ảnh & Video (
-                          {(review.imageUrls?.length || 0) +
-                            (review.videoUrls?.length || 0)}
-                          )
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {(review.imageUrls || []).map((url, idx) => (
-                            <a
-                              key={`img-${idx}`}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-24 h-24 border border-gray-200 overflow-hidden hover:opacity-80 transition-opacity"
-                            >
-                              <img
-                                src={url}
-                                className="w-full h-full object-cover"
-                                alt={`Review image ${idx + 1}`}
-                              />
-                            </a>
-                          ))}
+                        <div>
+                          <p className="text-[13px] font-bold text-gray-500 mb-2">
+                            Hình ảnh & Video (
+                            {(review.imageUrls?.length || 0) +
+                              (review.videoUrls?.length || 0)}
+                            )
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {(review.imageUrls || []).map((url, idx) => (
+                              <a
+                                key={`img-${idx}`}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-24 h-24 border border-gray-200 overflow-hidden hover:opacity-80 transition-opacity"
+                              >
+                                <img
+                                  src={url}
+                                  className="w-full h-full object-cover"
+                                  alt={`Review image ${idx + 1}`}
+                                />
+                              </a>
+                            ))}
 
-                          {(review.videoUrls || []).map((url, idx) => (
-                            <a
-                              key={`video-${idx}`}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-24 h-24 border border-gray-200 overflow-hidden bg-black"
-                            >
-                              <video
-                                src={url}
-                                className="w-full h-full object-cover"
-                                controls
-                                preload="metadata"
-                              />
-                            </a>
-                          ))}
+                            {(review.videoUrls || []).map((url, idx) => (
+                              <a
+                                key={`video-${idx}`}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-24 h-24 border border-gray-200 overflow-hidden bg-black"
+                              >
+                                <video
+                                  src={url}
+                                  className="w-full h-full object-cover"
+                                  controls
+                                  preload="metadata"
+                                />
+                              </a>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 )}
               </div>

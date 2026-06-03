@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Heart } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { apiRequest } from "../lib/api";
 import { attachVariantsToProducts } from "../lib/catalog";
@@ -16,6 +16,7 @@ export default function BestSellersSection({
   onAddToCart,
   wishlistProductIds = new Set(),
   className = "",
+  icon: Icon = Heart,
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,9 +105,12 @@ export default function BestSellersSection({
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
-            {eyebrow}
-          </p>
+          <div className="mb-2 flex items-center gap-2">
+            {Icon && <Icon className="h-4 w-4 text-gray-400" strokeWidth={2} />}
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
+              {eyebrow}
+            </p>
+          </div>
           <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
             {title}
           </h2>

@@ -335,13 +335,12 @@ export default function AdminOrderDetailPage() {
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
                     <p className="text-slate-500">Trạng thái thanh toán</p>
                     <p
-                      className={`mt-1 font-bold ${
-                        order.paymentStatus === "paid"
-                          ? "text-emerald-600"
-                          : order.paymentStatus === "failed"
-                            ? "text-red-600"
-                            : "text-amber-600"
-                      }`}
+                      className={`mt-1 font-bold ${order.paymentStatus === "paid"
+                        ? "text-emerald-600"
+                        : order.paymentStatus === "failed"
+                          ? "text-red-600"
+                          : "text-amber-600"
+                        }`}
                     >
                       {paymentStatusText[order.paymentStatus] ||
                         order.paymentStatus ||
@@ -572,7 +571,23 @@ export default function AdminOrderDetailPage() {
                     {formatCurrency(order.shippingFee)}
                   </span>
                 </div>
-                {order.discount > 0 && (
+                {order.couponDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Giảm giá SP ({order.couponCode})</span>
+                    <span className="font-semibold">
+                      -{formatCurrency(order.couponDiscount)}
+                    </span>
+                  </div>
+                )}
+                {order.shippingDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Giảm phí ship ({order.shippingCouponCode})</span>
+                    <span className="font-semibold">
+                      -{formatCurrency(order.shippingDiscount)}
+                    </span>
+                  </div>
+                )}
+                {order.discount > 0 && !order.couponDiscount && !order.shippingDiscount && (
                   <div className="flex justify-between text-red-600">
                     <span>Giảm giá</span>
                     <span className="font-semibold">

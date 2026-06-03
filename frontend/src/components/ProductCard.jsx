@@ -188,7 +188,7 @@ export default function ProductCard({
           </span>
         ) : null}
 
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1 flex items-center gap-2">
           {colorGroups.slice(0, 6).map((group) => (
             <button
               key={`${product._id}-${group.color}`}
@@ -196,7 +196,7 @@ export default function ProductCard({
               title={group.color}
               onMouseEnter={() => setActiveColorName(group.color)}
               onClick={() => setActiveColorName(group.color)}
-              className={`relative m-0 h-10 w-8 overflow-hidden border bg-white p-0 transition-all ${activeColorGroup?.color === group.color
+              className={`relative m-0 h-[50px] w-[40px] overflow-hidden border bg-white p-0 transition-all ${activeColorGroup?.color === group.color
                 ? "border-black"
                 : "border-gray-200 opacity-70 hover:opacity-100"
                 }`}
@@ -214,12 +214,12 @@ export default function ProductCard({
 
         <div className="mt-3 flex items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <p className="m-0 text-[14px] font-medium text-black">
+            <p className="m-0 text-[15px] font-medium text-black">
               {formatPrice(price)}
             </p>
             {effectiveDiscount > 0 && (
               <>
-                <p className="m-0 text-[13px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
+                <p className="m-0 text-[15px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
                   {formatPrice(priceBeforeDiscount)}
                 </p>
                 <span className="inline-flex items-center bg-[#b91c1c] px-1.5 py-0.5 text-[10px] font-bold text-white tracking-wider">
@@ -232,7 +232,7 @@ export default function ProductCard({
             <button
               type="button"
               onClick={() => onAddToWishlist(product)}
-              className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium transition ${isWishlisted ? "text-red-600" : "text-gray-500 hover:text-red-600"}`}
+              className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium transition text-red-600 hover:text-red-400`}
             >
               <Heart size={13} className={isWishlisted ? "fill-red-600 text-red-600" : "text-current"} />
               Yêu thích

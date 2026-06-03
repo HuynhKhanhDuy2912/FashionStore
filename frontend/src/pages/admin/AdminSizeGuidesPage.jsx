@@ -247,7 +247,7 @@ export default function AdminSizeGuidesPage() {
 
       {/* ═══ EDIT FORM ═══ */}
       {editing && (
-        <div className="mb-8 border border-gray-200 bg-white">
+        <div className="mb-8 border border-gray-200 bg-white rounded-md">
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
             <h2 className="text-[18px] font-medium uppercase">
               {editing._isNew ? "Tạo bảng size mới" : "Chỉnh sửa bảng size"}
@@ -533,7 +533,7 @@ export default function AdminSizeGuidesPage() {
           <div className="h-6 w-6 animate-spin border-2 border-black border-t-transparent rounded-full" />
         </div>
       ) : sizeGuides.length === 0 && !editing ? (
-        <div className="border border-gray-200 bg-white py-20 text-center">
+        <div className="border border-gray-200 bg-white py-20 text-center rounded-md">
           <Ruler size={40} className="mx-auto mb-3 text-gray-300" />
           <p className="text-sm text-gray-500">Chưa có bảng size nào</p>
           <button
@@ -547,7 +547,7 @@ export default function AdminSizeGuidesPage() {
       ) : (
         <div className="grid gap-4">
           {sizeGuides.map((guide) => (
-            <div key={guide._id} className="flex items-center justify-between border border-gray-200 bg-white px-6 py-4">
+            <div key={guide._id} className="flex items-center justify-between border border-gray-200 bg-white px-6 py-4 rounded-md">
               <div className="flex items-center gap-4">
                 {guide.measurementImage ? (
                   <img src={guide.measurementImage} alt="" className="h-16 w-16 object-contain border border-gray-100" />

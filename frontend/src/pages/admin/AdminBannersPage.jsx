@@ -151,7 +151,7 @@ export default function AdminBannersPage() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
-        <form className="bg-white border border-gray-200 p-7 grid gap-5 sticky top-6" onSubmit={handleSubmit}>
+        <form className="bg-white border border-gray-200 p-7 rounded-md grid gap-5 sticky top-6" onSubmit={handleSubmit}>
           <h3 className="text-black text-sm m-0 mb-2 pb-4 border-b border-gray-200 font-bold uppercase">
             {editingId ? "SỬA BANNER" : "THÊM BANNER MỚI"}
           </h3>
@@ -210,7 +210,7 @@ export default function AdminBannersPage() {
 
           <div className="flex gap-3 pt-4 border-t border-gray-200 mt-2">
             <button
-              className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none"
+              className="px-6 py-3 text-xs font-bold uppercase tracking-widest rounded-md text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none"
               type="submit"
             >
               {editingId ? "CẬP NHẬT" : "THÊM MỚI"}
@@ -218,7 +218,7 @@ export default function AdminBannersPage() {
             {editingId ? (
               <button
                 type="button"
-                className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-black bg-white border border-black hover:bg-gray-100 transition-colors cursor-pointer"
+                className="px-6 py-3 text-xs font-bold uppercase tracking-widest rounded-md text-black bg-white border border-black hover:bg-gray-100 transition-colors cursor-pointer"
                 onClick={() => {
                   setEditingId("");
                   setForm(initialForm);
@@ -230,7 +230,7 @@ export default function AdminBannersPage() {
           </div>
         </form>
 
-        <section className="bg-white border border-gray-200 p-7">
+        <section className="bg-white border border-gray-200 p-7 rounded-md">
           <h3 className="text-black text-sm m-0 mb-6 pb-4 border-b border-gray-200 font-bold uppercase tracking-widest">
             DANH SÁCH BANNER
           </h3>
@@ -260,13 +260,13 @@ export default function AdminBannersPage() {
                   <input
                     type="number"
                     defaultValue={banner.order}
-                    className="w-12 border border-gray-300 px-2 py-2 text-xs"
+                    className="w-12 border border-gray-300 px-2 py-2 text-xs rounded-md"
                     onBlur={(event) => handleOrderUpdate(banner._id, event.target.value)}
                   />
                   <button
                     className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-blue-700 ${banner.isActive
-                        ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-                        : "text-gray-600 border-gray-400 hover:bg-gray-600 hover:text-white"
+                      ? "text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                      : "text-gray-600 border-gray-400 hover:bg-gray-600 hover:text-white"
                       }`}
                     onClick={() => handleToggleStatus(banner._id)}
                   >

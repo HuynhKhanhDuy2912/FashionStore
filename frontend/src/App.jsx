@@ -23,6 +23,7 @@ import AdminInventoryPage from "./pages/admin/AdminInventoryPage.jsx";
 import AdminInventoryHistoryPage from "./pages/admin/AdminInventoryHistoryPage.jsx";
 import AdminContactMessagesPage from "./pages/admin/AdminContactMessagesPage.jsx";
 import AdminProductQuestionsPage from "./pages/admin/AdminProductQuestionsPage.jsx";
+import AdminCouponsPage from "./pages/admin/AdminCouponsPage.jsx";
 
 import CartPage from "./pages/CartPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -48,82 +49,83 @@ export default function App() {
         <Toaster position="top-right" />
         <Routes>
           <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/collections/:collectionId" element={<CollectionDetailPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route
-            path="/recommendations"
-            element={
-              <ProtectedRoute>
-                <RecommendationsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <CartPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <CheckoutPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/orders"
-            element={<Navigate to="/profile?tab=orders" replace />}
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/failed" element={<PaymentFailedPage />} />
-          <Route path="/payment/paypal/callback" element={<PayPalCallbackPage />} />
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="categories" element={<AdminCategoriesPage />} />
-            <Route path="products" element={<AdminProductListPage />} />
-            <Route path="products/list" element={<AdminProductListPage />} />
-            <Route path="products/add" element={<AdminProductAddPage />} />
-            <Route path="collections" element={<AdminCollectionsPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/:productId" element={<ProductDetailPage />} />
+            <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/collections/:collectionId" element={<CollectionDetailPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route
+              path="/recommendations"
+              element={
+                <ProtectedRoute>
+                  <RecommendationsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cart"
+              element={
+                <ProtectedRoute>
+                  <CartPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={<Navigate to="/profile?tab=orders" replace />}
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/payment/success" element={<PaymentSuccessPage />} />
+            <Route path="/payment/failed" element={<PaymentFailedPage />} />
+            <Route path="/payment/paypal/callback" element={<PayPalCallbackPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="products" element={<AdminProductListPage />} />
+              <Route path="products/list" element={<AdminProductListPage />} />
+              <Route path="products/add" element={<AdminProductAddPage />} />
+              <Route path="collections" element={<AdminCollectionsPage />} />
 
-            <Route path="inventory" element={<AdminInventoryPage />} />
-            <Route path="inventory/history" element={<AdminInventoryHistoryPage />} />
+              <Route path="inventory" element={<AdminInventoryPage />} />
+              <Route path="inventory/history" element={<AdminInventoryHistoryPage />} />
 
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="orders" element={<AdminOrdersPage />} />
-            <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
-            <Route path="banners" element={<AdminBannersPage />} />
-            <Route path="reviews" element={<AdminReviewsPage />} />
-            <Route path="contact-messages" element={<AdminContactMessagesPage />} />
-            <Route path="contact-messages/:requestId" element={<AdminContactMessagesPage />} />
-            <Route path="size-guides" element={<AdminSizeGuidesPage />} />
-            <Route path="product-questions" element={<AdminProductQuestionsPage />} />
-          </Route>
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
+              <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
+              <Route path="coupons" element={<AdminCouponsPage />} />
+              <Route path="banners" element={<AdminBannersPage />} />
+              <Route path="reviews" element={<AdminReviewsPage />} />
+              <Route path="contact-messages" element={<AdminContactMessagesPage />} />
+              <Route path="contact-messages/:requestId" element={<AdminContactMessagesPage />} />
+              <Route path="size-guides" element={<AdminSizeGuidesPage />} />
+              <Route path="product-questions" element={<AdminProductQuestionsPage />} />
+            </Route>
           </Route>
         </Routes>
       </CartProvider>

@@ -10,10 +10,15 @@ import {
   ShieldCheck,
   Truck,
   X,
+  GalleryVerticalEnd,
+  PackagePlus,
+  BookOpen
 } from "lucide-react";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
 import BestSellersSection from "../components/BestSellersSection.jsx";
+import CouponPopup from "../components/CouponPopup.jsx";
+import CouponSection from "../components/CouponSection.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
@@ -70,20 +75,24 @@ function SectionHeader({
   description,
   linkTo,
   linkLabel = "Xem tất cả",
+  icon: Icon,
 }) {
   return (
-    <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-end md:justify-between">
       <div>
         {eyebrow ? (
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-gray-500">
-            {eyebrow}
-          </p>
+          <div className="mb-2 flex items-center gap-2">
+            {Icon && <Icon className="h-4 w-4 text-gray-400" strokeWidth={2} />}
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
+              {eyebrow}
+            </p>
+          </div>
         ) : null}
-        <h2 className="text-3xl font-light tracking-tight text-black md:text-4xl">
+        <h2 className="text-2xl font-bold tracking-tight text-black md:text-3xl">
           {title}
         </h2>
         {description ? (
-          <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-gray-500">
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
             {description}
           </p>
         ) : null}
@@ -91,10 +100,10 @@ function SectionHeader({
       {linkTo ? (
         <Link
           to={linkTo}
-          className="group inline-flex shrink-0 items-center gap-2 border-b border-black pb-1 text-xs font-bold uppercase tracking-widest text-black transition-all hover:gap-3"
+          className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-black transition hover:gap-3"
         >
           {linkLabel}
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className="h-4 w-4" />
         </Link>
       ) : null}
     </div>
@@ -393,6 +402,7 @@ export default function HomePage() {
 
   return (
     <div className="bg-white">
+      <CouponPopup />
       <Toast
         message={message}
         error={error}
@@ -558,6 +568,7 @@ export default function HomePage() {
           eyebrow="Danh mục"
           title="Mua sắm theo phong cách"
           description="Chọn danh mục phù hợp với bạn - từ trang phục hàng ngày đến bộ sưu tập đặc biệt."
+          icon={GalleryVerticalEnd}
         />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
           {categoryCards.map((item) => (
@@ -595,6 +606,7 @@ export default function HomePage() {
             title="Sản phẩm mới"
             description="Những thiết kế mới nhất vừa được bổ sung - cập nhật tủ đồ của bạn."
             linkTo="/products?newArrivals=1"
+            icon={PackagePlus}
           />
           {loading ? (
             <ProductGridSkeleton />
@@ -652,6 +664,7 @@ export default function HomePage() {
               title="Bộ sưu tập nổi bật"
               description="Các câu chuyện thời trang được tuyển chọn theo mùa và phong cách riêng."
               linkTo="/collections"
+              icon={BookOpen}
             />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
               {featuredCollections.map((collection, index) => (
@@ -693,12 +706,15 @@ export default function HomePage() {
           </section>
         ) : null}
 
-
+        {/* BestSellers Section */}
         <BestSellersSection
           onAddToWishlist={token ? (item) => handleWishlist(item, "home_bestseller") : null}
           onAddToCart={token ? handleAddToCart : null}
           wishlistProductIds={wishlistProductIds}
         />
+
+        {/* Coupon Section */}
+        <CouponSection />
 
         {/* Trending Products */}
         <RecommendationSection

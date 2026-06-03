@@ -7,6 +7,11 @@ import ProductVariant from "../models/ProductVariant.js";
 import Review from "../models/Review.js";
 import { createNotificationForAdmins } from "./notification.service.js";
 import { createTransaction } from "./inventory.service.js";
+import {
+  validateAndCalculateCoupon,
+  applyCoupon,
+  revokeCoupon
+} from "./coupon.service.js";
 
 const ORDER_POPULATE = [{ path: "userId", select: "username email fullname" }];
 
@@ -19,6 +24,8 @@ export const createOrderFromCart = async (user, body) => {
     receiverPhone,
     note,
     paymentMethod = "cod",
+    couponCode,
+    shippingCouponCode,
   } = body;
   const requestedItemIds = Array.isArray(body.cartItemIds)
     ? body.cartItemIds
@@ -90,20 +97,54 @@ export const createOrderFromCart = async (user, body) => {
 
   // Receive shipping fee from frontend, with fallback to 0 (>= 999k) or 30k
   const providedShippingFee = body.shippingFee;
-  const shippingFee =
+  let shippingFee =
     providedShippingFee !== undefined
       ? Number(providedShippingFee)
       : subTotal >= 999000
         ? 0
         : 30000;
-  const totalPrice = subTotal + shippingFee;
+
+  // Apply product discount coupon (percentage / fixed_amount)
+  let couponDiscount = 0;
+  let appliedCoupon = null;
+  if (couponCode) {
+    const result = await validateAndCalculateCoupon(
+      couponCode, user._id, subTotal, shippingFee
+    );
+    if (result.coupon.discountType === "free_shipping") {
+      throw new Error("Mã này là mã miễn phí ship, vui lòng chọn đúng loại");
+    }
+    couponDiscount = result.discountAmount;
+    appliedCoupon = result.coupon;
+  }
+
+  // Apply free shipping coupon
+  let shippingDiscount = 0;
+  let appliedShippingCoupon = null;
+  if (shippingCouponCode) {
+    const result = await validateAndCalculateCoupon(
+      shippingCouponCode, user._id, subTotal, shippingFee
+    );
+    if (result.coupon.discountType !== "free_shipping") {
+      throw new Error("Mã này không phải mã miễn phí ship");
+    }
+    shippingDiscount = Math.min(result.discountAmount, shippingFee);
+    appliedShippingCoupon = result.coupon;
+  }
+
+  const discount = couponDiscount + shippingDiscount;
+  const totalPrice = Math.max(subTotal - couponDiscount + shippingFee - shippingDiscount, 0);
 
   const order = await Order.create({
     userId: user._id,
     totalPrice,
     subTotal,
     shippingFee,
-    discount: 0,
+    discount,
+    couponCode: appliedCoupon?.code || null,
+    shippingCouponCode: appliedShippingCoupon?.code || null,
+    couponDiscount,
+    shippingDiscount,
     status: "pending",
     paymentMethod,
     paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
@@ -124,6 +165,14 @@ export const createOrderFromCart = async (user, body) => {
     paymentMethod,
     paymentStatus: "pending",
   });
+
+  // Record coupon usage
+  if (appliedCoupon) {
+    await applyCoupon(appliedCoupon._id, user._id, order._id, couponDiscount);
+  }
+  if (appliedShippingCoupon) {
+    await applyCoupon(appliedShippingCoupon._id, user._id, order._id, shippingDiscount);
+  }
 
   // KHÔNG trừ stock ngay - chỉ trừ khi đơn hàng được xác nhận (confirmed)
   // Stock sẽ được trừ trong updateAdminOrderStatus khi status chuyển sang "confirmed"
@@ -241,6 +290,9 @@ export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
       });
     }
   }
+
+  // Revoke coupon usage
+  await revokeCoupon(orderId);
 
   order.status = "cancelled";
   order.cancellationReason = reason;
@@ -375,6 +427,11 @@ export const updateAdminOrderStatus = async (
         $inc: { stock: item.quantity },
       });
     }
+  }
+
+  // Revoke coupon usage when cancelling
+  if (status === "cancelled") {
+    await revokeCoupon(orderId);
   }
 
   // Cập nhật completedAt khi đơn hàng hoàn thành

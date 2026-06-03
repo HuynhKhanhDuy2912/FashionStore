@@ -296,7 +296,7 @@ export default function ProductDetailPage() {
           return next;
         });
         toast.success(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
-        
+
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
           actionType: "remove_from_wishlist",
@@ -318,7 +318,7 @@ export default function ProductDetailPage() {
           return next;
         });
         toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
-        
+
         // Track favorite behavior
         const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
         trackBehavior(token, {

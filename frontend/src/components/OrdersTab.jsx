@@ -512,15 +512,15 @@ export default function OrdersTab({ token }) {
                           <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                             {(item.variantId?.image ||
                               item.productId?.images?.[0]) && (
-                              <img
-                                src={
-                                  item.variantId?.image ||
-                                  item.productId.images[0]
-                                }
-                                alt={formatProductName(item.productId?.name) || "Sản phẩm"}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                                <img
+                                  src={
+                                    item.variantId?.image ||
+                                    item.productId.images[0]
+                                  }
+                                  alt={formatProductName(item.productId?.name) || "Sản phẩm"}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 mb-1 line-clamp-1">
@@ -624,13 +624,12 @@ export default function OrdersTab({ token }) {
                           <div className="flex justify-between">
                             <span className="text-gray-600">Trạng thái:</span>
                             <span
-                              className={`font-medium ${
-                                order.paymentStatus === "paid"
-                                  ? "text-green-600"
-                                  : order.paymentStatus === "failed"
-                                    ? "text-red-600"
-                                    : "text-yellow-600"
-                              }`}
+                              className={`font-medium ${order.paymentStatus === "paid"
+                                ? "text-green-600"
+                                : order.paymentStatus === "failed"
+                                  ? "text-red-600"
+                                  : "text-yellow-600"
+                                }`}
                             >
                               {translatePaymentStatus(order.paymentStatus)}
                             </span>
@@ -648,7 +647,23 @@ export default function OrdersTab({ token }) {
                                 {order.shippingFee?.toLocaleString("vi-VN")}₫
                               </span>
                             </div>
-                            {order.discount > 0 && (
+                            {order.couponDiscount > 0 && (
+                              <div className="flex justify-between text-green-600">
+                                <span>Giảm giá SP ({order.couponCode}):</span>
+                                <span>
+                                  -{order.couponDiscount?.toLocaleString("vi-VN")}₫
+                                </span>
+                              </div>
+                            )}
+                            {order.shippingDiscount > 0 && (
+                              <div className="flex justify-between text-green-600">
+                                <span>Giảm phí ship ({order.shippingCouponCode}):</span>
+                                <span>
+                                  -{order.shippingDiscount?.toLocaleString("vi-VN")}₫
+                                </span>
+                              </div>
+                            )}
+                            {order.discount > 0 && !order.couponDiscount && !order.shippingDiscount && (
                               <div className="flex justify-between text-red-600">
                                 <span>Giảm giá:</span>
                                 <span>

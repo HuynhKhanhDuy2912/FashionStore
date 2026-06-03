@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, ChevronRight, CreditCard, Loader2, MapPin, Plus, Truck, Wallet } from "lucide-react";
+import { Check, ChevronRight, CreditCard, Loader2, MapPin, Plus, Tag, Truck, Wallet, X } from "lucide-react";
+import CouponPickerModal from "../components/CouponPickerModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { apiRequest } from "../lib/api.js";
@@ -61,6 +62,10 @@ export default function CheckoutPage() {
 
   const [shippingFee, setShippingFee] = useState(30000);
   const [shippingLoading, setShippingLoading] = useState(false);
+
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [appliedShippingCoupon, setAppliedShippingCoupon] = useState(null);
 
   useEffect(() => {
     loadAddresses();
@@ -154,7 +159,14 @@ export default function CheckoutPage() {
     }
   }, [selectedAddress, subtotal, cartItems.length, token]);
 
-  const total = subtotal + shippingFee;
+  const couponDiscount = appliedCoupon?.potentialDiscount || 0;
+  const shippingDiscount = appliedShippingCoupon ? (appliedShippingCoupon.discountValue > 0 ? Math.min(appliedShippingCoupon.discountValue, shippingFee) : shippingFee) : 0;
+  const total = Math.max(subtotal - couponDiscount + shippingFee - shippingDiscount, 0);
+
+  const handleCouponApply = (productCoupon, shipCoupon) => {
+    setAppliedCoupon(productCoupon);
+    setAppliedShippingCoupon(shipCoupon);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -180,6 +192,8 @@ export default function CheckoutPage() {
           note: note.trim(),
           paymentMethod,
           shippingFee,
+          ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
+          ...(appliedShippingCoupon ? { shippingCouponCode: appliedShippingCoupon.code } : {}),
           ...(selectedItemIds.length ? { selectedItemIds } : {})
         }
       });
@@ -362,6 +376,67 @@ export default function CheckoutPage() {
                     )}
                   </span>
                 </div>
+
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Giảm giá sản phẩm</span>
+                    <span className="font-medium text-green-600">-{formatCurrency(couponDiscount)}</span>
+                  </div>
+                )}
+                {shippingDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Giảm phí vận chuyển</span>
+                    <span className="font-medium text-green-600">-{formatCurrency(shippingDiscount)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Coupon selection */}
+              <div className="mb-5 space-y-3 border-b border-gray-200 pb-5">
+                <h3 className="text-sm font-bold">Mã giảm giá</h3>
+
+                {/* Unified Coupon Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowCouponModal(true)}
+                  className="flex w-full items-center gap-3 border border-gray-200 p-3 text-left transition hover:border-black"
+                >
+                  <Tag className="h-4 w-4 shrink-0 text-gray-500" />
+                  {appliedCoupon || appliedShippingCoupon ? (
+                    <div className="flex flex-1 items-center justify-between">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center">
+                        {appliedCoupon && (
+                          <div>
+                            <span className="text-sm font-medium">{appliedCoupon.code}</span>
+                            <span className="ml-2 text-xs text-green-600">-{formatCurrency(couponDiscount)}</span>
+                          </div>
+                        )}
+                        {appliedCoupon && appliedShippingCoupon && (
+                          <span className="hidden text-gray-300 sm:inline">|</span>
+                        )}
+                        {appliedShippingCoupon && (
+                          <div>
+                            <span className="text-sm font-medium">{appliedShippingCoupon.code}</span>
+                            <span className="ml-2 text-xs text-blue-600">-{formatCurrency(shippingDiscount)} phí ship</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAppliedCoupon(null);
+                          setAppliedShippingCoupon(null);
+                        }}
+                        className="ml-2 shrink-0 text-gray-400 hover:text-red-500"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="flex-1 text-sm text-gray-500">Chọn hoặc nhập mã giảm giá</span>
+                  )}
+                </button>
               </div>
 
               <div className="mb-6 flex justify-between">
@@ -531,6 +606,18 @@ export default function CheckoutPage() {
           </div>
         </div>
       )}
+
+      {/* Coupon Picker Modal */}
+      <CouponPickerModal
+        isOpen={showCouponModal}
+        onClose={() => setShowCouponModal(false)}
+        token={token}
+        subtotal={subtotal}
+        shippingFee={shippingFee}
+        selectedCoupon={appliedCoupon}
+        selectedShippingCoupon={appliedShippingCoupon}
+        onApply={handleCouponApply}
+      />
     </div>
 
   );

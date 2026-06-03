@@ -68,9 +68,8 @@ function MiniStat({ label, value, sublabel, trend }) {
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
         {trend !== undefined && trend !== null ? (
           <span
-            className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
-              isPositive ? "text-emerald-600" : "text-red-500"
-            }`}
+            className={`inline-flex items-center gap-0.5 text-xs font-semibold ${isPositive ? "text-emerald-600" : "text-red-500"
+              }`}
           >
             {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {formatPercent(trend)}
@@ -211,11 +210,10 @@ export default function AdminDashboardPage() {
                       key={opt.value}
                       type="button"
                       onClick={() => setChartRange(opt.value)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                        chartRange === opt.value
-                          ? "bg-[#3874ff] text-white"
-                          : "text-slate-600 hover:bg-slate-50"
-                      }`}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${chartRange === opt.value
+                        ? "bg-[#3874ff] text-white"
+                        : "text-slate-600 hover:bg-slate-50"
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -345,9 +343,8 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                       <span
-                        className={`shrink-0 text-xs font-bold ${
-                          variant.stock === 0 ? "text-red-600" : "text-amber-600"
-                        }`}
+                        className={`shrink-0 text-xs font-bold ${variant.stock === 0 ? "text-red-600" : "text-amber-600"
+                          }`}
                       >
                         {variant.stock === 0 ? "Hết" : `Còn ${variant.stock}`}
                       </span>
@@ -395,9 +392,8 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="py-3.5 pr-4">
                           <span
-                            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ring-1 ring-inset ${
-                              STATUS_BADGE[order.status] || STATUS_BADGE.pending
-                            }`}
+                            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ring-1 ring-inset ${STATUS_BADGE[order.status] || STATUS_BADGE.pending
+                              }`}
                           >
                             {STATUS_LABEL[order.status] || order.status}
                           </span>

@@ -196,7 +196,7 @@ export default function AdminCollectionsPage() {
   const btnPrimary =
     "flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-gray-800";
   const btnSecondary =
-    "px-6 py-3 text-xs font-bold uppercase tracking-widest text-black bg-white hover:bg-gray-100 transition-colors cursor-pointer border border-gray-300";
+    "px-6 py-3 text-xs font-bold uppercase tracking-widest rounded-md text-black bg-white hover:bg-gray-100 transition-colors cursor-pointer border border-gray-300";
 
   return (
     <section className="grid gap-6 p-6">
@@ -206,7 +206,7 @@ export default function AdminCollectionsPage() {
       />
 
       {/* ── FORM ── */}
-      <div className="bg-white border border-gray-200 p-6">
+      <div className="bg-white border border-gray-200 p-6 rounded-md">
         <h3 className="text-xs font-bold uppercase tracking-widest text-black pb-4 border-b border-gray-100 m-0 mb-5">
           {editingId ? "SỬA BỘ SƯU TẬP" : "TẠO BỘ SƯU TẬP MỚI"}
         </h3>
@@ -432,7 +432,7 @@ export default function AdminCollectionsPage() {
       </div>
 
       {/* ── LIST ── */}
-      <div className="overflow-x-auto bg-white border border-gray-200">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-md">
         <div className="grid min-w-[940px] grid-cols-[80px_140px_1fr_100px_100px_80px_120px] gap-4 px-5 py-3 border-b border-gray-200 bg-gray-50">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
             Ảnh bìa

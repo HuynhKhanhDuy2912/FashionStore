@@ -663,7 +663,7 @@ export default function AdminProductAddPage() {
     "border border-gray-200 px-4 py-3 bg-white text-black text-sm focus:border-black focus:outline-none w-full transition-colors";
   const labelCls =
     "text-[10px] font-bold uppercase tracking-widest text-gray-500 flex flex-col gap-1.5";
-  const cardCls = "bg-white border border-gray-200 p-6 grid gap-5";
+  const cardCls = "bg-white border border-gray-200 p-6 grid gap-5 rounded-md";
   const headingCls =
     "text-xs font-bold uppercase tracking-widest text-black pb-4 border-b border-gray-100 m-0";
 
@@ -699,7 +699,7 @@ export default function AdminProductAddPage() {
             <button
               type="button"
               onClick={() => navigate("/admin/products/list")}
-              className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-black bg-white border border-gray-300 hover:border-black hover:bg-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-lg"
+              className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md text-black bg-white border border-gray-300 hover:border-black hover:bg-black hover:text-white transition-colors cursor-pointer flex items-center gap-2 rounded-lg"
             >
               <ArrowLeft size={16} />
               Quay lại
@@ -1247,7 +1247,7 @@ export default function AdminProductAddPage() {
               form="product-form"
               type="submit"
               disabled={loading}
-              className="w-full py-4 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 text-xs font-bold uppercase tracking-widest rounded-md text-white bg-black hover:bg-gray-800 transition-colors cursor-pointer border-none disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 "ĐANG LƯU..."

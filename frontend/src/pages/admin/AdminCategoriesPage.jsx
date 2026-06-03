@@ -556,33 +556,30 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={() => setActiveForm("root")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "root"
-                    ? "border-black text-black font-bold"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
-                }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "root"
+                  ? "border-black text-black font-bold"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 Cấp 1
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level2")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "level2"
-                    ? "border-black text-black font-bold"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
-                }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "level2"
+                  ? "border-black text-black font-bold"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 Cấp 2
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level3")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
-                  activeForm === "level3"
-                    ? "border-black text-black font-bold"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
-                }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "level3"
+                  ? "border-black text-black font-bold"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 Cấp 3
               </button>

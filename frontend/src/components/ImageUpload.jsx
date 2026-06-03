@@ -71,7 +71,7 @@ export default function ImageUpload({ value, onChange, label = "ẢNH" }) {
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs font-bold uppercase tracking-widest text-black">{label}</span>
-      
+
       {error && <p className="text-red-600 bg-red-50 px-3 py-2 font-bold text-xs uppercase tracking-widest border-l-2 border-red-600 m-0">{error}</p>}
 
       {value ? (

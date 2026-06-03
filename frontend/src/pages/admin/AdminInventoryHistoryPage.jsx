@@ -430,11 +430,10 @@ export default function AdminInventoryHistoryPage() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-lg transition ${
-                          currentPage === page
-                            ? "bg-black text-white"
-                            : "border border-gray-300 hover:bg-gray-50"
-                        }`}
+                        className={`w-10 h-10 rounded-lg transition ${currentPage === page
+                          ? "bg-black text-white"
+                          : "border border-gray-300 hover:bg-gray-50"
+                          }`}
                       >
                         {page}
                       </button>

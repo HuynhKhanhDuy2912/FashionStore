@@ -563,7 +563,7 @@ export default function AdminOrdersPage() {
                         </select>
                       </td>
 
-                      <td className="px-3 py-4 text-right">
+                      <td className="px-3 py-4">
                         <Link
                           to={`/admin/orders/${order._id}`}
                           className="inline-flex rounded-lg bg-blue-600 border px-2 py-2 text-xs font-semibold text-white transition hover:bg-blue-800"

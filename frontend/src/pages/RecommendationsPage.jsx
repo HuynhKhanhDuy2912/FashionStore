@@ -135,11 +135,10 @@ export default function RecommendationsPage() {
       {/* Toast notification */}
       {(message || error) && (
         <div
-          className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${
-            error
-              ? "border-red-200 bg-red-50 text-red-800"
-              : "border-gray-200 bg-white text-black"
-          }`}
+          className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${error
+            ? "border-red-200 bg-red-50 text-red-800"
+            : "border-gray-200 bg-white text-black"
+            }`}
         >
           <p className="flex-1 text-sm font-medium">{error || message}</p>
           <button

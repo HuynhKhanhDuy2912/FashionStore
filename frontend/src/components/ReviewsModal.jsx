@@ -106,8 +106,8 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
             </div>
 
             {/* Right - Reviews List */}
-            <div 
-              className="flex-1 overflow-y-auto p-6" 
+            <div
+              className="flex-1 overflow-y-auto p-6"
               style={{
                 /* Tùy chỉnh thanh cuộn cho webkit */
                 scrollbarWidth: "thin",
@@ -126,7 +126,7 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
                     const displayComment = hasLongComment && !isExpanded
                       ? review.comment.slice(0, 200) + "..."
                       : review.comment;
-                    
+
                     const userName = review.userId?.fullname || review.userId?.username || "User";
                     const initial = userName.charAt(0).toUpperCase();
                     const colors = ["bg-red-500", "bg-orange-500", "bg-green-500", "bg-blue-500", "bg-purple-500", "bg-pink-500"];
@@ -266,7 +266,7 @@ export default function ReviewsModal({ open, onClose, reviews = [], averageRatin
                 alt="Review"
                 className="w-full h-full object-contain"
               />
-            ) : ( 
+            ) : (
               <video
                 src={lightboxMedia.url}
                 controls
