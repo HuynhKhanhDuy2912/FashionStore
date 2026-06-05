@@ -56,7 +56,18 @@ function growthPercent(current, previous) {
   return Number((((current - previous) / previous) * 100).toFixed(1));
 }
 
-export async function getAdminDashboardStats() {
+function parseDateOnly(value, endOfDay = false) {
+  if (!value) return null;
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) date.setHours(23, 59, 59, 999);
+  return date;
+}
+
+export async function getAdminDashboardStats(filters = {}) {
   const now = new Date();
   const todayStart = startOfDay(now);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -66,6 +77,14 @@ export async function getAdminDashboardStats() {
   const sevenDaysAgo = startOfDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
 
   const revenueMatch = { status: { $in: REVENUE_STATUSES } };
+  const statusFrom = parseDateOnly(filters.statusFrom);
+  const statusTo = parseDateOnly(filters.statusTo, true);
+  const orderStatusMatch = {};
+  if (statusFrom || statusTo) {
+    orderStatusMatch.createdAt = {};
+    if (statusFrom) orderStatusMatch.createdAt.$gte = statusFrom;
+    if (statusTo) orderStatusMatch.createdAt.$lte = statusTo;
+  }
 
   const [
     totalOrders,
@@ -90,6 +109,7 @@ export async function getAdminDashboardStats() {
     ordersByStatus,
     ordersByPayment,
     topProducts,
+    topCategories,
     recentOrders,
     totalUsers,
     newUsersThisMonth,
@@ -182,6 +202,7 @@ export async function getAdminDashboardStats() {
       { $sort: { _id: 1 } },
     ]),
     Order.aggregate([
+      ...(Object.keys(orderStatusMatch).length ? [{ $match: orderStatusMatch }] : []),
       { $group: { _id: "$status", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]),
@@ -214,7 +235,7 @@ export async function getAdminDashboardStats() {
           revenue: { $sum: { $multiply: ["$price", "$quantity"] } },
         },
       },
-      { $sort: { quantity: -1 } },
+      { $sort: { quantity: -1, revenue: -1 } },
       { $limit: 5 },
       {
         $lookup: {
@@ -229,6 +250,62 @@ export async function getAdminDashboardStats() {
         $project: {
           productId: "$_id",
           name: "$product.name",
+          imageUrl: { $arrayElemAt: ["$product.images", 0] },
+          price: {
+            $cond: [
+              { $gt: ["$quantity", 0] },
+              { $round: [{ $divide: ["$revenue", "$quantity"] }, 0] },
+              "$product.price",
+            ],
+          },
+          quantity: 1,
+          revenue: 1,
+        },
+      },
+    ]),
+    OrderItem.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "order",
+        },
+      },
+      { $unwind: "$order" },
+      { $match: { "order.status": { $in: REVENUE_STATUSES } } },
+      {
+        $lookup: {
+          from: "products",
+          localField: "productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "product.categoryId",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$product.categoryId",
+          name: { $first: { $ifNull: ["$category.name", "Chưa phân loại"] } },
+          quantity: { $sum: "$quantity" },
+          revenue: { $sum: { $multiply: ["$price", "$quantity"] } },
+        },
+      },
+      { $sort: { quantity: -1, revenue: -1 } },
+      { $limit: 5 },
+      {
+        $project: {
+          categoryId: "$_id",
+          name: 1,
           quantity: 1,
           revenue: 1,
         },
@@ -320,6 +397,7 @@ export async function getAdminDashboardStats() {
       revenue: item.revenue,
     })),
     topProducts,
+    topCategories,
     recentOrders,
     lowStockVariants: lowStockVariants.map((variant) => ({
       _id: variant._id,

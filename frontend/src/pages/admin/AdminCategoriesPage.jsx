@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Filter,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import ImageUpload from "../../components/ImageUpload.jsx";
@@ -563,30 +564,33 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={() => setActiveForm("root")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "root"
-                  ? "border-black text-black font-bold"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "root"
+                    ? "border-black text-black font-bold"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
               >
                 Cấp 1
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level2")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "level2"
-                  ? "border-black text-black font-bold"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "level2"
+                    ? "border-black text-black font-bold"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
               >
                 Cấp 2
               </button>
               <button
                 type="button"
                 onClick={() => setActiveForm("level3")}
-                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${activeForm === "level3"
-                  ? "border-black text-black font-bold"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
+                className={`flex-1 border-b-2 px-3 py-2.5 text-xs font-bold uppercase tracking-widest transition ${
+                  activeForm === "level3"
+                    ? "border-black text-black font-bold"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
               >
                 Cấp 3
               </button>
@@ -917,7 +921,7 @@ export default function AdminCategoriesPage() {
             <div className="flex gap-3 border-t border-gray-200 pt-4">
               <button
                 type="submit"
-                className="flex items-center gap-2 rounded bg-blue-600 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-blue-700"
+                className="flex items-center gap-2 rounded bg-black px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800"
               >
                 <Edit2 size={14} />
                 Lưu thay đổi
@@ -945,7 +949,7 @@ export default function AdminCategoriesPage() {
                 <Trash2 size={24} className="text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-xl font-bold text-gray-900">
                   Xác nhận xóa
                 </h3>
                 <p className="text-sm text-gray-600">
@@ -962,9 +966,9 @@ export default function AdminCategoriesPage() {
                 {deleteConfirm.name}
               </p>
               {deleteConfirm.children && deleteConfirm.children.length > 0 && (
-                <p className="mt-2 text-xs text-red-600">
-                  ⚠️ Cảnh báo: Danh mục này có {deleteConfirm.children.length}{" "}
-                  mục con sẽ bị xóa theo
+                <p className="flex gap-2 mt-2 text-xs text-red-600 rounded-md bg-red-50 px-3 py-2">
+                  <AlertTriangle className="h-4 w-4" /> Cảnh báo: Danh mục này
+                  có {deleteConfirm.children.length} mục con sẽ bị xóa theo
                 </p>
               )}
             </div>

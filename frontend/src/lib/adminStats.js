@@ -1,7 +1,12 @@
 import { apiRequest } from "./api.js";
 
-export async function fetchAdminDashboardStats(token) {
-  const response = await apiRequest("/orders/admin/stats", { token });
+export async function fetchAdminDashboardStats(token, filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.statusFrom) params.set("statusFrom", filters.statusFrom);
+  if (filters.statusTo) params.set("statusTo", filters.statusTo);
+
+  const query = params.toString();
+  const response = await apiRequest(`/orders/admin/stats${query ? `?${query}` : ""}`, { token });
   return response.data;
 }
 

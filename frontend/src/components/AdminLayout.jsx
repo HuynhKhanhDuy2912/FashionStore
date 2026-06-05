@@ -178,6 +178,7 @@ export default function AdminLayout() {
   const [adminSearch, setAdminSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const searchFormRef = useRef(null);
   const accountMenuRef = useRef(null);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -233,6 +234,13 @@ export default function AdminLayout() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (
+        searchFormRef.current &&
+        !searchFormRef.current.contains(event.target)
+      ) {
+        setIsSearchOpen(false);
+      }
+
       if (
         accountMenuRef.current &&
         !accountMenuRef.current.contains(event.target)
@@ -401,16 +409,16 @@ export default function AdminLayout() {
             style={{ left: sidebarWidth }}
             className="fixed top-0 right-0 z-20 border-b border-gray-200 bg-white shadow-sm transition-[left] duration-300 ease-in-out"
           >
-            <div className="relative flex h-[61px] items-center px-4 sm:px-6">
+            <div className="relative flex h-[61px] items-center sm:pr-6">
               <div className="flex items-center">
                 <button
                   type="button"
                   onClick={() => setCollapsed((value) => !value)}
-                  className="grid h-6 w-6 shrink-0 place-items-center border border-gray-100 bg-white text-gray-600 transition hover:border-black hover:text-black"
+                  className="grid h-6 w-6 shrink-0 place-items-center bg-white text-gray-600 transition hover:border-black hover:text-black"
                   title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
                   aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
                 >
-                  {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </button>
 
                 <NavLink
@@ -429,6 +437,7 @@ export default function AdminLayout() {
               </div>
 
               <form
+                ref={searchFormRef}
                 className="absolute left-[72px] right-[92px] max-w-md lg:left-1/2 lg:right-auto lg:w-[min(560px,calc(100%-560px))] lg:min-w-[360px] lg:-translate-x-1/2"
                 onSubmit={(event) => {
                   event.preventDefault();

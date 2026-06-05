@@ -4,8 +4,6 @@ import { apiRequest } from "../lib/api.js";
 import { formatProductName } from "../lib/productName.js";
 import {
   Search,
-  Filter,
-  Calendar,
   ChevronDown,
   ChevronUp,
   MapPin,
@@ -18,7 +16,17 @@ import {
   X,
   Star,
   Eye,
+  ShoppingCart,
 } from "lucide-react";
+
+const STATUS_FILTERS = [
+  { value: "all", label: "Tất cả" },
+  { value: "pending", label: "Chờ xác nhận" },
+  { value: "confirmed", label: "Đang xử lý" },
+  { value: "shipping", label: "Đang giao" },
+  { value: "completed", label: "Hoàn thành" },
+  { value: "cancelled", label: "Đã hủy" },
+];
 
 export default function OrdersTab({ token }) {
   const navigate = useNavigate();
@@ -31,12 +39,6 @@ export default function OrdersTab({ token }) {
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
-  const [dateFromOrder, setDateFromOrder] = useState("");
-  const [dateToOrder, setDateToOrder] = useState("");
-  const [dateFromCompleted, setDateFromCompleted] = useState("");
-  const [dateToCompleted, setDateToCompleted] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelOrderId, setCancelOrderId] = useState("");
   const [cancelReason, setCancelReason] = useState("");
@@ -74,51 +76,11 @@ export default function OrdersTab({ token }) {
       result = result.filter((order) => order.status === statusFilter);
     }
 
-    // Filter by payment method
-    if (paymentMethodFilter !== "all") {
-      result = result.filter(
-        (order) => order.paymentMethod === paymentMethodFilter,
-      );
-    }
-
-    // Filter by order date range
-    if (dateFromOrder) {
-      const fromDate = new Date(dateFromOrder);
-      result = result.filter((order) => new Date(order.createdAt) >= fromDate);
-    }
-
-    if (dateToOrder) {
-      const toDate = new Date(dateToOrder);
-      toDate.setHours(23, 59, 59, 999);
-      result = result.filter((order) => new Date(order.createdAt) <= toDate);
-    }
-
-    // Filter by completion date range
-    if (dateFromCompleted) {
-      const fromDate = new Date(dateFromCompleted);
-      result = result.filter(
-        (order) => order.completedAt && new Date(order.completedAt) >= fromDate,
-      );
-    }
-
-    if (dateToCompleted) {
-      const toDate = new Date(dateToCompleted);
-      toDate.setHours(23, 59, 59, 999);
-      result = result.filter(
-        (order) => order.completedAt && new Date(order.completedAt) <= toDate,
-      );
-    }
-
     setFilteredOrders(result);
   }, [
     orders,
     searchTerm,
     statusFilter,
-    paymentMethodFilter,
-    dateFromOrder,
-    dateToOrder,
-    dateFromCompleted,
-    dateToCompleted,
   ]);
 
   const openCancelModal = (orderId) => {
@@ -205,7 +167,7 @@ export default function OrdersTab({ token }) {
   const translateStatus = (status) => {
     const map = {
       pending: "Chờ xác nhận",
-      confirmed: "Đã xác nhận",
+      confirmed: "Đang xử lý",
       shipping: "Đang giao",
       completed: "Hoàn thành",
       cancelled: "Đã hủy",
@@ -250,11 +212,6 @@ export default function OrdersTab({ token }) {
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
-    setPaymentMethodFilter("all");
-    setDateFromOrder("");
-    setDateToOrder("");
-    setDateFromCompleted("");
-    setDateToCompleted("");
   };
 
   return (
@@ -263,153 +220,60 @@ export default function OrdersTab({ token }) {
 
       {/* Search and Filter Bar */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo mã đơn hàng..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-gray-300 pl-10 pr-4 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Filter className="h-4 w-4" />
-            Bộ lọc
-            {showFilters ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </button>
+        <div className="relative max-w-xl">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo mã đơn hàng..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-12 w-full rounded-full border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-black"
+          />
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-black"
+              aria-label="Xóa tìm kiếm"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
 
-        {/* Advanced Filters */}
-        {showFilters && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trạng thái
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="shipping">Đang giao</option>
-                  <option value="completed">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {STATUS_FILTERS.map((filter) => {
+            const isActive = statusFilter === filter.value;
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phương thức thanh toán
-                </label>
-                <select
-                  value={paymentMethodFilter}
-                  onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                >
-                  <option value="all">Tất cả phương thức</option>
-                  <option value="cod">COD</option>
-                  <option value="vnpay">VNPay</option>
-                  <option value="momo">MoMo</option>
-                  <option value="paypal">PayPal</option>
-                </select>
-              </div>
+            return (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => setStatusFilter(filter.value)}
+                className={`h-10 shrink-0 rounded-full border px-6 text-sm font-semibold transition ${
+                  isActive
+                    ? "border-black bg-black text-white shadow-sm shadow-black/10"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Từ ngày
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    value={dateFromOrder}
-                    onChange={(e) => setDateFromOrder(e.target.value)}
-                    className="w-full border border-gray-300 pl-10 pr-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Đến ngày
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="date"
-                    value={dateToOrder}
-                    onChange={(e) => setDateToOrder(e.target.value)}
-                    className="w-full border border-gray-300 pl-10 pr-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-300 pt-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                Lọc theo ngày hoàn thành
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Từ ngày hoàn thành
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      value={dateFromCompleted}
-                      onChange={(e) => setDateFromCompleted(e.target.value)}
-                      className="w-full border border-gray-300 pl-10 pr-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Đến ngày hoàn thành
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      value={dateToCompleted}
-                      onChange={(e) => setDateToCompleted(e.target.value)}
-                      className="w-full border border-gray-300 pl-10 pr-3 py-2 text-sm rounded-lg focus:border-black focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                Tìm thấy{" "}
-                <span className="font-semibold">{filteredOrders.length}</span>{" "}
-                đơn hàng
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Xóa bộ lọc
-                </button>
-              </div>
-            </div>
+        {(searchTerm || statusFilter !== "all") && (
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+            <span>
+              Tìm thấy <span className="font-semibold text-gray-900">{filteredOrders.length}</span> đơn hàng
+            </span>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="font-semibold text-gray-700 underline-offset-4 hover:text-black hover:underline"
+            >
+              Xóa bộ lọc
+            </button>
           </div>
         )}
       </div>
@@ -427,7 +291,7 @@ export default function OrdersTab({ token }) {
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-16">
-          <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <ShoppingCart className="h-14 w-14 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             Không tìm thấy đơn hàng
           </h3>
@@ -441,7 +305,7 @@ export default function OrdersTab({ token }) {
               href="/"
               className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Khám phá sản phẩm
+              Tiếp tục mua sắm 
             </a>
           ) : (
             <button

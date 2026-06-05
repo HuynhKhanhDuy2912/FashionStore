@@ -115,9 +115,9 @@ export const markMyOrderAsReceived = async (req, res) => {
   }
 };
 
-export const getAdminDashboardStatsHandler = async (_req, res) => {
+export const getAdminDashboardStatsHandler = async (req, res) => {
   try {
-    const stats = await getAdminDashboardStats();
+    const stats = await getAdminDashboardStats(req.query);
 
     return res.status(200).json({
       success: true,
