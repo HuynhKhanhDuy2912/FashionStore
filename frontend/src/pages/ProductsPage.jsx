@@ -445,6 +445,9 @@ export default function ProductsPage() {
     );
   }, [categories, quickTagBaseId]);
 
+  const hasQuickTags =
+    Boolean(quickTagBaseId) || quickTagCategories.length > 0;
+
   const selectedScopeForTag = selectedCategoryId || quickTagBaseId || "";
 
   const selectedCategoryLabel = selectedNode?.name || "Tất cả sản phẩm";
@@ -784,46 +787,49 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <div className="flex items-center gap-2">
-            <div
-              ref={tagsRef}
-              className="scrollbar-hide flex-1 overflow-x-auto whitespace-nowrap"
-            >
-              <div className="inline-flex gap-2">
-                {quickTagBaseId ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectQuickTag(quickTagBaseId)}
-                    className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === quickTagBaseId
-                      ? "border-black bg-black text-white"
-                      : "border-gray-300 bg-white text-black hover:border-black"
-                      }`}
-                  >
-                    Tất cả
-                  </button>
-                ) : null}
+        {hasQuickTags && (
+          <div className="mt-4 mb-6">
+            <div className="flex items-center gap-2">
+              <div
+                ref={tagsRef}
+                className="scrollbar-hide flex-1 overflow-x-auto whitespace-nowrap"
+              >
+                <div className="inline-flex gap-2">
+                  {quickTagBaseId && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectQuickTag(quickTagBaseId)}
+                      className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === quickTagBaseId
+                        ? "border-black bg-black text-white"
+                        : "border-gray-300 bg-white text-black hover:border-black"
+                        }`}
+                    >
+                      Tất cả
+                    </button>
+                  )}
 
-                {quickTagCategories.map((tag) => (
-                  <button
-                    key={tag._id}
-                    type="button"
-                    onClick={() => handleSelectQuickTag(tag._id)}
-                    className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === tag._id
-                      ? "border-black bg-black text-white"
-                      : "border-gray-300 bg-white text-black hover:border-black"
-                      }`}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
+                  {quickTagCategories.map((tag) => (
+                    <button
+                      key={tag._id}
+                      type="button"
+                      onClick={() => handleSelectQuickTag(tag._id)}
+                      className={`border px-5 py-3 text-[15px] font-medium transition ${selectedScopeForTag === tag._id
+                        ? "border-black bg-black text-white"
+                        : "border-gray-300 bg-white text-black hover:border-black"
+                        }`}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {showFilterPanel ? (
-          <div className="mt-6 mb-6 grid grid-cols-1 gap-5 border border-gray-200 bg-white p-5 md:grid-cols-4">
+          <div className={`mt-2 mb-6 grid grid-cols-1 gap-5 border border-gray-200 bg-white p-5 md:grid-cols-4 ${hasQuickTags ? "mt-2" : "mt-4"
+            }`}>
             <label className="block min-w-0">
               <span className={labelClass}>Tìm kiếm</span>
               <input

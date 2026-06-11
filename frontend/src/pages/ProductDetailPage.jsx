@@ -463,7 +463,7 @@ export default function ProductDetailPage() {
         <span>/</span>
         <Link to="/products" className="hover:text-black">SẢN PHẨM</Link>
         <span>/</span>
-        <span className="text-black truncate max-w-[200px]">{displayName}</span>
+        <span className="text-black truncate max-w-auto">{displayName}</span>
       </nav>
 
       {/* ══ 3-COLUMN LAYOUT ══ */}
