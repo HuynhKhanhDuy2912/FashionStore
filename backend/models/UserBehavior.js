@@ -22,8 +22,8 @@ const behaviorSchema = new mongoose.Schema(
       enum: [
         "view_product",
         "search",
+        "filter",
         "click",
-        "favorite",
         "add_to_cart",
         "remove_from_cart",
         "add_to_wishlist",
@@ -43,6 +43,7 @@ const behaviorSchema = new mongoose.Schema(
         "wishlist",
         "cart",
         "product_page",
+        "buy_now",
         "other"
       ],
       default: "other"
@@ -71,15 +72,26 @@ const behaviorSchema = new mongoose.Schema(
         ref: "Category",
         default: null
       },
+      // [String] để khớp với Product.style / Product.occasion (vốn là mảng).
+      // Tránh Mongoose cast mảng -> chuỗi "minimal,casual" (token rác).
       style: {
-        type: String,
-        trim: true,
-        default: ""
+        type: [String],
+        default: []
       },
       occasion: {
-        type: String,
-        trim: true,
-        default: ""
+        type: [String],
+        default: []
+      },
+      // Lưu kèm cho add_to_cart (trước đây bị strict mode loại bỏ âm thầm)
+      variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProductVariant",
+        default: null
+      },
+      quantity: {
+        type: Number,
+        min: 1,
+        default: null
       }
     }
   },

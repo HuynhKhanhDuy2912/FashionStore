@@ -317,18 +317,7 @@ export default function ProductDetailPage() {
         duration: 3000
       });
 
-      const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
-      const occasionToTrack = Array.isArray(product.occasion) ? product.occasion[0] : (product.occasion || "");
-      trackBehavior(token, {
-        actionType: "add_to_cart",
-        productId: product._id,
-        source: "product_page",
-        metadata: {
-          categoryId: typeof product.categoryId === "object" ? product.categoryId?._id : product.categoryId,
-          style: styleToTrack || "",
-          occasion: occasionToTrack
-        }
-      });
+      // add_to_cart được track phía server (cart.service.js) — không track ở client để tránh double-count
     } catch (e) {
       toast.error(e.message);
     }
@@ -353,18 +342,7 @@ export default function ProductDetailPage() {
           body: { productId: product._id, variantId: selectedVariant._id, quantity, source: "buy_now" }
         });
 
-      const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
-      const occasionToTrack = Array.isArray(product.occasion) ? product.occasion[0] : (product.occasion || "");
-      trackBehavior(token, {
-        actionType: "add_to_cart",
-        productId: product._id,
-        source: "product_page",
-        metadata: {
-          categoryId: typeof product.categoryId === "object" ? product.categoryId?._id : product.categoryId,
-          style: styleToTrack || "",
-          occasion: occasionToTrack
-        }
-      });
+      // add_to_cart được track phía server (cart.service.js, source="buy_now") — không track ở client để tránh double-count
 
       const cartItemId = response.data?._id;
       if (cartItemId) {
@@ -428,17 +406,15 @@ export default function ProductDetailPage() {
         });
         toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
 
-        // Track favorite behavior
-        const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
-        const occasionToTrack = Array.isArray(product.occasion) ? product.occasion[0] : (product.occasion || "");
+        // Track add_to_wishlist behavior (đối xứng với remove_from_wishlist)
         trackBehavior(token, {
-          actionType: "favorite",
+          actionType: "add_to_wishlist",
           productId,
           source: addedFrom,
           metadata: {
             categoryId: typeof product.categoryId === "object" ? product.categoryId?._id : product.categoryId,
-            style: styleToTrack || "",
-            occasion: occasionToTrack
+            style: Array.isArray(product.style) ? product.style : (product.style ? [product.style] : []),
+            occasion: Array.isArray(product.occasion) ? product.occasion : (product.occasion ? [product.occasion] : [])
           }
         });
       }

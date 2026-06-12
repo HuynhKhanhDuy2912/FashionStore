@@ -98,16 +98,28 @@ export const addItemToCart = async (user, body) => {
     item = await CartItem.create({ cartId: cart._id, productId, variantId, quantity });
   }
 
-  // Track behavior
+  // Track behavior (nguồn DUY NHẤT cho add_to_cart — client không track nữa)
+  // variant.productId đã được populate ở trên -> lấy đủ context cho recommendation
+  const cartProduct = variant.productId;
+  const toArray = (value) =>
+    Array.isArray(value) ? value : value ? [value] : [];
   try {
     await UserBehavior.create({
       userId: user._id,
       productId,
       actionType: "add_to_cart",
       source,
-      metadata: { variantId, quantity }
+      metadata: {
+        categoryId: cartProduct.categoryId || null,
+        style: toArray(cartProduct.style),
+        occasion: toArray(cartProduct.occasion),
+        variantId,
+        quantity
+      }
     });
-  } catch (_) { /* non-critical */ }
+  } catch (err) {
+    console.error("Failed to track add_to_cart behavior:", err);
+  }
 
   return populateCartItems(CartItem.findById(item._id));
 };

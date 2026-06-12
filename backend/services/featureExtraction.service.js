@@ -216,7 +216,6 @@ export class UserProfileBuilder {
       view_product: 1,
       search: 0.5,
       click: 1.5,
-      favorite: 3,
       add_to_cart: 4,
       remove_from_cart: -2,
       add_to_wishlist: 3.5,
@@ -445,9 +444,12 @@ export class UserProfileBuilder {
     behaviors.forEach((behavior) => {
       let styles = [];
 
-      // Ưu tiên metadata.style (nếu frontend gửi)
-      if (behavior.metadata?.style) {
-        styles = [behavior.metadata.style];
+      // Ưu tiên metadata.style (giờ là [String]; vẫn hỗ trợ dữ liệu cũ dạng chuỗi)
+      const metaStyle = behavior.metadata?.style;
+      if (Array.isArray(metaStyle) && metaStyle.length > 0) {
+        styles = metaStyle;
+      } else if (typeof metaStyle === "string" && metaStyle.trim()) {
+        styles = [metaStyle];
       } else {
         // Fallback: lấy style từ product data
         const product = productMap.get(behavior.productId?.toString());
@@ -484,11 +486,14 @@ export class UserProfileBuilder {
       const weight = this.actionWeights[behavior.actionType] || 1;
 
       // Nguồn 1: metadata.occasion (intent trực tiếp từ filter/search)
-      if (behavior.metadata?.occasion) {
-        const metaOccasion = behavior.metadata.occasion;
-        // Trọng số 1.5x vì đây là intent rõ ràng từ user
-        occasionCounts[metaOccasion] = (occasionCounts[metaOccasion] || 0) + weight * 1.5;
-      }
+      // Giờ là [String]; vẫn hỗ trợ dữ liệu cũ dạng chuỗi. Trọng số 1.5x vì intent rõ ràng.
+      const metaOccasion = behavior.metadata?.occasion;
+      const metaOccasions = Array.isArray(metaOccasion)
+        ? metaOccasion
+        : (typeof metaOccasion === "string" && metaOccasion.trim() ? [metaOccasion] : []);
+      metaOccasions.forEach((occ) => {
+        occasionCounts[occ] = (occasionCounts[occ] || 0) + weight * 1.5;
+      });
 
       // Nguồn 2: product data (occasion của sản phẩm đã tương tác)
       const productId = behavior.productId?.toString();

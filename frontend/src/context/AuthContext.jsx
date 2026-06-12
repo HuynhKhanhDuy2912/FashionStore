@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
     });
 
     setAuth(response.data);
-    toast.success("Đăng nhập bằng Google thành công");
+    toast.success("Đăng nhập thành công");
     return response.data;
   };
 
@@ -68,7 +68,7 @@ export function AuthProvider({ children }) {
     });
 
     setAuth(response.data);
-    toast.success("Đăng nhập bằng số điện thoại thành công");
+    toast.success("Đăng nhập thành công");
     return response.data;
   };
 

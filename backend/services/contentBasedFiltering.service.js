@@ -175,7 +175,7 @@ export class CategoryFilter {
       if (categoryId) {
         const weight = behavior.actionType === "purchase" ? 5 :
                       behavior.actionType === "add_to_cart" ? 3 :
-                      behavior.actionType === "favorite" ? 2 : 1;
+                      behavior.actionType === "add_to_wishlist" ? 2 : 1;
 
         categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + weight;
       }

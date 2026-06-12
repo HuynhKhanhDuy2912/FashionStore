@@ -37,9 +37,14 @@ export const getPersonalizedRecommendations = async (user, limitParam) => {
     // Tính điểm ưu tiên style từ hành vi
     const styleCounts = {};
     for (const b of behaviors) {
-      if (b.metadata?.style) {
-        styleCounts[b.metadata.style] = (styleCounts[b.metadata.style] || 0) + 1;
-      }
+      // metadata.style giờ là [String]; vẫn hỗ trợ dữ liệu cũ dạng chuỗi
+      const metaStyle = b.metadata?.style;
+      const styles = Array.isArray(metaStyle)
+        ? metaStyle
+        : (typeof metaStyle === "string" && metaStyle.trim() ? [metaStyle] : []);
+      styles.forEach((style) => {
+        styleCounts[style] = (styleCounts[style] || 0) + 1;
+      });
     }
 
     // Style ưu tiên: từ hành vi hoặc profile

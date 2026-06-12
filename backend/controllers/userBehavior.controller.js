@@ -14,7 +14,7 @@ const baseUserBehaviorController = createCrudControllers(UserBehavior, {
 });
 
 const STRONG_ACTIONS = new Set([
-  "purchase", "add_to_cart", "add_to_wishlist", "favorite",
+  "purchase", "add_to_cart", "add_to_wishlist",
   "remove_from_cart", "remove_from_wishlist"
 ]);
 

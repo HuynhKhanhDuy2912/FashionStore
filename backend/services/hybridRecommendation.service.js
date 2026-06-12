@@ -515,7 +515,7 @@ class HybridRecommendationEngine {
         if (pid) {
           const weight = b.actionType === "purchase" ? 5 :
                         b.actionType === "add_to_cart" ? 3 :
-                        b.actionType === "favorite" ? 2 : 1;
+                        b.actionType === "add_to_wishlist" ? 2 : 1;
           productInteractions[pid] = (productInteractions[pid] || 0) + weight;
         }
       });
@@ -628,7 +628,7 @@ class HybridRecommendationEngine {
       demographicBehaviors = await UserBehavior.aggregate([
         {
           $match: {
-            actionType: { $in: ["purchase", "add_to_cart", "favorite", "add_to_wishlist"] },
+            actionType: { $in: ["purchase", "add_to_cart", "add_to_wishlist"] },
             createdAt: { $gte: thirtyDaysAgo },
             productId: { $ne: null }
           }
@@ -653,7 +653,6 @@ class HybridRecommendationEngine {
                   branches: [
                     { case: { $eq: ["$actionType", "purchase"] }, then: 5 },
                     { case: { $eq: ["$actionType", "add_to_cart"] }, then: 3 },
-                    { case: { $eq: ["$actionType", "favorite"] }, then: 2 },
                     { case: { $eq: ["$actionType", "add_to_wishlist"] }, then: 2 }
                   ],
                   default: 1

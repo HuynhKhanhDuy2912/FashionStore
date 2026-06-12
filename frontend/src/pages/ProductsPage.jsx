@@ -286,17 +286,15 @@ export default function ProductsPage() {
         setWishlistProductIds((current) => new Set([...current, product._id]));
         setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
 
-        // Track favorite behavior
-        const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
-        const occasionToTrack = Array.isArray(product.occasion) ? product.occasion[0] : (product.occasion || "");
+        // Track add_to_wishlist behavior (đối xứng với remove_from_wishlist)
         trackBehavior(token, {
-          actionType: "favorite",
+          actionType: "add_to_wishlist",
           productId: product._id,
           source: "category",
           metadata: {
             categoryId: typeof product.categoryId === "object" ? product.categoryId?._id : product.categoryId,
-            style: styleToTrack || "",
-            occasion: occasionToTrack
+            style: Array.isArray(product.style) ? product.style : (product.style ? [product.style] : []),
+            occasion: Array.isArray(product.occasion) ? product.occasion : (product.occasion ? [product.occasion] : [])
           }
         });
       }
@@ -347,13 +345,14 @@ export default function ProductsPage() {
       }
 
       trackBehavior(token, {
-        actionType: "search",
+        // "search" chỉ dành cho từ khóa user thực sự gõ; thao tác bộ lọc -> "filter"
+        actionType: hasSearch ? "search" : "filter",
         source: hasSearch ? "search" : "category",
         searchKeyword: keyword,
         metadata: {
           categoryId: selectedCategoryId || null,
-          style: filters.style || "",
-          occasion: filters.occasion || ""
+          style: filters.style ? [filters.style] : [],
+          occasion: filters.occasion ? [filters.occasion] : []
         }
       });
     }, 1500);
@@ -932,7 +931,7 @@ export default function ProductsPage() {
         ) : null}
 
         {useNewAllProductsLayout && activeFilterChips.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {activeFilterChips.map((chip) => (
               <button
                 key={chip.key}

@@ -25,6 +25,7 @@ import { apiRequest } from "../lib/api.js";
 import { attachVariantsToProducts } from "../lib/catalog.js";
 import { trackBehavior } from "../lib/tracking.js";
 import { formatProductName } from "../lib/productName.js";
+import toast from "react-hot-toast";
 
 const categoryCards = [
   {
@@ -158,8 +159,6 @@ export default function HomePage() {
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
   const [newArrivalsPage, setNewArrivalsPage] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -204,15 +203,6 @@ export default function HomePage() {
 
     loadData();
   }, [token]);
-
-  useEffect(() => {
-    if (!message && !error) return undefined;
-    const timer = setTimeout(() => {
-      setMessage("");
-      setError("");
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [message, error]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -273,7 +263,7 @@ export default function HomePage() {
 
   const handleWishlist = async (product, addedFrom = "home") => {
     if (!token) {
-      setError("Vui lòng đăng nhập để thêm sản phẩm vào yêu thích.");
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào yêu thích.");
       return;
     }
 
@@ -293,7 +283,7 @@ export default function HomePage() {
           next.delete(productId);
           return next;
         });
-        setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
+        toast.success(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
 
         // Track remove_from_wishlist behavior
         trackBehavior(token, {
@@ -315,30 +305,28 @@ export default function HomePage() {
           next.add(productId);
           return next;
         });
-        setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
+        toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
 
-        // Track favorite behavior
-        const styleToTrack = Array.isArray(product.style) ? product.style[0] : product.style;
-        const occasionToTrack = Array.isArray(product.occasion) ? product.occasion[0] : (product.occasion || "");
+        // Track add_to_wishlist behavior (đối xứng với remove_from_wishlist)
         trackBehavior(token, {
-          actionType: "favorite",
+          actionType: "add_to_wishlist",
           productId,
           source: addedFrom,
           metadata: {
             categoryId: typeof product.categoryId === "object" ? product.categoryId?._id : product.categoryId,
-            style: styleToTrack || "",
-            occasion: occasionToTrack
+            style: Array.isArray(product.style) ? product.style : (product.style ? [product.style] : []),
+            occasion: Array.isArray(product.occasion) ? product.occasion : (product.occasion ? [product.occasion] : [])
           }
         });
       }
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     }
   };
 
   const handleAddToCart = async (product, variant) => {
     if (!token) {
-      setError("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
 
@@ -354,9 +342,9 @@ export default function HomePage() {
         },
       });
 
-      setMessage(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
+      toast.success(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
     } catch (requestError) {
-      setError(requestError.message);
+      toast.error(requestError.message);
     }
   };
 
@@ -427,14 +415,6 @@ export default function HomePage() {
       >
         <ArrowUp className="h-5 w-5" strokeWidth={2} />
       </button>
-      <Toast
-        message={message}
-        error={error}
-        onClose={() => {
-          setMessage("");
-          setError("");
-        }}
-      />
 
       {/* Hero */}
       <section

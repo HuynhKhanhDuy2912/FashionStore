@@ -204,6 +204,9 @@ export const createOrderFromCart = async (user, body) => {
   );
 
   // Track purchase behavior for each product
+  // style/occasion là [String] trong Product → giữ nguyên dạng mảng để khớp schema mới
+  const toArray = (value) =>
+    Array.isArray(value) ? value : value ? [value] : [];
   const purchaseBehaviors = cartItems.map((item) => ({
     userId: user._id,
     productId: item.productId._id,
@@ -211,11 +214,13 @@ export const createOrderFromCart = async (user, body) => {
     source: "cart",
     metadata: {
       categoryId: item.productId.categoryId || null,
-      style: item.productId.style || "",
-      occasion: item.productId.occasion || ""
+      style: toArray(item.productId.style),
+      occasion: toArray(item.productId.occasion)
     }
   }));
-  UserBehavior.insertMany(purchaseBehaviors).catch(() => {});
+  UserBehavior.insertMany(purchaseBehaviors).catch((err) => {
+    console.error("Failed to track purchase behaviors:", err);
+  });
 
   await createNotificationForAdmins("order", {
     orderId: order._id,

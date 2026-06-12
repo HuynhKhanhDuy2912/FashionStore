@@ -19,7 +19,7 @@ export class ItemBasedCollaborativeEngine {
    * Xây dựng Co-occurrence Matrix từ tất cả positive behaviors
    *
    * Logic:
-   * 1. Query tất cả behaviors dạng positive (purchase, add_to_cart, favorite, add_to_wishlist)
+   * 1. Query tất cả behaviors dạng positive (purchase, add_to_cart, add_to_wishlist)
    * 2. Group theo userId → mỗi user có 1 Set<productId>
    * 3. Với mỗi user, đếm tất cả cặp (productA, productB) xuất hiện cùng nhau
    * 4. Kết quả: sparse matrix { "prodA_prodB": count }
@@ -31,7 +31,7 @@ export class ItemBasedCollaborativeEngine {
     // Chỉ lấy positive behaviors — đây là signals cho thấy user quan tâm
     const positiveBehaviors = await UserBehaviorModel.find({
       actionType: {
-        $in: ["purchase", "add_to_cart", "favorite", "add_to_wishlist"]
+        $in: ["purchase", "add_to_cart", "add_to_wishlist"]
       },
       productId: { $ne: null }
     })

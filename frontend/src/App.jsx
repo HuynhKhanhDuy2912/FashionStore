@@ -53,7 +53,7 @@ export default function App() {
               role="alert"
               style={{
                 opacity: t.visible ? 1 : 0,
-                transform: t.visible ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
+                transform: t.visible ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.95)",
                 transition: "all 0.2s ease-in-out"
               }}
               className={`pointer-events-auto flex max-w-sm w-[350px] items-start gap-3 border px-4 py-3 shadow-lg ${t.type === "error"
