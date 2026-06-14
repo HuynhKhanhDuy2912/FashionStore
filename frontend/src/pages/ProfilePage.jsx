@@ -256,7 +256,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-6xl mt-4">
+    <div className="mx-auto max-w-7xl mt-4">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4 items-start">
         <aside className="lg:col-span-1 lg:sticky lg:top-24">
           <div className="mb-6">
@@ -307,6 +307,7 @@ export default function ProfilePage() {
                   <h2 className="mb-6 text-xl font-bold">Tài khoản</h2>
 
                   <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* Họ */}
                     <div>
                       <label className="mb-2 block text-sm font-medium">Họ</label>
                       <input
@@ -316,12 +317,16 @@ export default function ProfilePage() {
                         onChange={(e) => {
                           const firstName = e.target.value;
                           const lastName = formData.fullname.split(" ").slice(-1)[0] || "";
-                          setFormData((prev) => ({ ...prev, fullname: `${firstName} ${lastName}` }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            fullname: `${firstName} ${lastName}`,
+                          }));
                         }}
                         className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
                       />
                     </div>
 
+                    {/* Tên */}
                     <div>
                       <label className="mb-2 block text-sm font-medium">Tên</label>
                       <input
@@ -329,17 +334,26 @@ export default function ProfilePage() {
                         name="last_name"
                         value={formData.fullname.split(" ").slice(-1)[0] || ""}
                         onChange={(e) => {
-                          const firstName = formData.fullname.split(" ").slice(0, -1).join(" ") || "";
+                          const firstName =
+                            formData.fullname.split(" ").slice(0, -1).join(" ") || "";
                           const lastName = e.target.value;
-                          setFormData((prev) => ({ ...prev, fullname: `${firstName} ${lastName}` }));
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            fullname: `${firstName} ${lastName}`,
+                          }));
                         }}
                         className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
                       />
                     </div>
 
-                    <div className="md:col-span-2">
+                    {/* Email */}
+                    <div>
                       <label className="mb-2 block text-sm font-medium">Email</label>
-                      {user.authProviders?.includes("firebase_phone") && !user.authProviders?.includes("email") && !user.authProviders?.includes("google") ? (
+
+                      {user.authProviders?.includes("firebase_phone") &&
+                        !user.authProviders?.includes("email") &&
+                        !user.authProviders?.includes("google") ? (
                         <input
                           type="email"
                           name="email"
@@ -359,8 +373,12 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="mb-2 block text-sm font-medium">Số điện thoại</label>
+                    {/* Số điện thoại */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium">
+                        Số điện thoại
+                      </label>
+
                       <input
                         type="tel"
                         name="phone_number"

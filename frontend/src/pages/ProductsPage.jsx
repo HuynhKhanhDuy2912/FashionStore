@@ -148,6 +148,33 @@ function formatPrice(price) {
   return `${Number(price || 0).toLocaleString("vi-VN")} đ`;
 }
 
+// Giá hiển thị trên card = (giá gốc + điều chỉnh biến thể) * (1 - giảm giá).
+// Dùng để sắp xếp theo giá cho khớp với con số người dùng nhìn thấy.
+function getProductDisplayPrice(product) {
+  const colorGroups = getColorGroups(product);
+  const group = colorGroups[0];
+  const sizes = sortSizes([
+    ...new Set((group?.variants || []).map((item) => item.size).filter(Boolean)),
+  ]);
+  const selectedSize = sizes[0] || "";
+  const variant =
+    (group?.variants || []).find((item) => item.size === selectedSize) ||
+    group?.variants?.[0] ||
+    null;
+  const basePrice = Number(product.price || 0);
+  const priceAdjustment = Number(variant?.priceAdjustment || 0);
+  const priceBeforeDiscount = basePrice + priceAdjustment;
+  const productDiscount = product.discount || 0;
+  const variantDiscount = variant?.discount;
+  const effectiveDiscount =
+    variantDiscount !== null && variantDiscount !== undefined
+      ? variantDiscount
+      : productDiscount;
+  return effectiveDiscount > 0
+    ? Math.round(priceBeforeDiscount * (1 - effectiveDiscount / 100))
+    : priceBeforeDiscount;
+}
+
 const sortSequence = ["newest", "price_asc", "price_desc", "name_asc"];
 const sortLabelMap = {
   newest: "Mới nhất",
@@ -386,9 +413,9 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(() => {
     const data = [...baseFilteredProducts];
     if (sortBy === "price_asc")
-      data.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+      data.sort((a, b) => getProductDisplayPrice(a) - getProductDisplayPrice(b));
     if (sortBy === "price_desc")
-      data.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+      data.sort((a, b) => getProductDisplayPrice(b) - getProductDisplayPrice(a));
     if (sortBy === "name_asc")
       data.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi"));
     if (sortBy === "newest")
@@ -946,68 +973,7 @@ export default function ProductsPage() {
           </div>
         ) : null}
 
-        <div
-          className={`mt-6 ${useNewAllProductsLayout ? "grid gap-4 lg:grid-cols-[115px_1fr]" : ""}`}
-        >
-          {useNewAllProductsLayout ? (
-            <aside className="hidden lg:block border border-gray-200 bg-white p-4 h-fit sticky top-6">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-black">
-                  Danh mục
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => handleSelectCategory("")}
-                  className="text-xs text-gray-500 hover:text-black"
-                >
-                </button>
-              </div>
-
-              <div className="space-y-1">
-                {categoryLevel1.map((cat) => (
-                  <button
-                    key={cat._id}
-                    type="button"
-                    onClick={() => handleSelectCategory(cat._id)}
-                    className={`w-full text-left px-2 py-2 text-sm ${selectedLevel1Id === cat._id ? "bg-black text-white" : "text-black hover:bg-gray-100"}`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-
-              {categoryLevel2.length > 0 && (
-                <div className="mt-4 border-t border-gray-100 pt-3 space-y-1">
-                  {categoryLevel2.map((cat) => (
-                    <button
-                      key={cat._id}
-                      type="button"
-                      onClick={() => handleSelectCategory(cat._id)}
-                      className={`w-full text-left px-2 py-1.5 text-sm ${selectedLevel2Id === cat._id ? "font-semibold text-black" : "text-gray-600 hover:text-black"}`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {categoryLevel3.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 pt-3 space-y-1">
-                  {categoryLevel3.map((cat) => (
-                    <button
-                      key={cat._id}
-                      type="button"
-                      onClick={() => handleSelectCategory(cat._id)}
-                      className={`w-full text-left px-2 py-1.5 text-sm ${selectedCategoryId === cat._id ? "font-semibold text-black" : "text-gray-600 hover:text-black"}`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </aside>
-          ) : null}
-
+        <div className="mt-6">
           <div>
             <div className="mb-3 lg:hidden">
               <button

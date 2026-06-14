@@ -34,6 +34,20 @@ const styleLabels = {
   smart_casual: "Công sở năng động (Smart Casual)",
 };
 
+// Giá bán thực tế = giá gốc + điều chỉnh của từng biến thể (priceAdjustment).
+// Trả về khoảng giá thấp nhất / cao nhất trên các biến thể.
+function getEffectivePriceRange(product) {
+  const base = Number(product.price || 0);
+  const variants = product.variants || [];
+  if (variants.length === 0) return { min: base, max: base };
+  const prices = variants.map((v) => base + Number(v.priceAdjustment || 0));
+  return { min: Math.min(...prices), max: Math.max(...prices) };
+}
+
+function formatVnd(value) {
+  return `${Math.round(Number(value) || 0).toLocaleString("vi-VN")}₫`;
+}
+
 export default function AdminProductListPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -132,6 +146,18 @@ export default function AdminProductListPage() {
     return Array.from(styleSet).sort();
   }, [products]);
 
+  // Chỉ lấy danh mục cấp 3 (lá): danh mục có cha, và cha đó cũng có cha.
+  const leafCategories = useMemo(() => {
+    const getParentId = (cat) => cat?.parentId?._id || cat?.parentId || null;
+    const catById = new Map(categories.map((cat) => [cat._id, cat]));
+    return categories.filter((cat) => {
+      const parentId = getParentId(cat);
+      if (!parentId) return false; // cấp 1
+      const parent = catById.get(parentId);
+      return Boolean(parent && getParentId(parent)); // cha có cha => cấp 3
+    });
+  }, [categories]);
+
   const filteredAndSorted = useMemo(() => {
     let result = products.filter((p) => {
       const searchMatch =
@@ -173,9 +199,9 @@ export default function AdminProductListPage() {
         case "name-desc":
           return b.name.localeCompare(a.name);
         case "price-asc":
-          return a.price - b.price;
+          return getEffectivePriceRange(a).min - getEffectivePriceRange(b).min;
         case "price-desc":
-          return b.price - a.price;
+          return getEffectivePriceRange(b).min - getEffectivePriceRange(a).min;
         case "newest":
           return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         case "oldest":
@@ -386,7 +412,7 @@ export default function AdminProductListPage() {
                 className={selectClass}
               >
                 <option value="all">Tất cả danh mục</option>
-                {categories.map((cat) => (
+                {leafCategories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
                     {cat.name}
                   </option>
@@ -536,6 +562,7 @@ export default function AdminProductListPage() {
                     product.discount || 0,
                     ...(product.variants || []).map(v => (v.discount != null ? v.discount : (product.discount || 0)))
                   );
+                  const priceRange = getEffectivePriceRange(product);
 
                   return (
                     <div
@@ -577,7 +604,12 @@ export default function AdminProductListPage() {
                           <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">
                             {Array.isArray(product.style) ? product.style.join(", ") : (product.style || "N/A")}
                           </span>
-                          <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-600">
+                          <span
+                            className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${product.gender === "female"
+                                ? "bg-pink-50 text-pink-600"
+                                : "bg-blue-50 text-blue-600"
+                              }`}
+                          >
                             {product.gender === "female" ? "Nữ" : "Nam"}
                           </span>
                         </div>
@@ -637,15 +669,16 @@ export default function AdminProductListPage() {
 
                       <div className="flex flex-col justify-center text-center">
                         <span className="text-sm font-bold text-gray-900">
-                          {Number(product.price).toLocaleString("vi-VN")}₫
+                          {priceRange.min === priceRange.max
+                            ? formatVnd(priceRange.min)
+                            : `${formatVnd(priceRange.min)} - ${formatVnd(priceRange.max)}`}
                         </span>
                         {maxDiscount > 0 && (
                           <span className="text-xs font-semibold text-green-600">
                             Sau giảm:{" "}
-                            {Math.round(
-                              product.price * (1 - maxDiscount / 100),
-                            ).toLocaleString("vi-VN")}
-                            ₫
+                            {priceRange.min === priceRange.max
+                              ? formatVnd(priceRange.min * (1 - maxDiscount / 100))
+                              : `${formatVnd(priceRange.min * (1 - maxDiscount / 100))} - ${formatVnd(priceRange.max * (1 - maxDiscount / 100))}`}
                           </span>
                         )}
                       </div>

@@ -219,7 +219,7 @@ export default function OrdersTab({ token }) {
 
       {/* Search and Filter Bar */}
       <div className="mb-6 space-y-4">
-        <div className="relative max-w-xl">
+        <div className="relative max-w">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -240,7 +240,7 @@ export default function OrdersTab({ token }) {
           ) : null}
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 flex gap-2 px-1 pb-1">
           {STATUS_FILTERS.map((filter) => {
             const isActive = statusFilter === filter.value;
 
@@ -249,11 +249,10 @@ export default function OrdersTab({ token }) {
                 key={filter.value}
                 type="button"
                 onClick={() => setStatusFilter(filter.value)}
-                className={`h-10 shrink-0 rounded-full border px-6 text-sm font-semibold transition ${
-                  isActive
-                    ? "border-black bg-black text-white shadow-sm shadow-black/10"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`h-10 flex-1 rounded-full border text-sm font-semibold transition ${isActive
+                  ? "border-black bg-black text-white shadow-sm shadow-black/10"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {filter.label}
               </button>
@@ -304,7 +303,7 @@ export default function OrdersTab({ token }) {
               href="/"
               className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Tiếp tục mua sắm 
+              Tiếp tục mua sắm
             </a>
           ) : (
             <button
@@ -407,13 +406,13 @@ export default function OrdersTab({ token }) {
                                 <span>•</span>
                                 <span>x{item.quantity}</span>
                               </div>
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-semibold text-gray-900">
-                                {(item.price * item.quantity)?.toLocaleString(
-                                  "vi-VN",
-                                )}
-                                ₫
-                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {(item.price * item.quantity)?.toLocaleString(
+                                    "vi-VN",
+                                  )}
+                                  ₫
+                                </div>
                                 {order.status === "completed" && item.productId?._id && !item.productId.isDeleted && (
                                   <div>
                                     {item.isReviewed ? (

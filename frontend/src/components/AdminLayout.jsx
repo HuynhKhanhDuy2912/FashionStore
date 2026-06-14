@@ -263,10 +263,10 @@ export default function AdminLayout() {
   };
 
   const linkClass = ({ isActive }) =>
-    `mx-0 flex items-center gap-2 px-4 py-3.5 text-xs font-bold uppercase transition-colors ${isActive
+    `flex items-center gap-2 text-xs font-bold uppercase transition-colors ${isActive
       ? "bg-black text-white"
       : "text-gray-500 hover:bg-gray-50 hover:text-black"
-    } ${collapsed ? "justify-center px-2" : ""}`;
+    } ${collapsed ? "mx-2 my-0.5 justify-center rounded-lg px-2 py-3" : "px-4 py-3.5"}`;
 
   const buildSearchPath = (path, keyword) => {
     const query = keyword.trim();
@@ -302,12 +302,13 @@ export default function AdminLayout() {
                 const isActive = location.pathname.startsWith(item.basePath);
 
                 if (collapsed) {
+                  const collapsedTarget = item.children[0]?.to || item.basePath;
                   return (
                     <NavLink
                       key={item.label}
-                      to="/admin/products/list"
+                      to={collapsedTarget}
                       title={item.label}
-                      className={linkClass}
+                      className={() => linkClass({ isActive })}
                     >
                       <NavItemContent icon={item.icon} label={item.label} collapsed />
                     </NavLink>

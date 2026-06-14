@@ -101,6 +101,7 @@ export default function CouponsTab({ token }) {
 
   return (
     <div className="space-y-8">
+      <h2 className="text-xl font-bold border-b border-gray-300 pb-4">Danh sách mã giảm giá</h2>
       {/* Product discount coupons */}
       {productCoupons.length > 0 && (
         <div>
@@ -108,7 +109,7 @@ export default function CouponsTab({ token }) {
             <Tag className="h-4 w-4" />
             Giảm giá sản phẩm
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {productCoupons.map((coupon) => (
               <CouponCard
                 key={coupon._id}
@@ -128,7 +129,7 @@ export default function CouponsTab({ token }) {
             <Truck className="h-4 w-4" />
             Miễn phí vận chuyển
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {shippingCoupons.map((coupon) => (
               <CouponCard
                 key={coupon._id}
@@ -144,9 +145,9 @@ export default function CouponsTab({ token }) {
 
       {/* Detail Modal */}
       {selectedCoupon && (
-        <CouponDetailModal 
-          coupon={selectedCoupon} 
-          onClose={() => setSelectedCoupon(null)} 
+        <CouponDetailModal
+          coupon={selectedCoupon}
+          onClose={() => setSelectedCoupon(null)}
         />
       )}
     </div>
@@ -156,7 +157,7 @@ export default function CouponsTab({ token }) {
 function CouponDetailModal({ coupon, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div 
+      <div
         className="relative w-full max-w-lg bg-white overflow-visible"
         onClick={e => e.stopPropagation()}
       >
@@ -191,8 +192,8 @@ function CouponDetailModal({ coupon, onClose }) {
           <div>
             <h4 className="text-sm font-bold text-black mb-1">Ưu đãi</h4>
             <p className="text-sm text-gray-600">
-              {coupon.discountType === "free_shipping" 
-                ? "Miễn phí vận chuyển cho toàn bộ sản phẩm" 
+              {coupon.discountType === "free_shipping"
+                ? "Miễn phí vận chuyển cho toàn bộ sản phẩm"
                 : "Áp dụng giảm giá cho toàn bộ sản phẩm"}
               {coupon.maxDiscountAmount > 0 ? ` (tối đa ${formatCurrency(coupon.maxDiscountAmount)})` : ""}
             </p>
@@ -224,7 +225,7 @@ function CouponDetailModal({ coupon, onClose }) {
 
 function CouponCard({ coupon, copiedCode, onCopy, onClick }) {
   const copied = copiedCode === coupon.code;
-  
+
   // Calculate remaining days
   const endDate = new Date(coupon.endDate);
   const now = new Date();
@@ -237,8 +238,8 @@ function CouponCard({ coupon, copiedCode, onCopy, onClick }) {
   const checkClass = isFreeShipping ? "text-blue-600" : "text-emerald-600";
 
   return (
-    <div 
-      className={`relative flex w-full max-w-lg cursor-pointer overflow-hidden ${bgClass} shadow-sm transition hover:scale-[1.02]`}
+    <div
+      className={`relative flex w-full cursor-pointer overflow-hidden rounded-lg ${bgClass} shadow-sm transition hover:scale-[1.02]`}
       onClick={onClick}
     >
       {/* Left section (Info) */}

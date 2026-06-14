@@ -44,10 +44,13 @@ export default function ProductInfoModal({ open, onClose, product }) {
           </button>
         </div>
 
-        <div className="space-y-3 px-5 py-4 text-[15px] leading-6 text-gray-600">
-          {product.description && (
-            <p className="whitespace-pre-wrap text-black">{product.description}</p>
-          )}
+        <div className="space-y-3 px-5 py-4 text-[15px] leading-6 text-black">
+          {product.description &&
+            product.description
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line, index) => <p key={index}>{line}</p>)}
 
           {product.material && (
             <p>

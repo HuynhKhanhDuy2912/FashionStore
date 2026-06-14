@@ -4,7 +4,9 @@ import { apiRequest } from "../../lib/api";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import { formatProductName } from "../../lib/productName";
-import { History, Download, Package, Filter, Calendar, ChevronsLeft, ChevronsRight } from "lucide-react";
+import {
+  History, Download, Package, Search, Calendar, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, ArrowRight, RefreshCw, Undo2
+} from "lucide-react";
 
 export default function AdminInventoryHistoryPage() {
   const { token } = useAuth();
@@ -112,7 +114,7 @@ export default function AdminInventoryHistoryPage() {
     import: "text-green-600 bg-green-50",
     export: "text-red-600 bg-red-50",
     adjustment: "text-blue-600 bg-blue-50",
-    return: "text-green-600 bg-green-50",
+    return: "text-orange-600 bg-orange-50",
   };
 
   const typeLabels = {
@@ -123,10 +125,10 @@ export default function AdminInventoryHistoryPage() {
   };
 
   const typeIcons = {
-    import: "↑",
-    export: "↓",
-    adjustment: "⟳",
-    return: "↩",
+    import: <ArrowUp size={16} />,
+    export: <ArrowDown size={16} />,
+    adjustment: <RefreshCw size={16} />,
+    return: <Undo2 size={16} />,
   };
 
   if (loading) {
@@ -165,7 +167,7 @@ export default function AdminInventoryHistoryPage() {
               Tìm kiếm
             </label>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Sản phẩm, SKU..."
@@ -248,10 +250,10 @@ export default function AdminInventoryHistoryPage() {
                 <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
                   Sản phẩm
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
                   Màu/Size
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
                   SKU
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
@@ -263,12 +265,12 @@ export default function AdminInventoryHistoryPage() {
                 <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600">
                   Tồn kho
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-gray-600 min-w-[150px]">
                   Lý do
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
+                {/* <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-600">
                   Người thực hiện
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -293,7 +295,7 @@ export default function AdminInventoryHistoryPage() {
                           <img
                             src={image}
                             alt=""
-                            className="w-10 h-10 object-cover rounded-lg"
+                            className="w-10 h-10 object-cover rounded-md"
                           />
                         ) : (
                           <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -305,10 +307,10 @@ export default function AdminInventoryHistoryPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-[12px]">
                       {tx.variantId?.color} / {tx.variantId?.size}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono">
+                    <td className="px-4 py-3 text-[12px]">
                       {tx.variantId?.sku || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -327,7 +329,7 @@ export default function AdminInventoryHistoryPage() {
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
                       <span className="text-gray-500">{tx.previousStock}</span>
-                      <span className="mx-2 text-gray-400">→</span>
+                      <ArrowRight className="mx-2 text-gray-400 w-3 h-3 inline" />
                       <span className="font-bold">{tx.newStock}</span>
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -339,17 +341,17 @@ export default function AdminInventoryHistoryPage() {
                           </p>
                         )}
                         {tx.orderId && (
-                          <p className="text-blue-600 text-xs mt-1">
-                            Đơn hàng: {tx.orderId._id}
+                          <p className="text-blue-600 text-xs mt-1 min-w-[150px]">
+                            Đơn hàng: {tx.orderId._id.slice(-8).toUpperCase()}
                           </p>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    {/* <td className="px-4 py-3 text-sm">
                       {tx.createdBy?.fullname ||
                         tx.createdBy?.username ||
                         "N/A"}
-                    </td>
+                    </td> */}
                   </tr>
                 );
               })}

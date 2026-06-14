@@ -11,7 +11,10 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*"
+    // Phải là origin CỤ THỂ (không được "*") khi bật credentials — spec CORS cấm
+    // Access-Control-Allow-Origin: * đi kèm Access-Control-Allow-Credentials: true.
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true
   })
 );
 app.use(helmet());

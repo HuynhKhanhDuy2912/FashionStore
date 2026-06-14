@@ -193,9 +193,8 @@ export default function HomePage() {
             .filter(Boolean),
         );
         setWishlistProductIds(wishlistIds);
-        setError("");
       } catch (loadError) {
-        setError(loadError.message);
+        toast.error(loadError.message);
       } finally {
         setLoading(false);
       }

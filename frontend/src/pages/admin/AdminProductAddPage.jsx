@@ -717,13 +717,19 @@ export default function AdminProductAddPage() {
   };
 
   // ── Helpers ──
-  const field = (key) => ({
+  const field = (key, { uppercase = false } = {}) => ({
     value: form[key],
-    onChange: (e) => setForm((c) => ({ ...c, [key]: e.target.value })),
+    onChange: (e) => {
+      const value = uppercase ? e.target.value.toUpperCase() : e.target.value;
+      setForm((c) => ({ ...c, [key]: value }));
+    },
   });
-  const vField = (key) => ({
+  const vField = (key, { uppercase = false } = {}) => ({
     value: variantForm[key] ?? "",
-    onChange: (e) => setVariantForm((c) => ({ ...c, [key]: e.target.value })),
+    onChange: (e) => {
+      const value = uppercase ? e.target.value.toUpperCase() : e.target.value;
+      setVariantForm((c) => ({ ...c, [key]: value }));
+    },
   });
 
   const inputCls =
@@ -978,7 +984,7 @@ export default function AdminProductAddPage() {
                           className={inputCls}
                           required
                           placeholder="S, M, L, XL"
-                          {...field("sizes")}
+                          {...field("sizes", { uppercase: true })}
                         />
                       </label>
 
@@ -1367,7 +1373,7 @@ export default function AdminProductAddPage() {
                   <input
                     className={inputCls}
                     placeholder="S, M, L..."
-                    {...vField("size")}
+                    {...vField("size", { uppercase: true })}
                   />
                 </label>
 

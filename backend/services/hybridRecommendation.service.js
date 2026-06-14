@@ -11,6 +11,17 @@ import { RuleBasedEngine, BusinessRulesHelper } from "./ruleBasedRecommendation.
 import { ItemBasedCollaborativeEngine } from "./collaborativeFiltering.service.js";
 
 /**
+ * Ngưỡng điểm sàn (0–100) để hiển thị badge "Match %".
+ *
+ * Gợi ý có matchScore < ngưỡng này được coi là "độ tự tin thấp": backend trả
+ * matchScore = null + isHighMatch = false để Frontend ẨN badge thay vì khoe một
+ * con số gây hiểu lầm. Đây là tham số cần CALIBRATE theo phân phối điểm thực tế
+ * (xem phân phối finalScore trong log/analytics): đặt quá cao sẽ ẩn gần hết badge,
+ * quá thấp sẽ lại để lọt các gợi ý yếu.
+ */
+const MIN_MATCH_THRESHOLD = 60;
+
+/**
  * Hybrid Recommendation Engine v2.0
  *
  * Kết hợp 5 engines:
@@ -211,13 +222,14 @@ class HybridRecommendationEngine {
         scoredProducts, 0.7, limit * 2
       );
 
-      // 12. Take top N — enrich products with recommendation metadata
+      // 12. Take top N — enrich products with recommendation metadata.
+      //     matchScore giờ là điểm TUYỆT ĐỐI (finalScore ∈ [0,1] × 100), không còn
+      //     chuẩn hóa theo maxScore cục bộ nên top-1 không mặc nhiên = 100%.
       const topItems = diverseProducts.slice(0, limit);
-      const maxScore = topItems.length > 0 ? topItems[0].finalScore : 1;
 
       const recommendations = topItems.map(item => ({
         ...item.product,
-        matchScore: Math.round(Math.min((item.finalScore / Math.max(maxScore, 0.01)) * 100, 100)),
+        ...this.buildMatchMeta(item.finalScore),
         recommendationReasons: this.generateRecommendationReasons(item),
         recommendationGroup: this.classifyRecommendationGroup(item)
       }));
@@ -351,6 +363,33 @@ class HybridRecommendationEngine {
   }
 
   /**
+   * Chuyển một điểm hợp nhất đã chuẩn hóa về [0,1] thành metadata cho badge "Match %".
+   *
+   * TUYỆT ĐỐI HÓA: matchScore = score × 100, KHÔNG chia cho maxScore cục bộ → item
+   * top-1 không còn mặc nhiên = 100%; con số phản ánh đúng độ phù hợp tuyệt đối.
+   *
+   * Vì finalScore là tổ hợp lồi (các trọng số cộng lại = 1) của những điểm con đều
+   * thuộc [0,1], nên finalScore ∈ [0,1] và (× 100) cho ra ngay thang phần trăm.
+   * Math.min/Math.max chỉ là lớp phòng vệ chống lệch dải do sai số dấu phẩy động.
+   *
+   * @param {number} score01 - Điểm hợp nhất, kỳ vọng ∈ [0, 1]
+   * @returns {{ matchScore: number|null, isHighMatch: boolean }}
+   */
+  buildMatchMeta(score01) {
+    const safeScore = Number.isFinite(score01) ? score01 : 0;
+    const clamped = Math.min(Math.max(safeScore, 0), 1);
+    const absoluteMatch = Math.round(clamped * 100);
+    const isHighMatch = absoluteMatch >= MIN_MATCH_THRESHOLD;
+
+    return {
+      // Dưới ngưỡng → null để Frontend ẩn badge. Điều kiện `matchScore > 0` sẵn có
+      // ở ProductCard coi null là falsy nên KHÔNG cần sửa Frontend.
+      matchScore: isHighMatch ? absoluteMatch : null,
+      isHighMatch
+    };
+  }
+
+  /**
    * Calculate behavior weight for a product
    */
   calculateBehaviorWeight(product, behaviors, allProducts) {
@@ -445,13 +484,14 @@ class HybridRecommendationEngine {
         };
       });
 
-      // Sort and take top N
+      // Sort and take top N.
+      // matchScore dựa trên rawSimilarity (cosine ∈ [0,1]) — độ tương đồng THẬT,
+      // KHÔNG dùng score đã nhân boost (boost chỉ phục vụ xếp hạng, không phải %match).
       similarities.sort((a, b) => b.score - a.score);
       const topItems = similarities.slice(0, limit);
-      const maxScore = topItems.length > 0 ? topItems[0].score : 1;
       const recommendations = topItems.map(item => ({
         ...item.product,
-        matchScore: Math.round(Math.min((item.score / Math.max(maxScore, 0.01)) * 100, 100)),
+        ...this.buildMatchMeta(item.rawSimilarity),
         recommendationReasons: ["Sản phẩm tương tự"],
         recommendationGroup: "similar_products"
       }));
@@ -560,10 +600,13 @@ class HybridRecommendationEngine {
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
-      const maxTrendScore = topItems.length > 0 ? topItems[0].score : 1;
+      // Trending là XẾP HẠNG PHỔ BIẾN TOÀN CỤC (đếm tương tác, không có trần lý
+      // thuyết), KHÔNG phải độ phù hợp cá nhân hóa → không gán "% MATCH" để tránh
+      // lặp lại đúng kiểu lừa "top = 100%". Reason "Đang thịnh hành" đã đủ giải thích.
       const sorted = topItems.map(item => ({
         ...item.product,
-        matchScore: Math.round(Math.min((item.score / Math.max(maxTrendScore, 0.01)) * 100, 100)),
+        matchScore: null,
+        isHighMatch: false,
         recommendationReasons: ["Đang thịnh hành"],
         recommendationGroup: "trending"
       }));
@@ -751,7 +794,7 @@ class HybridRecommendationEngine {
 
     return combined.slice(0, limit).map(item => ({
       ...item.product,
-      matchScore: Math.round(Math.min(item.finalScore * 100, 100)),
+      ...this.buildMatchMeta(item.finalScore),
       recommendationReasons: ["Phổ biến trong nhóm của bạn"],
       recommendationGroup: "popular"
     }));
