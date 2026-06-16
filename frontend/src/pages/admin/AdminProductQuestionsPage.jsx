@@ -13,10 +13,11 @@ import {
   Eye,
   EyeOff,
   Send,
-  ChevronLeft,
-  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   X,
 } from "lucide-react";
+import { getPaginationRange } from "../../lib/pagination.js";
 import toast from "react-hot-toast";
 
 const filterOptions = [
@@ -333,23 +334,46 @@ export default function AdminProductQuestionsPage() {
         {/* Pagination */}
         {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
-            <span className="text-xs text-gray-400">
-              Trang {pagination.page}/{pagination.totalPages} — {pagination.total} câu hỏi
+            <span className="text-sm text-gray-500">
+              Trang {pagination.page} / {pagination.totalPages} &mdash; {pagination.total} câu hỏi
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex gap-2">
               <button
+                onClick={() => loadQuestions(Math.max(pagination.page - 1, 1))}
                 disabled={pagination.page <= 1}
-                onClick={() => loadQuestions(pagination.page - 1)}
-                className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-gray-900 hover:text-gray-900 disabled:opacity-30 cursor-pointer bg-white"
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft size={14} />
+                <ChevronsLeft size={16} />
               </button>
+
+              <div className="flex items-center gap-1">
+                {getPaginationRange(pagination.page, pagination.totalPages).map((p) => {
+                  if (p === "left-ellipsis" || p === "right-ellipsis") {
+                    return (
+                      <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => loadQuestions(p)}
+                      className={`h-8 w-8 rounded text-sm font-medium ${pagination.page === p
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
+                onClick={() => loadQuestions(Math.min(pagination.page + 1, pagination.totalPages))}
                 disabled={pagination.page >= pagination.totalPages}
-                onClick={() => loadQuestions(pagination.page + 1)}
-                className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-gray-900 hover:text-gray-900 disabled:opacity-30 cursor-pointer bg-white"
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronRight size={14} />
+                <ChevronsRight size={16} />
               </button>
             </div>
           </div>

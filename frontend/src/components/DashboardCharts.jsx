@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactApexChart from "react-apexcharts";
 import { formatCompactCurrency, formatCurrency } from "../lib/adminStats.js";
 import { formatProductName } from "../lib/productName.js";
 
@@ -20,6 +21,101 @@ const STATUS_DISPLAY_LABELS = {
 };
 
 const PAYMENT_COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
+
+// Biểu đồ doanh thu kiểu combo: cột Doanh thu + đường vùng tô Số đơn + đường nét đứt Hoàn/Hủy
+export function RevenueApexChart({ data = [] }) {
+  if (!data.length) {
+    return (
+      <div className="grid min-h-[320px] place-items-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
+        Chưa có dữ liệu doanh thu
+      </div>
+    );
+  }
+
+  const categories = data.map((item) => item.label);
+  const series = [
+    { name: "Doanh thu", type: "column", data: data.map((item) => Math.round(item.revenue || 0)) },
+    { name: "Số đơn", type: "line", data: data.map((item) => item.orders || 0) },
+    { name: "Đơn hủy", type: "line", data: data.map((item) => item.refunds || 0) },
+  ];
+
+  const options = {
+    chart: {
+      type: "line",
+      stacked: false,
+      toolbar: { show: false },
+      fontFamily: "inherit",
+      parentHeightOffset: 0,
+      // Tắt animation để tránh lỗi runMaskReveal (đọc 'node' của null) khi vẽ vùng tô
+      animations: { enabled: false },
+    },
+    colors: ["#0062ffff", "#2de903ff", "#f00505ff"],
+    stroke: { width: [0, 3, 2], curve: "smooth", dashArray: [0, 0, 5] },
+    fill: {
+      type: ["gradient", "solid", "solid"],
+      opacity: [1, 1, 1],
+      gradient: { shade: "light", type: "vertical", opacityFrom: 0.95, opacityTo: 0.7 },
+    },
+    plotOptions: { bar: { columnWidth: data.length <= 2 ? "20%" : "42%", borderRadius: 4 } },
+    dataLabels: { enabled: false },
+    // Hiện marker cho 2 đường (Số đơn, Đơn hủy) để điểm đơn lẻ vẫn nhìn thấy
+    markers: { size: [0, 5, 4], strokeWidth: 2, strokeColors: "#fff", hover: { sizeOffset: 2 } },
+    legend: { show: false },
+    grid: { borderColor: "#eef0f4", strokeDashArray: 4, padding: { left: 8, right: 8 } },
+    xaxis: {
+      categories,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: { style: { colors: "#94a3b8", fontSize: "12px" } },
+    },
+    yaxis: [
+      {
+        seriesName: "Doanh thu",
+        labels: {
+          formatter: (val) => formatCompactCurrency(val),
+          style: { colors: "#94a3b8" },
+        },
+      },
+      {
+        seriesName: "Số đơn",
+        opposite: true,
+        labels: { formatter: (val) => Math.round(val), style: { colors: "#94a3b8" } },
+      },
+      { seriesName: "Số đơn", opposite: true, show: false },
+    ],
+    tooltip: {
+      shared: true,
+      intersect: false,
+      y: {
+        formatter: (val, { seriesIndex }) =>
+          seriesIndex === 0 ? formatCurrency(val) : `${val}`,
+      },
+    },
+  };
+
+  const legendItems = [
+    { label: "Doanh thu", color: "#0062ffff" },
+    { label: "Số đơn", color: "#2de903ff" },
+    { label: "Đơn hủy", color: "#f00505ff" },
+  ];
+
+  return (
+    <div>
+      <ReactApexChart options={options} series={series} type="line" height={320} />
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm font-medium text-slate-600">
+        {legendItems.map((item) => (
+          <span key={item.label} className="inline-flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: item.color }}
+            />
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function RevenueOrdersChart({ data = [], primaryColor = "#2563eb" }) {
   const maxRevenue = Math.max(...data.map((item) => item.revenue), 1);
@@ -348,7 +444,7 @@ export function TopProductsTable({ data = [] }) {
 
 export function TopCategoriesBarChart({ data = [] }) {
   const maxQuantity = Math.max(...data.map((item) => item.quantity), 1);
-  const colors = ["#6366f1", "#a5b4fc", "#6366f1", "#a5b4fc", "#6366f1"];
+  const colors = ["#6366f1", "#a5b4fc"];
 
   if (data.length === 0) {
     return (

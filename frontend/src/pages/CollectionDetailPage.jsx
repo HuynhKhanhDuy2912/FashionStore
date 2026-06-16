@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Filter, Grid2X2, Grid3X3, Rows3 } from "lucide-react";
 import toast from "react-hot-toast";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -206,21 +205,6 @@ export default function CollectionDetailPage() {
             </Link>
             <span className="text-gray-300">&gt;</span>
             <span className="font-bold text-black">{collection.name}</span>
-          </div>
-
-          <div className="flex items-center gap-4 text-black">
-            <button type="button" className="grid h-9 w-9 place-items-center transition hover:bg-gray-50" aria-label="Lọc">
-              <Filter className="h-5 w-5" strokeWidth={1.7} />
-            </button>
-            <button type="button" className="grid h-9 w-9 place-items-center transition hover:bg-gray-50" aria-label="Sắp xếp">
-              <Rows3 className="h-5 w-5" strokeWidth={1.7} />
-            </button>
-            <button type="button" className="grid h-9 w-9 place-items-center transition hover:bg-gray-50" aria-label="Lưới 2 cột">
-              <Grid2X2 className="h-5 w-5" strokeWidth={1.7} />
-            </button>
-            <button type="button" className="grid h-9 w-9 place-items-center transition hover:bg-gray-50" aria-label="Lưới 3 cột">
-              <Grid3X3 className="h-5 w-5 text-gray-500" strokeWidth={1.7} />
-            </button>
           </div>
         </div>
       </section>

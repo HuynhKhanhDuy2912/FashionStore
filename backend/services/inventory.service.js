@@ -60,7 +60,7 @@ export const getInventoryList = async (filters = {}, pagination = {}) => {
   }
 
   if (lowStock === "true" || lowStock === true) {
-    filtered = filtered.filter((v) => v.stock > 0 && v.stock <= 10);
+    filtered = filtered.filter((v) => v.stock > 0 && v.stock <= 5);
   }
 
   if (outOfStock === "true" || outOfStock === true) {
@@ -250,7 +250,7 @@ export const getTransactionHistory = async (filters = {}, pagination = {}) => {
   };
 };
 
-export const getLowStockVariants = async (threshold = 10) => {
+export const getLowStockVariants = async (threshold = 5) => {
   const variants = await ProductVariant.find({
     stock: { $lte: threshold, $gt: 0 },
     isActive: true
@@ -284,7 +284,7 @@ export const getInventoryStats = async () => {
     inventoryValueAgg
   ] = await Promise.all([
     ProductVariant.countDocuments({ isActive: true }),
-    ProductVariant.countDocuments({ isActive: true, stock: { $lte: 10, $gt: 0 } }),
+    ProductVariant.countDocuments({ isActive: true, stock: { $lte: 5, $gt: 0 } }),
     ProductVariant.countDocuments({ isActive: true, stock: 0 }),
     ProductVariant.aggregate([
       { $match: { isActive: true, stock: { $gt: 0 } } },

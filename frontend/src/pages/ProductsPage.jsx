@@ -23,6 +23,7 @@ import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { trackBehavior } from "../lib/tracking.js";
 import { formatProductName } from "../lib/productName.js";
+import { getPaginationRange } from "../lib/pagination.js";
 import {
   FALLBACK_PRODUCT_IMAGE,
   findFirstDistinctImage,
@@ -1385,50 +1386,46 @@ export default function ProductsPage() {
             )}
 
             {filteredProducts.length > PAGE_SIZE ? (
-              <div className="mt-6 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={normalizedCurrentPage === 1}
-                  className="grid h-9 w-9 place-items-center border border-gray-300 bg-white text-sm font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <ChevronsLeft className="w-4 h-4" />
-                </button>
+              <div className="mt-4 flex items-center justify-center border-t border-gray-200 px-5 py-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={normalizedCurrentPage === 1}
+                    className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+                  >
+                    <ChevronsLeft size={18} />
+                  </button>
 
-                {Array.from({ length: totalPages }, (_, index) => index + 1)
-                  .filter((page) => {
-                    if (totalPages <= 7) return true;
-                    if (page === 1 || page === totalPages) return true;
-                    return Math.abs(page - normalizedCurrentPage) <= 1;
-                  })
-                  .map((page, index, pages) => {
-                    const prevPage = pages[index - 1];
-                    const showEllipsis = prevPage && page - prevPage > 1;
-                    return (
-                      <span key={`page-wrap-${page}`} className="inline-flex items-center gap-2">
-                        {showEllipsis ? <span className="px-1 text-gray-500">...</span> : null}
+                  <div className="flex items-center gap-1">
+                    {getPaginationRange(normalizedCurrentPage, totalPages).map((p) => {
+                      if (p === "left-ellipsis" || p === "right-ellipsis") {
+                        return (
+                          <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
+                        );
+                      }
+                      return (
                         <button
-                          type="button"
-                          onClick={() => setCurrentPage(page)}
-                          className={`grid h-9 min-w-9 place-items-center border px-2 text-sm font-medium transition ${page === normalizedCurrentPage
-                            ? "border-black bg-black text-white"
-                            : "border-gray-300 bg-white text-black hover:border-black"
+                          key={p}
+                          onClick={() => setCurrentPage(p)}
+                          className={`h-10 w-10 rounded text-sm font-medium ${normalizedCurrentPage === p
+                            ? "bg-black text-white"
+                            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                             }`}
                         >
-                          {page}
+                          {p}
                         </button>
-                      </span>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={normalizedCurrentPage === totalPages}
-                  className="grid h-9 w-9 place-items-center border border-gray-300 bg-white text-sm font-medium text-black transition hover:border-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <ChevronsRight className="w-4 h-4" />
-                </button>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={normalizedCurrentPage === totalPages}
+                    className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+                  >
+                    <ChevronsRight size={18} />
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>

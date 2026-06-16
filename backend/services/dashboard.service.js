@@ -4,7 +4,8 @@ import User from "../models/User.js";
 import Product from "../models/Product.js";
 import ProductVariant from "../models/ProductVariant.js";
 
-const REVENUE_STATUSES = ["confirmed", "shipping", "completed"];
+// Doanh thu chỉ ghi nhận khi đơn đã hoàn tất (giao thành công)
+const REVENUE_STATUSES = ["completed"];
 const STATUS_LABELS = {
   pending: "Chờ xác nhận",
   confirmed: "Đã xác nhận",
@@ -45,6 +46,46 @@ function fillDailySeries(rows, days = 30) {
       revenue: row?.revenue || 0,
       orders: row?.orders || 0,
     });
+  }
+
+  return result;
+}
+
+// Lấp đầy các tháng thiếu từ tháng có dữ liệu sớm nhất đến tháng hiện tại
+function fillMonthlySeries(rows) {
+  const map = new Map(rows.map((row) => [row._id, row]));
+  const now = new Date();
+
+  // Luôn hiển thị tối thiểu 12 tháng gần nhất để có khung biểu đồ; mở rộng thêm nếu
+  // có dữ liệu cũ hơn 12 tháng.
+  const minStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  let start = minStart;
+  if (rows.length > 0) {
+    const [y, m] = rows[0]._id.split("-").map(Number);
+    const dataStart = new Date(y, m - 1, 1);
+    if (dataStart < minStart) start = dataStart;
+  }
+
+  const result = [];
+  const cursor = new Date(start);
+  while (
+    cursor.getFullYear() < now.getFullYear() ||
+    (cursor.getFullYear() === now.getFullYear() && cursor.getMonth() <= now.getMonth())
+  ) {
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth() + 1;
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const row = map.get(key);
+
+    result.push({
+      month: key,
+      label: `Th${m}/${String(y).slice(2)}`,
+      revenue: row?.revenue || 0,
+      orders: row?.orders || 0,
+      refunds: row?.refunds || 0,
+    });
+
+    cursor.setMonth(cursor.getMonth() + 1);
   }
 
   return result;
@@ -105,6 +146,7 @@ export async function getAdminDashboardStats(filters = {}) {
     revenueToday,
     ordersToday,
     revenueByDayRaw,
+    revenueByMonthRaw,
     ordersByStatus,
     ordersByPayment,
     topProducts,
@@ -196,6 +238,24 @@ export async function getAdminDashboardStats(filters = {}) {
           },
           revenue: { $sum: "$totalPrice" },
           orders: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    // Chuỗi theo tháng (toàn thời gian): doanh thu (đơn hoàn tất), tổng số đơn, số đơn hoàn/hủy
+    Order.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          orders: { $sum: 1 },
+          revenue: {
+            $sum: {
+              $cond: [{ $in: ["$status", REVENUE_STATUSES] }, "$totalPrice", 0],
+            },
+          },
+          refunds: {
+            $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+          },
         },
       },
       { $sort: { _id: 1 } },
@@ -300,7 +360,7 @@ export async function getAdminDashboardStats(filters = {}) {
         },
       },
       { $sort: { quantity: -1, revenue: -1 } },
-      { $limit: 5 },
+      { $limit: 7 },
       {
         $project: {
           categoryId: "$_id",
@@ -318,12 +378,12 @@ export async function getAdminDashboardStats(filters = {}) {
     User.countDocuments(),
     User.countDocuments({ createdAt: { $gte: monthStart } }),
     Product.countDocuments(),
-    ProductVariant.find({ stock: { $lte: 10 } })
+    ProductVariant.find({ stock: { $lte: 5 } })
       .sort({ stock: 1 })
       .limit(6)
       .populate("productId", "name")
       .lean(),
-    ProductVariant.countDocuments({ stock: { $lte: 10, $gt: 0 } }),
+    ProductVariant.countDocuments({ stock: { $lte: 5, $gt: 0 } }),
     ProductVariant.countDocuments({ stock: 0 }),
     ProductVariant.aggregate([
       { $match: { isActive: true, stock: { $gt: 0 } } },
@@ -384,6 +444,7 @@ export async function getAdminDashboardStats(filters = {}) {
       totalInventoryValue: inventoryValueAgg[0]?.totalInventoryValue || 0
     },
     revenueChart: fillDailySeries(revenueByDayRaw, 30),
+    revenueMonthlyChart: fillMonthlySeries(revenueByMonthRaw),
     orderStatusChart: ordersByStatus.map((item) => ({
       status: item._id,
       label: STATUS_LABELS[item._id] || item._id,

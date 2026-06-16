@@ -14,6 +14,7 @@ function formatDate(dateStr) {
   });
 }
 
+
 function UserAvatar({ user }) {
   const name = user?.fullname || user?.username || "?";
   const initials = name.charAt(0).toUpperCase();
@@ -192,18 +193,30 @@ export default function ProductQAModal({ productId, productName, onClose }) {
               <div key={q._id} className="flex flex-col gap-3 py-5 first:pt-2 last:pb-2">
                 {/* Question */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-[13px] font-bold text-black uppercase">
-                    {q.userId?.fullname || q.userId?.username || "NGƯỜI DÙNG"}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-bold text-black uppercase">
+                      {q.userId?.fullname || q.userId?.username || "NGƯỜI DÙNG"}
+                    </span>
+                    <span className="text-[11px] text-gray-500 shrink-0">
+                      {formatDate(q.createdAt)}
+                    </span>
+                  </div>
                   <p className="text-[14px] text-black leading-relaxed">{q.question}</p>
                 </div>
 
                 {/* Admin Reply */}
                 {q.isAnswered && q.answer && (
                   <div className="bg-[#f7ece2] px-4 py-3">
-                    <p className="mb-1 text-[13px] font-bold text-black">
-                      adminReply
-                    </p>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-[13px] font-bold text-black">
+                        Admin FashionStore
+                      </p>
+                      {q.answeredAt && (
+                        <span className="text-[11px] text-gray-500 shrink-0">
+                          {formatDate(q.answeredAt)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[14px] text-black leading-relaxed">{q.answer}</p>
                   </div>
                 )}

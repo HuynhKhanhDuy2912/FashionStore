@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
-  Filter,
   Users,
   ShieldCheck,
   UserCheck,
@@ -10,14 +9,13 @@ import {
   Edit2,
   Trash2,
   X,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   Phone,
   Mail,
   Calendar,
-  Shield,
   User,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -27,6 +25,7 @@ import {
   getAvatarInitial,
   getUserDisplayName,
 } from "../../lib/avatar.js";
+import { getPaginationRange } from "../../lib/pagination.js";
 import toast from "react-hot-toast";
 
 const ROLES = [
@@ -464,11 +463,10 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => toggleActive(user)}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition hover:opacity-80 cursor-pointer ${
-                          user.isActive
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-red-200 bg-red-50 text-red-600"
-                        }`}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition hover:opacity-80 cursor-pointer ${user.isActive
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-red-200 bg-red-50 text-red-600"
+                          }`}
                       >
                         {user.isActive ? (
                           <UserCheck className="h-3.5 w-3.5" />
@@ -535,26 +533,49 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Pagination */}
-        {!loading && filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+        {/* Pagination UI */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
             <span className="text-sm text-gray-500">
-              Trang <span className="font-semibold">{currentPage}</span> /{" "}
-              {totalPages} &mdash; {filtered.length} người dùng
+              Trang {currentPage} / {totalPages} &mdash; {filtered.length} người dùng
             </span>
             <div className="flex gap-2">
               <button
-                disabled={currentPage <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="h-4 w-4" /> Trước
+                <ChevronsLeft size={16} />
               </button>
+
+              <div className="flex items-center gap-1">
+                {getPaginationRange(currentPage, totalPages).map((p) => {
+                  if (p === "left-ellipsis" || p === "right-ellipsis") {
+                    return (
+                      <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`h-8 w-8 rounded text-sm font-medium ${currentPage === p
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sau <ChevronRight className="h-4 w-4" />
+                <ChevronsRight size={16} />
               </button>
             </div>
           </div>

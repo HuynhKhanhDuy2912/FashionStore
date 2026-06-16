@@ -1564,7 +1564,7 @@ export default function AdminProductAddPage() {
                             {v.sku}
                           </td>
                           <td
-                            className={`py-3 px-3 font-bold ${v.stock <= 10 ? "text-red-600" : "text-black"}`}
+                            className={`py-3 px-3 font-bold ${v.stock <= 5 ? "text-red-600" : "text-black"}`}
                           >
                             {v.stock}
                           </td>

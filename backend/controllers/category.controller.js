@@ -20,7 +20,7 @@ const normalizeImageUrl = (value) => (value || "").trim();
 const list = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 1000);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 10000);
 
     const [items, total] = await Promise.all([
       Category.find({})

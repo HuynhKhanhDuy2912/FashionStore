@@ -160,7 +160,7 @@ export const exportTransactionHistory = async (req, res) => {
 
 export const getLowStockVariants = async (req, res) => {
   try {
-    const threshold = req.query.threshold || 10;
+    const threshold = req.query.threshold || 5;
     const variants = await inventoryService.getLowStockVariants(threshold);
     res.json({ data: variants });
   } catch (error) {

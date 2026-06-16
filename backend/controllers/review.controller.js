@@ -284,7 +284,7 @@ const create = async (req, res) => {
 const list = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 10000);
     const sort = req.query.sort || { createdAt: -1 };
     const filters = { isHidden: false };
 
@@ -332,7 +332,7 @@ const list = async (req, res) => {
 const adminList = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 10000);
     const sort = req.query.sort || { createdAt: -1 };
     const filters = {};
 

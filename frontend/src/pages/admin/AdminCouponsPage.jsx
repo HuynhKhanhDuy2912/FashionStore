@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Loader2, Plus, Search, Tag, Trash2, ToggleLeft, ToggleRight, Pencil, Truck, BadgePercent } from "lucide-react";
+import { Loader2, Plus, Search, Tag, Trash2, ToggleLeft, ToggleRight, Pencil, Truck, BadgePercent, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { apiRequest } from "../../lib/api.js";
+import { getPaginationRange } from "../../lib/pagination.js";
 
 const formatCurrency = (v = 0) => `${Number(v).toLocaleString("vi-VN")}đ`;
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "");
+
+const PAGE_SIZE = 10;
 
 const TYPE_LABELS = {
   percentage: "Giảm %",
@@ -59,6 +62,7 @@ export default function AdminCouponsPage() {
   const [searchTerm, setSearchTerm] = useState(globalSearch);
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
 
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
@@ -94,6 +98,17 @@ export default function AdminCouponsPage() {
     c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCoupons.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedCoupons = filteredCoupons.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterType, filterStatus]);
 
   const openCreateModal = () => {
     setEditingCoupon(null);
@@ -260,7 +275,7 @@ export default function AdminCouponsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredCoupons.map((coupon) => {
+              {paginatedCoupons.map((coupon) => {
                 const status = getStatusBadge(coupon);
                 return (
                   <tr key={coupon._id} className="transition hover:bg-gray-50">
@@ -347,6 +362,54 @@ export default function AdminCouponsPage() {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+          <span className="text-sm text-gray-500">
+            Trang {currentPage} / {totalPages} &mdash; {filteredCoupons.length} mã giảm giá
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronsLeft size={16} />
+            </button>
+
+            <div className="flex items-center gap-1">
+              {getPaginationRange(currentPage, totalPages).map((p) => {
+                if (p === "left-ellipsis" || p === "right-ellipsis") {
+                  return (
+                    <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
+                  );
+                }
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`h-8 w-8 rounded text-sm font-medium ${currentPage === p
+                      ? "bg-black text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100"
+                      }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (

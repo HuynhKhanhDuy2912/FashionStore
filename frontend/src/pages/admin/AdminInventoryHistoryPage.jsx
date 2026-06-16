@@ -4,6 +4,7 @@ import { apiRequest } from "../../lib/api";
 import toast from "react-hot-toast";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import { formatProductName } from "../../lib/productName";
+import { getPaginationRange } from "../../lib/pagination";
 import {
   History, Download, Package, Search, Calendar, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, ArrowRight, RefreshCw, Undo2
 } from "lucide-react";
@@ -367,90 +368,48 @@ export default function AdminInventoryHistoryPage() {
         </div>
 
         {/* Pagination */}
-        {filteredTransactions.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Hiển thị {(currentPage - 1) * itemsPerPage + 1} -{" "}
-              {Math.min(
-                currentPage * itemsPerPage,
-                filteredTransactions.length,
-              )}{" "}
-              trong tổng số {filteredTransactions.length} giao dịch
-            </div>
-            <div className="flex items-center gap-2">
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+            <span className="text-sm text-gray-500">
+              Trang {currentPage} / {totalPages} &mdash; {filteredTransactions.length} giao dịch
+            </span>
+            <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronsLeft className="w-4 h-4" />
+                <ChevronsLeft size={16} />
               </button>
+
               <div className="flex items-center gap-1">
-                {(() => {
-                  const pages = [];
-                  if (totalPages <= 5) {
-                    for (let i = 1; i <= totalPages; i++) {
-                      pages.push(i);
-                    }
-                  } else {
-                    pages.push(1);
-
-                    if (currentPage > 3) {
-                      pages.push("...");
-                    }
-
-                    const start = Math.max(2, currentPage - 1);
-                    const end = Math.min(totalPages - 1, currentPage + 1);
-
-                    for (let i = start; i <= end; i++) {
-                      if (!pages.includes(i)) {
-                        pages.push(i);
-                      }
-                    }
-
-                    if (currentPage < totalPages - 2) {
-                      pages.push("...");
-                    }
-
-                    if (!pages.includes(totalPages)) {
-                      pages.push(totalPages);
-                    }
-                  }
-
-                  return pages.map((page, index) => {
-                    if (page === "...") {
-                      return (
-                        <span
-                          key={`ellipsis-${index}`}
-                          className="px-2 text-gray-400"
-                        >
-                          ...
-                        </span>
-                      );
-                    }
+                {getPaginationRange(currentPage, totalPages).map((p) => {
+                  if (p === "left-ellipsis" || p === "right-ellipsis") {
                     return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg transition ${currentPage === page
-                          ? "bg-black text-white"
-                          : "border border-gray-300 hover:bg-gray-50"
-                          }`}
-                      >
-                        {page}
-                      </button>
+                      <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
                     );
-                  });
-                })()}
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`h-8 w-8 rounded text-sm font-medium ${currentPage === p
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
               </div>
+
               <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronsRight className="w-4 h-4" />
+                <ChevronsRight size={16} />
               </button>
             </div>
           </div>

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import {
   PaymentBarList,
-  RevenueOrdersChart,
+  RevenueApexChart,
   StatusDonutChart,
   TopCategoriesBarChart,
   TopProductsTable,
@@ -22,17 +22,18 @@ import {
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   fetchAdminDashboardStats,
+  formatCompactCurrency,
   formatCurrency,
   formatPercent,
 } from "../../lib/adminStats.js";
 import { formatProductName } from "../../lib/productName.js";
 
 const STATUS_BADGE = {
-  pending: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  confirmed: "bg-sky-50 text-sky-700 ring-sky-600/20",
-  shipping: "bg-violet-50 text-violet-700 ring-violet-600/20",
-  completed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  cancelled: "bg-slate-100 text-slate-600 ring-slate-500/20",
+  pending: "bg-orange-50 text-orange-600 ring-orange-600/20",
+  confirmed: "bg-blue-50 text-blue-600 ring-blue-600/20",
+  shipping: "bg-violet-50 text-violet-600 ring-violet-600/20",
+  completed: "bg-green-50 text-green-600 ring-green-600/20",
+  cancelled: "bg-red-100 text-red-600 ring-red-500/20",
 };
 
 const STATUS_LABEL = {
@@ -95,11 +96,10 @@ function KPICard({
 
         {change !== undefined && change !== null && (
           <div
-            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold ${
-              isPositive
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
+            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold ${isPositive
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
+              }`}
           >
             {isPositive ? (
               <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={3} />
@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [chartRange, setChartRange] = useState("30");
+  const [chartRange, setChartRange] = useState("1Y");
   const [statusRange, setStatusRange] = useState("today");
   const [statusFrom, setStatusFrom] = useState(() => toDateInputValue(new Date()));
   const [statusTo, setStatusTo] = useState(() => toDateInputValue(new Date()));
@@ -236,14 +236,21 @@ export default function AdminDashboardPage() {
   const catalog = stats?.catalog;
 
   const chartData = useMemo(() => {
-    if (!stats?.revenueChart) return [];
-    return chartRange === "7"
-      ? stats.revenueChart.slice(-7)
-      : stats.revenueChart;
+    const all = stats?.revenueMonthlyChart || [];
+    const months = { "1M": 1, "6M": 6, "1Y": 12, ALL: all.length }[chartRange] || all.length;
+    return all.slice(-months);
   }, [stats, chartRange]);
 
-  const chartTotalRevenue = useMemo(
-    () => chartData.reduce((sum, item) => sum + Number(item.revenue || 0), 0),
+  const revenueTotals = useMemo(
+    () =>
+      chartData.reduce(
+        (acc, item) => ({
+          orders: acc.orders + Number(item.orders || 0),
+          earnings: acc.earnings + Number(item.revenue || 0),
+          refunds: acc.refunds + Number(item.refunds || 0),
+        }),
+        { orders: 0, earnings: 0, refunds: 0 },
+      ),
     [chartData],
   );
 
@@ -396,44 +403,52 @@ export default function AdminDashboardPage() {
           {/* Main revenue chart + analytics */}
           <div className="mb-6 grid gap-4 xl:grid-cols-3">
             <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm xl:col-span-2 md:p-5">
-              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-950">
-                    Doanh thu & đơn hàng
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Cột là doanh thu, đường là số đơn theo ngày
-                  </p>
-                </div>
+              <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-xl font-bold text-slate-950">Doanh thu</h2>
                 <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
                   {[
-                    { value: "7", label: "7 ngày" },
-                    { value: "30", label: "30 ngày" },
+                    { value: "ALL", label: "ALL" },
+                    { value: "1M", label: "1M" },
+                    { value: "6M", label: "6M" },
+                    { value: "1Y", label: "1Y" },
                   ].map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => setChartRange(opt.value)}
-                      className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
-                        chartRange === opt.value
-                          ? "bg-slate-950 text-white"
-                          : "text-slate-600 hover:bg-slate-100"
-                      }`}
+                      className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${chartRange === opt.value
+                        ? "bg-slate-950 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                        }`}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="mb-4">
-                <p className="text-4xl font-bold text-slate-900">
-                  {formatCurrency(chartTotalRevenue)}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Tổng doanh thu trong {chartRange} ngày qua
-                </p>
+
+              <div className="mb-6 grid grid-cols-3 divide-x divide-slate-200 rounded-lg bg-slate-50">
+                <div className="px-4 py-4 text-center">
+                  <p className="text-2xl font-bold text-slate-900">
+                    {revenueTotals.orders.toLocaleString("vi-VN")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">Số đơn</p>
+                </div>
+                <div className="px-4 py-4 text-center">
+                  <p className="text-2xl font-bold text-slate-900">
+                    {formatCurrency(revenueTotals.earnings)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">Doanh thu</p>
+                </div>
+                <div className="px-4 py-4 text-center">
+                  <p className="text-2xl font-bold text-slate-900">
+                    {revenueTotals.refunds.toLocaleString("vi-VN")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">Đơn hủy</p>
+                </div>
               </div>
-              <RevenueOrdersChart data={chartData} primaryColor="#2563eb" />
+
+              <RevenueApexChart data={chartData} />
             </section>
 
             <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-5">
@@ -553,42 +568,41 @@ export default function AdminDashboardPage() {
 
                 <div className="flex justify-center">
                   <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200">
-                  <div className="flex rounded-lg bg-white p-1 ring-1 ring-slate-200">
-                    {STATUS_RANGE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setStatusRange(option.value)}
-                        className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
-                          statusRange === option.value
+                    <div className="flex rounded-lg bg-white p-1 ring-1 ring-slate-200">
+                      {STATUS_RANGE_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setStatusRange(option.value)}
+                          className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${statusRange === option.value
                             ? "bg-slate-950 text-white shadow-sm"
                             : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+                            }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
 
-                  <span className="hidden h-6 w-px bg-slate-200 sm:block" />
+                    <span className="hidden h-6 w-px bg-slate-200 sm:block" />
 
-                  <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-                    <input
-                      type="date"
-                      value={statusDateFilters.statusFrom || ""}
-                      onChange={(event) => handleStatusFromChange(event.target.value)}
-                      className="w-[128px] bg-transparent text-sm font-semibold text-slate-900 outline-none"
-                      aria-label="Từ ngày"
-                    />
-                    <span className="text-slate-400">→</span>
-                    <input
-                      type="date"
-                      value={statusDateFilters.statusTo || ""}
-                      onChange={(event) => handleStatusToChange(event.target.value)}
-                      className="w-[128px] bg-transparent text-sm font-semibold text-slate-900 outline-none"
-                      aria-label="Đến ngày"
-                    />
-                  </div>
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
+                      <input
+                        type="date"
+                        value={statusDateFilters.statusFrom || ""}
+                        onChange={(event) => handleStatusFromChange(event.target.value)}
+                        className="w-[128px] bg-transparent text-sm font-semibold text-slate-900 outline-none"
+                        aria-label="Từ ngày"
+                      />
+                      <span className="text-slate-400">→</span>
+                      <input
+                        type="date"
+                        value={statusDateFilters.statusTo || ""}
+                        onChange={(event) => handleStatusToChange(event.target.value)}
+                        className="w-[128px] bg-transparent text-sm font-semibold text-slate-900 outline-none"
+                        aria-label="Đến ngày"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -660,11 +674,10 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                       <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                          variant.stock === 0
-                            ? "bg-red-100 text-red-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${variant.stock === 0
+                          ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-700"
+                          }`}
                       >
                         {variant.stock === 0
                           ? "Hết hàng"
@@ -688,7 +701,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <Link
                   to="/admin/orders"
-                  className="rounded-md border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-md border border-slate-200 px-4 py-2 text-xs font-semibold transition hover:bg-black hover:text-white"
                 >
                   Xem tất cả đơn hàng →
                 </Link>
@@ -699,7 +712,7 @@ export default function AdminDashboardPage() {
                     <tr className="border-b-2 border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
                       <th className="pb-3 pr-4">Khách hàng</th>
                       <th className="pb-3 pr-4">Thời gian</th>
-                      <th className="pb-3 pr-4">Trạng thái</th>
+                      <th className="pb-3 pr-4 text-center">Trạng thái</th>
                       <th className="pb-3 text-right">Tổng tiền</th>
                     </tr>
                   </thead>
@@ -723,11 +736,10 @@ export default function AdminDashboardPage() {
                         <td className="py-4 pr-4 text-slate-600">
                           {formatDateTime(order.createdAt)}
                         </td>
-                        <td className="py-4 pr-4">
+                        <td className="py-4 pr-4 text-center">
                           <span
-                            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase ring-1 ring-inset ${
-                              STATUS_BADGE[order.status] || STATUS_BADGE.pending
-                            }`}
+                            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase ring-1 ring-inset ${STATUS_BADGE[order.status] || STATUS_BADGE.pending
+                              }`}
                           >
                             {STATUS_LABEL[order.status] || order.status}
                           </span>

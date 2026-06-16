@@ -126,7 +126,7 @@ export const getContactRequests = async (req, res) => {
 
     const requests = await ContactRequest.find(query)
       .sort({ createdAt: -1 })
-      .limit(Math.min(Number(limit) || 50, 100))
+      .limit(Math.min(Number(limit) || 50, 10000))
       .lean();
 
     return res.status(200).json({

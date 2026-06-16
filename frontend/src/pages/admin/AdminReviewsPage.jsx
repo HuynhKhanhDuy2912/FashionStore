@@ -11,7 +11,10 @@ import {
   Star,
   ChevronDown,
   ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
+import { getPaginationRange } from "../../lib/pagination.js";
 import toast from "react-hot-toast";
 
 export default function AdminReviewsPage() {
@@ -34,7 +37,7 @@ export default function AdminReviewsPage() {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        limit: "20",
+        limit: "15",
       });
 
       if (searchTerm.trim()) {
@@ -402,26 +405,49 @@ export default function AdminReviewsPage() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 p-5 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-            >
-              Trước
-            </button>
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3">
+            <span className="text-sm text-gray-500">
               Trang {page} / {totalPages}
             </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-            >
-              Sau
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronsLeft size={16} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {getPaginationRange(page, totalPages).map((p) => {
+                  if (p === "left-ellipsis" || p === "right-ellipsis") {
+                    return (
+                      <span key={`ellipsis-${p}`} className="px-1 text-gray-400">...</span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`h-8 w-8 rounded text-sm font-medium ${page === p
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={page === totalPages}
+                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -64,9 +64,9 @@ export const listByProduct = async (req, res) => {
     }
 
     const parsedPage = Math.max(Number(page), 1);
-    const parsedLimit = Math.min(Math.max(Number(limit), 1), 50);
+    const parsedLimit = Math.min(Math.max(Number(limit), 1), 10000);
 
-    const filter = { productId, isAnswered: true, isHidden: false };
+    const filter = { productId, isHidden: false };
 
     const [items, total] = await Promise.all([
       ProductQuestion.find(filter)
@@ -99,7 +99,7 @@ export const adminList = async (req, res) => {
     const { page = 1, limit = 20, isAnswered, productId, search } = req.query;
 
     const parsedPage = Math.max(Number(page), 1);
-    const parsedLimit = Math.min(Math.max(Number(limit), 1), 100);
+    const parsedLimit = Math.min(Math.max(Number(limit), 1), 10000);
 
     const filter = {};
     if (isAnswered !== undefined) filter.isAnswered = isAnswered === "true";

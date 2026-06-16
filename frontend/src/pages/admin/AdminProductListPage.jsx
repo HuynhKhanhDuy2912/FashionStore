@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import { sortVariantsBySize } from "../../lib/sizes.js";
 import { formatProductName } from "../../lib/productName.js";
+import { getPaginationRange } from "../../lib/pagination.js";
 import {
   Plus,
   Search,
@@ -606,8 +607,8 @@ export default function AdminProductListPage() {
                           </span>
                           <span
                             className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${product.gender === "female"
-                                ? "bg-pink-50 text-pink-600"
-                                : "bg-blue-50 text-blue-600"
+                              ? "bg-pink-50 text-pink-600"
+                              : "bg-blue-50 text-blue-600"
                               }`}
                           >
                             {product.gender === "female" ? "Nữ" : "Nam"}
@@ -758,29 +759,25 @@ export default function AdminProductListPage() {
               </button>
 
               <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
-                  .map((page, index, array) => {
-                    // Render ellipsis if there is a gap
-                    if (index > 0 && page - array[index - 1] > 1) {
-                      return (
-                        <span key={`ellipsis-${page}`} className="px-1 text-gray-400">...</span>
-                      );
-                    }
+                {getPaginationRange(currentPage, totalPages).map((page) => {
+                  if (page === "left-ellipsis" || page === "right-ellipsis") {
                     return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-8 w-8 rounded text-sm font-medium ${currentPage === page
-                          ? "bg-black text-white"
-                          : "bg-white text-gray-600 hover:bg-gray-100"
-                          }`}
-                      >
-                        {page}
-                      </button>
+                      <span key={`ellipsis-${page}`} className="px-1 text-gray-400">...</span>
                     );
-                  })
-                }
+                  }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-8 w-8 rounded text-sm font-medium ${currentPage === page
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
               </div>
 
               <button

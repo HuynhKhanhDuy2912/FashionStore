@@ -276,7 +276,7 @@ export default function AdminVariantsPage() {
                       {variant.color} - {variant.size} · Tồn kho:{" "}
                       <span
                         className={
-                          variant.stock <= 10 ? "text-red-600 font-bold" : ""
+                          variant.stock <= 5 ? "text-red-600 font-bold" : ""
                         }
                       >
                         {variant.stock}
