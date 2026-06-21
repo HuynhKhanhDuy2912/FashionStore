@@ -322,6 +322,27 @@ export default function AdminLayout() {
           style={{ width: sidebarWidth }}
           className="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-gray-200 bg-white text-black transition-[width] duration-300 ease-in-out"
         >
+          <div className={`flex flex-col justify-center border-b border-gray-200 h-[71px] ${collapsed ? "items-center px-2" : "px-4"}`}>
+            {collapsed ? (
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black text-sm font-bold uppercase text-white">
+                {getAvatarInitial(user, "A")}
+              </div>
+            ) : (
+              <div className="flex w-full items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-black text-sm font-bold uppercase text-white">
+                  {getAvatarInitial(user, "A")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-gray-500">
+                    Xin chào,
+                  </p>
+                  <p className="truncate text-sm font-bold text-black">
+                    {getUserDisplayName(user, "Admin")}!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
           <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-2">
             {adminNavItems.map((item) => {
               if (item.children) {
@@ -439,7 +460,7 @@ export default function AdminLayout() {
             style={{ left: sidebarWidth }}
             className="fixed top-0 right-0 z-20 border-b border-gray-200 bg-white shadow-sm transition-[left] duration-300 ease-in-out"
           >
-            <div className="relative flex h-[61px] items-center sm:pr-6">
+            <div className="relative flex h-[70px] items-center sm:pr-6">
               <div className="flex items-center">
                 <button
                   type="button"
@@ -634,7 +655,7 @@ export default function AdminLayout() {
             </div>
           </header>
 
-          <div className="pt-[55px]">
+          <div className="pt-[65px]">
             <Outlet />
           </div>
         </main>

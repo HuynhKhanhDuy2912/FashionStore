@@ -34,8 +34,8 @@ const MIN_MATCH_THRESHOLD = 60;
  */
 class HybridRecommendationEngine {
   constructor() {
-    // Cache recommendations for 15 minutes
-    this.cache = new NodeCache({ stdTTL: 900, checkperiod: 120 });
+    // Cache recommendations for 5 minutes
+    this.cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
     this.featureExtractor = new ProductFeatureExtractor();
     this.contentEngine = new ContentBasedFilteringEngine();

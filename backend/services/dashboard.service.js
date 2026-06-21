@@ -34,7 +34,11 @@ function fillDailySeries(rows, days = 30) {
   for (let index = days - 1; index >= 0; index -= 1) {
     const date = new Date(today);
     date.setDate(today.getDate() - index);
-    const key = date.toISOString().slice(0, 10);
+    const key = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0"),
+    ].join("-");
     const row = map.get(key);
 
     result.push({
@@ -45,6 +49,7 @@ function fillDailySeries(rows, days = 30) {
       }),
       revenue: row?.revenue || 0,
       orders: row?.orders || 0,
+      refunds: row?.refunds || 0,
     });
   }
 
@@ -70,7 +75,8 @@ function fillMonthlySeries(rows) {
   const cursor = new Date(start);
   while (
     cursor.getFullYear() < now.getFullYear() ||
-    (cursor.getFullYear() === now.getFullYear() && cursor.getMonth() <= now.getMonth())
+    (cursor.getFullYear() === now.getFullYear() &&
+      cursor.getMonth() <= now.getMonth())
   ) {
     const y = cursor.getFullYear();
     const m = cursor.getMonth() + 1;
@@ -112,9 +118,21 @@ export async function getAdminDashboardStats(filters = {}) {
   const todayStart = startOfDay(now);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-  const chartStart = startOfDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
-  const sevenDaysAgo = startOfDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
+  const lastMonthEnd = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
+  const chartStart = startOfDay(
+    new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+  );
+  const sevenDaysAgo = startOfDay(
+    new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+  );
 
   const revenueMatch = { status: { $in: REVENUE_STATUSES } };
   const statusFrom = parseDateOnly(filters.statusFrom);
@@ -148,7 +166,8 @@ export async function getAdminDashboardStats(filters = {}) {
     revenueByDayRaw,
     revenueByMonthRaw,
     ordersByStatus,
-    ordersByPayment,
+    inventoryMale,
+    inventoryFemale,
     topProducts,
     topCategories,
     recentOrders,
@@ -158,7 +177,7 @@ export async function getAdminDashboardStats(filters = {}) {
     lowStockVariants,
     lowStockCount,
     outOfStockCount,
-    inventoryValueAgg
+    inventoryValueAgg,
   ] = await Promise.all([
     Order.countDocuments(),
     Order.aggregate([
@@ -224,29 +243,22 @@ export async function getAdminDashboardStats(filters = {}) {
       { $group: { _id: null, revenue: { $sum: "$totalPrice" } } },
     ]),
     Order.countDocuments({ createdAt: { $gte: todayStart } }),
+    // Chuỗi theo ngày (30 ngày gần nhất): tổng đơn, doanh thu (đơn hoàn tất), đơn hủy
     Order.aggregate([
       {
         $match: {
-          ...revenueMatch,
           createdAt: { $gte: chartStart },
         },
       },
       {
         $group: {
           _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+              timezone: "+07:00",
+            },
           },
-          revenue: { $sum: "$totalPrice" },
-          orders: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]),
-    // Chuỗi theo tháng (toàn thời gian): doanh thu (đơn hoàn tất), tổng số đơn, số đơn hoàn/hủy
-    Order.aggregate([
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
           orders: { $sum: 1 },
           revenue: {
             $sum: {
@@ -261,20 +273,96 @@ export async function getAdminDashboardStats(filters = {}) {
       { $sort: { _id: 1 } },
     ]),
     Order.aggregate([
-      ...(Object.keys(orderStatusMatch).length ? [{ $match: orderStatusMatch }] : []),
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m",
+              date: "$createdAt",
+              timezone: "+07:00",
+            },
+          },
+          orders: { $sum: 1 },
+          revenue: {
+            $sum: {
+              $cond: [{ $in: ["$status", REVENUE_STATUSES] }, "$totalPrice", 0],
+            },
+          },
+          refunds: {
+            $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    Order.aggregate([
+      ...(Object.keys(orderStatusMatch).length
+        ? [{ $match: orderStatusMatch }]
+        : []),
       { $group: { _id: "$status", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]),
-    Order.aggregate([
-      { $match: revenueMatch },
+    ProductVariant.aggregate([
+      { $match: { isActive: true, stock: { $gt: 0 } } },
       {
-        $group: {
-          _id: "$paymentMethod",
-          count: { $sum: 1 },
-          revenue: { $sum: "$totalPrice" },
+        $lookup: {
+          from: "products",
+          localField: "productId",
+          foreignField: "_id",
+          as: "product",
         },
       },
-      { $sort: { revenue: -1 } },
+      { $unwind: "$product" },
+      { $match: { "product.gender": "male" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "product.categoryId",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$product.categoryId",
+          name: { $first: { $ifNull: ["$category.name", "Chưa phân loại"] } },
+          totalValue: { $sum: { $multiply: ["$stock", "$costPrice"] } },
+          totalStock: { $sum: "$stock" },
+        },
+      },
+      { $sort: { totalValue: -1 } },
+    ]),
+    ProductVariant.aggregate([
+      { $match: { isActive: true, stock: { $gt: 0 } } },
+      {
+        $lookup: {
+          from: "products",
+          localField: "productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      { $match: { "product.gender": "female" } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "product.categoryId",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$product.categoryId",
+          name: { $first: { $ifNull: ["$category.name", "Chưa phân loại"] } },
+          totalValue: { $sum: { $multiply: ["$stock", "$costPrice"] } },
+          totalStock: { $sum: "$stock" },
+        },
+      },
+      { $sort: { totalValue: -1 } },
     ]),
     OrderItem.aggregate([
       {
@@ -360,7 +448,7 @@ export async function getAdminDashboardStats(filters = {}) {
         },
       },
       { $sort: { quantity: -1, revenue: -1 } },
-      { $limit: 7 },
+      { $limit: 8 },
       {
         $project: {
           categoryId: "$_id",
@@ -391,11 +479,11 @@ export async function getAdminDashboardStats(filters = {}) {
         $group: {
           _id: null,
           totalInventoryValue: {
-            $sum: { $multiply: ["$stock", "$costPrice"] }
-          }
-        }
-      }
-    ])
+            $sum: { $multiply: ["$stock", "$costPrice"] },
+          },
+        },
+      },
+    ]),
   ]);
 
   const recognizedRevenue = revenueOrders[0]?.revenue || 0;
@@ -441,7 +529,7 @@ export async function getAdminDashboardStats(filters = {}) {
       totalProducts,
       lowStockCount,
       outOfStockCount,
-      totalInventoryValue: inventoryValueAgg[0]?.totalInventoryValue || 0
+      totalInventoryValue: inventoryValueAgg[0]?.totalInventoryValue || 0,
     },
     revenueChart: fillDailySeries(revenueByDayRaw, 30),
     revenueMonthlyChart: fillMonthlySeries(revenueByMonthRaw),
@@ -450,11 +538,17 @@ export async function getAdminDashboardStats(filters = {}) {
       label: STATUS_LABELS[item._id] || item._id,
       count: item.count,
     })),
-    paymentChart: ordersByPayment.map((item) => ({
-      method: item._id || "unknown",
-      label: PAYMENT_LABELS[item._id] || item._id || "Khác",
-      count: item.count,
-      revenue: item.revenue,
+    inventoryMale: inventoryMale.map((item) => ({
+      categoryId: item._id,
+      name: item.name,
+      totalValue: item.totalValue,
+      totalStock: item.totalStock,
+    })),
+    inventoryFemale: inventoryFemale.map((item) => ({
+      categoryId: item._id,
+      name: item.name,
+      totalValue: item.totalValue,
+      totalStock: item.totalStock,
     })),
     topProducts,
     topCategories,

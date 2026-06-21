@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
 import Layout from "./components/Layout.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ProtectedRoute, { GuestRoute } from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage.jsx";
@@ -43,6 +43,7 @@ import PaymentSuccessPage from "./pages/PaymentSuccessPage.jsx";
 import PaymentFailedPage from "./pages/PaymentFailedPage.jsx";
 import PayPalCallbackPage from "./pages/PayPalCallbackPage.jsx";
 import PayPalCancelPage from "./pages/PayPalCancelPage.jsx";
+import OrderSuccessPage from "./pages/OrderSuccessPage.jsx";
 
 export default function App() {
   return (
@@ -79,9 +80,9 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:productId" element={<ProductDetailPage />} />
             <Route path="/collections" element={<CollectionsPage />} />
@@ -127,6 +128,7 @@ export default function App() {
             <Route path="/payment/failed" element={<PaymentFailedPage />} />
             <Route path="/payment/paypal/callback" element={<PayPalCallbackPage />} />
             <Route path="/payment/paypal/cancel" element={<PayPalCancelPage />} />
+            <Route path="/order/success" element={<OrderSuccessPage />} />
             <Route
               path="/admin"
               element={

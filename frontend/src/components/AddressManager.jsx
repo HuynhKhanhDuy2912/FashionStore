@@ -16,7 +16,8 @@ export default function AddressManager({ token }) {
   const [wards, setWards] = useState([]);
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    lastName: "",
+    firstName: "",
     phoneNumber: "",
     province: "",
     district: "",
@@ -129,8 +130,13 @@ export default function AddressManager({ token }) {
   const openModal = async (address = null) => {
     if (address) {
       setEditingId(address._id);
+      // Tách fullName thành họ và tên
+      const parts = (address.fullName || "").trim().split(" ");
+      const firstName = parts.length > 1 ? parts[parts.length - 1] : parts[0] || "";
+      const lastName = parts.length > 1 ? parts.slice(0, -1).join(" ") : "";
       setFormData({
-        fullName: address.fullName,
+        lastName,
+        firstName,
         phoneNumber: address.phoneNumber,
         province: address.province,
         district: address.district,
@@ -162,7 +168,8 @@ export default function AddressManager({ token }) {
     } else {
       setEditingId(null);
       setFormData({
-        fullName: "",
+        lastName: "",
+        firstName: "",
         phoneNumber: "",
         province: "",
         district: "",
@@ -193,19 +200,24 @@ export default function AddressManager({ token }) {
     setError("");
     setSuccess("");
 
+    // Ghép họ + tên thành fullName trước khi gửi
+    const { lastName, firstName, ...rest } = formData;
+    const fullName = [lastName.trim(), firstName.trim()].filter(Boolean).join(" ");
+    const payload = { ...rest, fullName };
+
     try {
       if (editingId) {
         await apiRequest(`/addresses/${editingId}`, {
           method: "PUT",
           token,
-          body: formData
+          body: payload
         });
         setSuccess("Cập nhật địa chỉ thành công!");
       } else {
         await apiRequest("/addresses", {
           method: "POST",
           token,
-          body: formData
+          body: payload
         });
         setSuccess("Thêm địa chỉ thành công!");
       }
@@ -362,15 +374,9 @@ export default function AddressManager({ token }) {
                     <label className="mb-2 block text-sm">Họ</label>
                     <input
                       type="text"
-                      value={formData.fullName.split(" ").slice(0, -1).join(" ") || ""}
-                      onChange={(e) => {
-                        const lastName = e.target.value;
-                        const firstName = formData.fullName.split(" ").slice(-1)[0] || "";
-                        setFormData((prev) => ({
-                          ...prev,
-                          fullName: firstName ? `${lastName} ${firstName}` : lastName
-                        }));
-                      }}
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
                       className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                     />
                   </div>
@@ -379,16 +385,9 @@ export default function AddressManager({ token }) {
                     <label className="mb-2 block text-sm">Tên</label>
                     <input
                       type="text"
-                      name="fullName"
-                      value={formData.fullName.split(" ").slice(-1)[0] || ""}
-                      onChange={(e) => {
-                        const firstName = e.target.value;
-                        const lastName = formData.fullName.split(" ").slice(0, -1).join(" ");
-                        setFormData((prev) => ({
-                          ...prev,
-                          fullName: lastName ? `${lastName} ${firstName}` : firstName
-                        }));
-                      }}
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
                       required
                       className="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black"
                     />

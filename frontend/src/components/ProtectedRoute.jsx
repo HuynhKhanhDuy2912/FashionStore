@@ -11,3 +11,19 @@ export default function ProtectedRoute({ children }) {
 
   return children;
 }
+
+/**
+ * GuestRoute – ngược lại với ProtectedRoute.
+ * Chỉ cho phép user CHƯA đăng nhập truy cập.
+ * Nếu đã đăng nhập → redirect về trang chủ (hoặc trang admin nếu là admin).
+ */
+export function GuestRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+
+  if (isAuthenticated) {
+    const redirectTo = user?.role === "admin" ? "/admin" : "/";
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return children;
+}

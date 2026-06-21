@@ -250,18 +250,18 @@ export default function CheckoutPage() {
         body: checkoutPayload
       });
 
-      const awardedCoupons = orderResponse.data.awardedCoupons;
-      if (awardedCoupons && awardedCoupons.length > 0) {
-        toast.success(
-          "Chúc mừng! Bạn đã nhận được mã giảm giá phần thưởng. Vui lòng kiểm tra mục Mã giảm giá.",
-          { id: "reward-coupon-toast", duration: 5000 }
-        );
-      }
+      const orderId = orderResponse.data?.order?._id || orderResponse.data?._id || "";
+      const awardedCoupons = orderResponse.data?.awardedCoupons || [];
+      const hasAwardedCoupons = awardedCoupons.length > 0;
 
       localStorage.removeItem(CHECKOUT_SELECTION_KEY);
       sessionStorage.removeItem(CHECKOUT_SELECTION_KEY);
       await refreshCartCount();
-      navigate("/orders");
+
+      const successParams = new URLSearchParams();
+      if (orderId) successParams.set("orderId", orderId);
+      if (hasAwardedCoupons) successParams.set("awardedCoupons", "true");
+      navigate(`/order/success?${successParams.toString()}`);
     } catch (submitError) {
       toast.error(submitError.message);
       setLoading(false);
