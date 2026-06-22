@@ -1037,7 +1037,7 @@ export default function ProductDetailPage() {
           <div className="border-b border-gray-300 pt-4 pb-2">
             <div className="flex justify-between items-center mb-2">
               <p className="text-xs font-bold uppercase tracking-widest text-black">SỐ LƯỢNG</p>
-              {selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
+              {selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 10 && (
                 <span className="text-[12px] font-bold tracking-wide">
                   Chỉ còn {selectedVariant.stock} sản phẩm
                 </span>
