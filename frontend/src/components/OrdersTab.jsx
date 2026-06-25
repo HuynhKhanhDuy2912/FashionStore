@@ -199,6 +199,7 @@ export default function OrdersTab({ token }) {
       pending: "Chờ thanh toán",
       paid: "Đã thanh toán",
       failed: "Thất bại",
+      refunded: "Đã hoàn tiền",
     };
     return map[status] || status;
   };

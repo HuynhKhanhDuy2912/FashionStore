@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { apiRequest } from "../../lib/api.js";
+import { apiRequest, warmUpServer } from "../../lib/api.js";
 
 const statusOptions = [
   { value: "all", label: "Tất cả" },
@@ -126,6 +126,11 @@ export default function AdminContactMessagesPage() {
       setLoadingDetail(false);
     }
   };
+
+  // Đánh thức server Render khi admin mở trang
+  useEffect(() => {
+    warmUpServer();
+  }, []);
 
   useEffect(() => {
     loadMessages();

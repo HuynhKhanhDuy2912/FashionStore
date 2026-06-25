@@ -1,7 +1,13 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-export async function apiRequest(path, { method = "GET", body, token, isFormData = false } = {}) {
+// Gửi 1 request nhẹ để "đánh thức" server Render khỏi trạng thái ngủ
+const BACKEND_ROOT = API_BASE_URL.replace(/\/api\/?$/, "");
+export function warmUpServer() {
+  fetch(BACKEND_ROOT, { method: "GET", mode: "no-cors" }).catch(() => {});
+}
+
+export async function apiRequest(path, { method = "GET", body, token, isFormData = false, timeoutMs = 60000 } = {}) {
   const headers = {
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
@@ -10,11 +16,26 @@ export async function apiRequest(path, { method = "GET", body, token, isFormData
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    ...(body ? { body: isFormData ? body : JSON.stringify(body) } : {})
-  });
+  // Timeout để tránh chờ vô hạn khi Render cold start
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers,
+      signal: controller.signal,
+      ...(body ? { body: isFormData ? body : JSON.stringify(body) } : {})
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error("Server đang khởi động, vui lòng thử lại sau ít giây.");
+    }
+    throw error;
+  }
+  clearTimeout(timeoutId);
 
   const data = await response.json();
 

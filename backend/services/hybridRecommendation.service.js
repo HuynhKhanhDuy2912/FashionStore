@@ -260,106 +260,101 @@ class HybridRecommendationEngine {
   }
 
   /**
-   * Generate human-readable recommendation reasons from scoring data
+   * Generate human-readable recommendation reasons from scoring data.
+   *
+   * REFACTORED: Thay vì chuỗi if-else tuần tự (khiến reason đầu tiên luôn lấn
+   * át), giờ gom TẤT CẢ reasons thỏa ngưỡng tối thiểu vào mảng candidates rồi
+   * sắp xếp theo score giảm dần → top 3 reasons luôn là những lý do NỔI BẬT NHẤT
+   * của sản phẩm, không phụ thuộc thứ tự khai báo.
+   *
+   * Ngưỡng đã được cân chỉnh lại:
+   * - contentScore:  0.6  → 0.75 (tránh gần như mọi SP đều lọt)
+   * - seasonal:      0.9  → 0.8  (cho "all_season" cũng đạt)
+   * - freshness:     0.9  → 0.8  (SP mới trong 30 ngày cũng đạt)
+   * - discount:      0.8  → 0.7  (SP giảm ≥ 10% cũng đạt)
    */
   generateRecommendationReasons(scoredItem) {
-    const reasons = [];
     const bd = scoredItem.ruleBreakdown || {};
 
-    // Content-based (style/features similarity)
-    if (scoredItem.contentScore >= 0.6) {
-      reasons.push("Phù hợp phong cách của bạn");
+    // Mỗi candidate thuộc một `category` ngữ nghĩa. Khi chọn top 3, chỉ lấy
+    // TỐI ĐA 1 reason / category để tránh trùng lặp kiểu:
+    //   "Phù hợp phong cách" + "Đúng phong cách" + "Phù hợp dịp" (cùng nhóm style).
+    //
+    // Categories:
+    //   style      — sở thích phong cách / dịp (content similarity, style rule, occasion rule)
+    //   social     — tín hiệu cộng đồng (collaborative filtering, popularity)
+    //   behavior   — lịch sử duyệt web cá nhân (category, behavior weight)
+    //   value      — giá & ưu đãi (price range, discount)
+    //   timeliness — tính thời điểm (seasonal, freshness)
+    //   wishlist   — danh sách yêu thích
+    const candidateRules = [
+      { reason: "Phù hợp phong cách của bạn",    score: scoredItem.contentScore,       threshold: 0.75, category: "style" },
+      { reason: "Đúng phong cách bạn yêu thích", score: bd.style,                      threshold: 0.8,  category: "style" },
+      { reason: "Phù hợp dịp bạn quan tâm",     score: bd.occasion,                   threshold: 0.7,  category: "style" },
+      { reason: "Người mua tương tự cũng thích", score: scoredItem.collaborativeScore,  threshold: 0.4,  category: "social" },
+      { reason: "Được nhiều người yêu thích",    score: scoredItem.popularityScore,     threshold: 0.75, category: "social" },
+      { reason: "Danh mục bạn hay xem",          score: scoredItem.categoryScore,       threshold: 0.7,  category: "behavior" },
+      { reason: "Dựa trên sản phẩm bạn đã xem", score: scoredItem.behaviorWeight,      threshold: 0.6,  category: "behavior" },
+      { reason: "Phù hợp tầm giá của bạn",      score: bd.priceRange,                  threshold: 0.8,  category: "value" },
+      { reason: "Đang có ưu đãi tốt",           score: bd.discount,                    threshold: 0.7,  category: "value" },
+      { reason: "Phù hợp mùa hiện tại",         score: bd.seasonal,                    threshold: 0.8,  category: "timeliness" },
+      { reason: "Sản phẩm mới về",              score: bd.freshness,                    threshold: 0.8,  category: "timeliness" },
+      { reason: "Trong danh sách yêu thích",    score: bd.wishlist,                     threshold: 0.9,  category: "wishlist" }
+    ];
+
+    // Lọc candidates thỏa ngưỡng, sắp xếp theo score giảm dần
+    const qualified = candidateRules
+      .filter(c => (c.score ?? 0) >= c.threshold)
+      .sort((a, b) => b.score - a.score);
+
+    // Chọn top 3 với ràng buộc: tối đa 1 reason / category
+    const usedCategories = new Set();
+    const topReasons = [];
+    for (const c of qualified) {
+      if (topReasons.length >= 3) break;
+      if (usedCategories.has(c.category)) continue; // đã có reason cùng nhóm → bỏ qua
+      topReasons.push(c.reason);
+      usedCategories.add(c.category);
     }
 
-    // Collaborative filtering
-    if (scoredItem.collaborativeScore >= 0.4) {
-      reasons.push("Người mua tương tự cũng thích");
+    if (topReasons.length === 0) {
+      topReasons.push("Gợi ý dành cho bạn");
     }
 
-    // Style match
-    if (bd.style >= 0.8) {
-      reasons.push("Đúng phong cách bạn yêu thích");
-    }
-
-    // Occasion match
-    if (bd.occasion >= 0.7) {
-      reasons.push("Phù hợp dịp bạn quan tâm");
-    }
-
-    // Category preference
-    if (scoredItem.categoryScore >= 0.7) {
-      reasons.push("Danh mục bạn hay xem");
-    }
-
-    // Behavior weight (interaction similarity)
-    if (scoredItem.behaviorWeight >= 0.6) {
-      reasons.push("Dựa trên sản phẩm bạn đã xem");
-    }
-
-    // Price range
-    if (bd.priceRange >= 0.8) {
-      reasons.push("Phù hợp tầm giá của bạn");
-    }
-
-    // Seasonal
-    if (bd.seasonal >= 0.9) {
-      reasons.push("Phù hợp mùa hiện tại");
-    }
-
-    // Trending / popular
-    if (scoredItem.popularityScore >= 0.75) {
-      reasons.push("Được nhiều người yêu thích");
-    }
-
-    // Freshness
-    if (bd.freshness >= 0.9) {
-      reasons.push("Sản phẩm mới về");
-    }
-
-    // Discount
-    if (bd.discount >= 0.8) {
-      reasons.push("Đang có ưu đãi tốt");
-    }
-
-    // Wishlist
-    if (bd.wishlist >= 0.9) {
-      reasons.push("Trong danh sách yêu thích");
-    }
-
-    // Ensure at least 1 reason
-    if (reasons.length === 0) {
-      reasons.push("Gợi ý dành cho bạn");
-    }
-
-    return reasons.slice(0, 3); // Max 3 reasons
+    return topReasons;
   }
 
   /**
-   * Classify product into a recommendation group for UI grouping
+   * Classify product into a recommendation group for UI grouping.
+   *
+   * REFACTORED: Thay vì if-else chain (khiến group đầu tiên luôn thắng), giờ
+   * so sánh TẤT CẢ các nhóm điểm và chọn nhóm có Dominant Score cao nhất.
+   * Nếu tất cả đều thấp hoặc bằng nhau → fallback "for_you".
    */
   classifyRecommendationGroup(scoredItem) {
     const bd = scoredItem.ruleBreakdown || {};
 
-    // Priority order for group classification
-    if (scoredItem.contentScore >= 0.6 || bd.style >= 0.8) {
-      return "style_match";
+    // Mỗi group được đại diện bởi một score (hoặc max của nhiều scores liên quan)
+    const groupScores = [
+      { group: "style_match",      score: Math.max(scoredItem.contentScore || 0, bd.style || 0) },
+      { group: "similar_users",    score: scoredItem.collaborativeScore || 0 },
+      { group: "browsing_history", score: Math.max(scoredItem.behaviorWeight || 0, scoredItem.categoryScore || 0) },
+      { group: "popular",          score: scoredItem.popularityScore || 0 },
+      { group: "new_arrivals",     score: bd.freshness || 0 },
+      { group: "deals",            score: bd.discount || 0 }
+    ];
+
+    // Sắp xếp theo score giảm dần, lấy group có điểm cao nhất
+    groupScores.sort((a, b) => b.score - a.score);
+
+    const best = groupScores[0];
+
+    // Ngưỡng tối thiểu: nếu dominant score quá thấp thì fallback
+    if (best.score < 0.4) {
+      return "for_you";
     }
-    if (scoredItem.collaborativeScore >= 0.4) {
-      return "similar_users";
-    }
-    if (scoredItem.behaviorWeight >= 0.6 || scoredItem.categoryScore >= 0.7) {
-      return "browsing_history";
-    }
-    if (scoredItem.popularityScore >= 0.75) {
-      return "popular";
-    }
-    if (bd.freshness >= 0.9) {
-      return "new_arrivals";
-    }
-    if (bd.discount >= 0.8) {
-      return "deals";
-    }
-    return "for_you";
+
+    return best.group;
   }
 
   /**
