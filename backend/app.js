@@ -32,8 +32,11 @@ app.use(
     credentials: true,
   }),
 );
-app.use(helmet());
-// app.use(morgan("dev")); log request HTTP
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
