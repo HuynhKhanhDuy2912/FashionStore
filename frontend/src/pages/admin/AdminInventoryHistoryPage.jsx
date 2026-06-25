@@ -58,7 +58,7 @@ export default function AdminInventoryHistoryPage() {
       if (filters.endDate) params.append("endDate", filters.endDate);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/inventory/transactions/export?${params.toString()}`,
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/inventory/transactions/export?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

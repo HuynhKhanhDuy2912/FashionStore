@@ -28,7 +28,8 @@ export default function MultiVideoUpload({ values = [], onChange, label = "VIDEO
           const formData = new FormData();
           formData.append("image", file);
 
-          const response = await fetch("http://localhost:5000/api/upload", {
+          const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+          const response = await fetch(`${API_BASE}/upload`, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
