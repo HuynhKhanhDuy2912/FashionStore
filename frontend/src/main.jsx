@@ -17,7 +17,7 @@ const routerFutureFlags = {
 };
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <>
     {googleClientId ? (
       <GoogleOAuthProvider clientId={googleClientId}>
         <BrowserRouter future={routerFutureFlags}>
@@ -29,5 +29,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
       </BrowserRouter>
     )}
-  </React.StrictMode>
+  </>
 );

@@ -2,6 +2,8 @@ import {
   getPersonalizedRecommendations,
   getSimilarProducts,
   getTrendingProducts,
+  getPersonalizedBestsellers,
+  getPersonalizedNewArrivals,
   clearRecommendationCache
 } from "../services/hybridRecommendation.service.js";
 import ProductVariant from "../models/ProductVariant.js";
@@ -126,6 +128,46 @@ export const clearCacheController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Recommendation cache cleared successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getPersonalizedBestsellersController = async (req, res) => {
+  try {
+    const bestsellers = await getPersonalizedBestsellers(
+      req.user,
+      req.query.limit
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Personalized bestsellers fetched successfully",
+      data: await enrichProducts(bestsellers)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const getPersonalizedNewArrivalsController = async (req, res) => {
+  try {
+    const newArrivals = await getPersonalizedNewArrivals(
+      req.user,
+      req.query.limit
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Personalized new arrivals fetched successfully",
+      data: await enrichProducts(newArrivals)
     });
   } catch (error) {
     return res.status(500).json({

@@ -126,29 +126,6 @@ function ProductGridSkeleton() {
   );
 }
 
-function Toast({ message, error, onClose }) {
-  if (!message && !error) return null;
-
-  return (
-    <div
-      role="alert"
-      className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${error
-        ? "border-red-200 bg-red-50 text-red-800"
-        : "border-green-200 bg-green-50 text-green-800"
-        }`}
-    >
-      <p className="flex-1 text-sm font-medium">{error || message}</p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="shrink-0 text-gray-400 transition hover:text-black"
-        aria-label="Đóng thông báo"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const { token } = useAuth();
@@ -610,61 +587,72 @@ export default function HomePage() {
 
       <div className="mx-auto flex max-w-[1440px] flex-col gap-16 px-4 pb-4 md:px-8 md:pb-4">
         {/* New arrivals */}
-        <section>
-          <SectionHeader
-            eyebrow="Mới về"
-            title="Sản phẩm mới"
-            description="Những thiết kế mới nhất vừa được bổ sung - cập nhật tủ đồ của bạn."
-            linkTo="/products?newArrivals=1"
-            icon={PackagePlus}
+        {token ? (
+          <RecommendationSection
+            type="personalized-new-arrivals"
+            token={token}
+            limit={12}
+            onAddToWishlist={(item) => handleWishlist(item, "home_new_arrivals")}
+            onAddToCart={handleAddToCart}
+            wishlistProductIds={wishlistProductIds}
           />
-          {loading ? (
-            <ProductGridSkeleton />
-          ) : (
-            <div className="group relative">
-              {newArrivals.length > 4 ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewArrivalsPage((prev) =>
-                        prev === 0 ? newArrivalsPageCount - 1 : prev - 1,
-                      )
-                    }
-                    className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-left-6"
-                    aria-label="Xem sản phẩm mới trước"
-                  >
-                    <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNewArrivalsPage((prev) =>
-                        prev === newArrivalsPageCount - 1 ? 0 : prev + 1,
-                      )
-                    }
-                    className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-right-6"
-                    aria-label="Xem sản phẩm mới tiếp theo"
-                  >
-                    <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-                  </button>
-                </>
-              ) : null}
+        ) : (
+          <section>
+            <SectionHeader
+              eyebrow="Mới về"
+              title="Sản phẩm mới"
+              description="Những thiết kế mới nhất vừa được bổ sung - cập nhật tủ đồ của bạn."
+              linkTo="/products?newArrivals=1"
+              icon={PackagePlus}
+            />
+            {loading ? (
+              <ProductGridSkeleton />
+            ) : (
+              <div className="group relative">
+                {newArrivals.length > 4 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewArrivalsPage((prev) =>
+                          prev === 0 ? newArrivalsPageCount - 1 : prev - 1,
+                        )
+                      }
+                      className="absolute -left-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-left-6"
+                      aria-label="Xem sản phẩm mới trước"
+                    >
+                      <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewArrivalsPage((prev) =>
+                          prev === newArrivalsPageCount - 1 ? 0 : prev + 1,
+                        )
+                      }
+                      className="absolute -right-3 top-1/2 z-10 -translate-y-1/2 grid h-12 w-12 place-items-center bg-white text-black shadow-lg opacity-0 transition-all duration-300 group-hover:opacity-100 md:-right-6"
+                      aria-label="Xem sản phẩm mới tiếp theo"
+                    >
+                      <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+                    </button>
+                  </>
+                ) : null}
 
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-                {visibleNewArrivals.map((product) => (
-                  <ProductCard
-                    key={product._id}
-                    product={withCollectionName(product)}
-                    onAddToWishlist={(item) => handleWishlist(item, "home")}
-                    isWishlisted={wishlistProductIds.has(product._id)}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+                  {visibleNewArrivals.map((product) => (
+                    <ProductCard
+                      key={product._id}
+                      product={withCollectionName(product)}
+                      onAddToWishlist={(item) => handleWishlist(item, "home")}
+                      isWishlisted={wishlistProductIds.has(product._id)}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
 
         {/* Featured collections */}
         {featuredCollections.length > 0 ? (
@@ -717,11 +705,22 @@ export default function HomePage() {
         ) : null}
 
         {/* BestSellers Section */}
-        <BestSellersSection
-          onAddToWishlist={(item) => handleWishlist(item, "home_bestseller")}
-          onAddToCart={handleAddToCart}
-          wishlistProductIds={wishlistProductIds}
-        />
+        {token ? (
+          <RecommendationSection
+            type="personalized-bestsellers"
+            token={token}
+            limit={12}
+            onAddToWishlist={(item) => handleWishlist(item, "home_bestseller")}
+            onAddToCart={handleAddToCart}
+            wishlistProductIds={wishlistProductIds}
+          />
+        ) : (
+          <BestSellersSection
+            onAddToWishlist={(item) => handleWishlist(item, "home_bestseller")}
+            onAddToCart={handleAddToCart}
+            wishlistProductIds={wishlistProductIds}
+          />
+        )}
 
         {/* Coupon Section */}
         <CouponSection />

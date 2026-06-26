@@ -813,6 +813,334 @@ class HybridRecommendationEngine {
       this.collaborativeEngine.clearMatrixCache();
     }
   }
+
+  /**
+   * Personalized Bestsellers — Bán chạy trong phong cách của bạn
+   *
+   * Chiến lược: Giữ bản chất "bán chạy" (soldCount chiếm 40%)
+   * nhưng re-rank theo sở thích cá nhân (category 25%, style 20%, popularity 15%).
+   * Cold start (0 behaviors) → fallback về bestsellers đại trà.
+   *
+   * @param {Object} user - User object
+   * @param {Object} options - { limit }
+   * @returns {Array} Personalized bestseller products
+   */
+  async getPersonalizedBestsellers(user, options = {}) {
+    const { limit = 12, enableCache = true } = options;
+
+    const cacheKey = `pers_best_${user._id}_${limit}`;
+    if (enableCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      // 1. Fetch data
+      const [behaviors, products] = await Promise.all([
+        UserBehavior.find({ userId: user._id })
+          .sort({ createdAt: -1 })
+          .limit(100)
+          .lean(),
+        Product.find({ isActive: true }).lean()
+      ]);
+
+      // Cold start → fallback đại trà (sort by soldCount via aggregation)
+      if (!behaviors || behaviors.length === 0) {
+        const filtered = RuleBasedEngine.applyHardFilters(products, { gender: user.gender });
+        return this._getUnpersonalizedBestsellers(filtered.length > 0 ? filtered : products, limit);
+      }
+
+      // 2. Apply gender hard filter
+      let filteredProducts = RuleBasedEngine.applyHardFilters(products, { gender: user.gender });
+      if (filteredProducts.length === 0) filteredProducts = products;
+
+      // 3. Extract preferences
+      const preferredCategories = CategoryFilter.extractPreferredCategories(behaviors, filteredProducts);
+      const preferredStyles = this.userProfileBuilder.extractStylePreferences(behaviors, filteredProducts);
+
+      // 4. Compute soldCount via aggregation (exclude cancelled orders)
+      const productIds = filteredProducts.map(p => p._id);
+      const soldRows = await OrderItem.aggregate([
+        { $match: { productId: { $in: productIds } } },
+        {
+          $lookup: {
+            from: "orders",
+            localField: "orderId",
+            foreignField: "_id",
+            as: "order"
+          }
+        },
+        { $unwind: "$order" },
+        { $match: { "order.status": { $ne: "cancelled" } } },
+        { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } }
+      ]);
+      const soldMap = new Map(soldRows.map(r => [r._id.toString(), r.soldCount]));
+
+      // 5. Filter: only products with sales
+      const bestsellers = filteredProducts
+        .map(p => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
+        .filter(p => p.soldCount > 0);
+
+      if (bestsellers.length === 0) {
+        return [];
+      }
+
+      // 6. Normalize soldCount to [0,1]
+      const maxSold = Math.max(...bestsellers.map(p => p.soldCount));
+
+      // 7. Score with hybrid weights
+      const scored = bestsellers.map(product => {
+        const soldNorm = maxSold > 0 ? product.soldCount / maxSold : 0;
+        const categoryScore = this._calculateCategoryMatch(product, preferredCategories);
+        const styleScore = this._calculateStyleMatch(product, preferredStyles);
+        const popularityScore = RuleBasedEngine.calculatePopularityScore(product);
+
+        const finalScore =
+          soldNorm       * 0.25 +
+          categoryScore  * 0.30 +
+          styleScore     * 0.30 +
+          popularityScore * 0.15;
+
+        return { product, finalScore, soldNorm, categoryScore, styleScore };
+      });
+
+      scored.sort((a, b) => b.finalScore - a.finalScore);
+      const topItems = scored.slice(0, limit);
+
+      const results = topItems.map(item => ({
+        ...item.product,
+        matchScore: null,
+        isHighMatch: false,
+        recommendationReasons: this._buildBestsellerReasons(item),
+        recommendationGroup: "personalized_bestseller"
+      }));
+
+      if (enableCache) {
+        this.cache.set(cacheKey, results);
+      }
+
+      return results;
+    } catch (error) {
+      console.error("Personalized bestsellers error:", error);
+      // Fallback
+      const products = await Product.find({ isActive: true }).lean();
+      return this._getUnpersonalizedBestsellers(products, limit);
+    }
+  }
+
+  /**
+   * Personalized New Arrivals — Sản phẩm mới phù hợp với gu của bạn
+   *
+   * Chiến lược: Freshness chiếm 35% (giữ bản chất "mới"),
+   * style 30%, category 20%, seasonal 15%.
+   * Cold start (0 behaviors) → fallback về new arrivals đại trà.
+   *
+   * @param {Object} user - User object
+   * @param {Object} options - { limit, daysBack }
+   * @returns {Array} Personalized new arrival products
+   */
+  async getPersonalizedNewArrivals(user, options = {}) {
+    const { limit = 12, daysBack = 60, enableCache = true } = options;
+
+    const cacheKey = `pers_new_${user._id}_${limit}`;
+    if (enableCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      // 1. Fetch data
+      const cutoffDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+      const [behaviors, newProducts] = await Promise.all([
+        UserBehavior.find({ userId: user._id })
+          .sort({ createdAt: -1 })
+          .limit(100)
+          .lean(),
+        Product.find({
+          isActive: true,
+          createdAt: { $gte: cutoffDate }
+        })
+          .sort({ createdAt: -1 })
+          .lean()
+      ]);
+
+      // Cold start → fallback đại trà (sort by createdAt) — vẫn lọc gender
+      if (!behaviors || behaviors.length === 0) {
+        const genderFiltered = RuleBasedEngine.applyHardFilters(newProducts, { gender: user.gender });
+        const coldStartProducts = genderFiltered.length > 0 ? genderFiltered : newProducts;
+        const results = coldStartProducts.slice(0, limit).map(p => ({
+          ...p,
+          matchScore: null,
+          isHighMatch: false,
+          recommendationReasons: ["Sản phẩm mới về"],
+          recommendationGroup: "new_arrival"
+        }));
+        if (enableCache) this.cache.set(cacheKey, results);
+        return results;
+      }
+
+      // 2. Apply gender hard filter
+      let filteredNewProducts = RuleBasedEngine.applyHardFilters(newProducts, { gender: user.gender });
+      if (filteredNewProducts.length === 0) filteredNewProducts = newProducts;
+
+      if (filteredNewProducts.length === 0) return [];
+
+      // 3. Extract preferences — dùng ALL products cho context đầy đủ
+      const allProducts = await Product.find({ isActive: true }).lean();
+      const filteredAllProducts = RuleBasedEngine.applyHardFilters(allProducts, { gender: user.gender });
+      const preferredCategories = CategoryFilter.extractPreferredCategories(behaviors, filteredAllProducts.length > 0 ? filteredAllProducts : allProducts);
+      const preferredStyles = this.userProfileBuilder.extractStylePreferences(behaviors, filteredAllProducts.length > 0 ? filteredAllProducts : allProducts);
+
+      // 4. Score new products
+      const scored = filteredNewProducts.map(product => {
+        const freshnessScore = RuleBasedEngine.calculateFreshnessScore(product);
+        const styleScore = this._calculateStyleMatch(product, preferredStyles);
+        const categoryScore = this._calculateCategoryMatch(product, preferredCategories);
+        const seasonalScore = RuleBasedEngine.calculateSeasonalScore(product);
+
+        const finalScore =
+          freshnessScore  * 0.20 +
+          styleScore      * 0.35 +
+          categoryScore   * 0.30 +
+          seasonalScore   * 0.15;
+
+        return { product, finalScore, freshnessScore, styleScore, categoryScore };
+      });
+
+      scored.sort((a, b) => b.finalScore - a.finalScore);
+      const topItems = scored.slice(0, limit);
+
+      const results = topItems.map(item => ({
+        ...item.product,
+        matchScore: null,
+        isHighMatch: false,
+        recommendationReasons: this._buildNewArrivalReasons(item),
+        recommendationGroup: "personalized_new_arrival"
+      }));
+
+      if (enableCache) {
+        this.cache.set(cacheKey, results);
+      }
+
+      return results;
+    } catch (error) {
+      console.error("Personalized new arrivals error:", error);
+      // Fallback: sort by createdAt
+      const fallback = await Product.find({ isActive: true })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+      return fallback.map(p => ({
+        ...p,
+        matchScore: null,
+        isHighMatch: false,
+        recommendationReasons: ["Sản phẩm mới về"],
+        recommendationGroup: "new_arrival"
+      }));
+    }
+  }
+
+  /**
+   * Calculate style match between a product and user's preferred styles
+   * @returns {number} 0–1
+   */
+  _calculateStyleMatch(product, preferredStyles) {
+    if (!preferredStyles || preferredStyles.length === 0) return 0.5;
+
+    const productStyles = Array.isArray(product.style)
+      ? product.style
+      : [product.style].filter(Boolean);
+
+    if (productStyles.length === 0) return 0.05;
+
+    const matchCount = productStyles.filter(s => preferredStyles.includes(s)).length;
+    if (matchCount === 0) return 0.05;
+
+    // Partial match: 0.75, full match: 1.0
+    return matchCount >= productStyles.length ? 1.0 : 0.75;
+  }
+
+  /**
+   * Calculate category match with high contrast scoring
+   * Used by personalized sections — stricter than CategoryFilter.calculateCategoryScore
+   * to create visible differentiation in results.
+   * @returns {number} 1.0 (match), 0.05 (no match)
+   */
+  _calculateCategoryMatch(product, preferredCategoryIds) {
+    if (!preferredCategoryIds || preferredCategoryIds.length === 0) return 0.5;
+
+    const productCategoryId = product.categoryId?.toString();
+    if (preferredCategoryIds.includes(productCategoryId)) {
+      return 1.0;
+    }
+
+    return 0.05;
+  }
+
+  /**
+   * Build recommendation reasons for personalized bestseller items
+   */
+  _buildBestsellerReasons(scoredItem) {
+    const reasons = [];
+    if (scoredItem.categoryScore >= 0.8) reasons.push("Bán chạy trong danh mục bạn hay xem");
+    if (scoredItem.styleScore >= 0.7) reasons.push("Phù hợp phong cách của bạn");
+    if (reasons.length === 0) reasons.push("Được nhiều người mua");
+    return reasons.slice(0, 2);
+  }
+
+  /**
+   * Build recommendation reasons for personalized new arrival items
+   */
+  _buildNewArrivalReasons(scoredItem) {
+    const reasons = [];
+    if (scoredItem.freshnessScore >= 0.8) reasons.push("Mới về gần đây");
+    if (scoredItem.styleScore >= 0.7) reasons.push("Phù hợp gu của bạn");
+    if (scoredItem.categoryScore >= 0.8) reasons.push("Danh mục bạn quan tâm");
+    if (reasons.length === 0) reasons.push("Sản phẩm mới về");
+    return reasons.slice(0, 2);
+  }
+
+  /**
+   * Fallback: unpersonalized bestsellers (used for cold start)
+   */
+  async _getUnpersonalizedBestsellers(products, limit) {
+    const productIds = products.map(p => p._id);
+    const soldRows = await OrderItem.aggregate([
+      { $match: { productId: { $in: productIds } } },
+      { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } }
+    ]);
+    const soldMap = new Map(soldRows.map(r => [r._id.toString(), r.soldCount]));
+
+    return products
+      .map(p => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
+      .filter(p => p.soldCount > 0)
+      .sort((a, b) => b.soldCount - a.soldCount)
+      .slice(0, limit)
+      .map(p => ({
+        ...p,
+        matchScore: null,
+        isHighMatch: false,
+        recommendationReasons: ["Được nhiều người mua"],
+        recommendationGroup: "bestseller"
+      }));
+  }
+
+  /**
+   * Clear cache (recommendation cache + collaborative matrix nếu cần)
+   */
+  clearCache(userId = null) {
+    if (userId) {
+      const keys = this.cache.keys();
+      keys.forEach(key => {
+        if (key.includes(userId.toString())) {
+          this.cache.del(key);
+        }
+      });
+    } else {
+      this.cache.flushAll();
+      this.collaborativeEngine.clearMatrixCache();
+    }
+  }
 }
 
 // Export singleton instance
@@ -847,6 +1175,22 @@ export const getTrendingProducts = async (limitParam) => {
  */
 export const clearRecommendationCache = (userId = null) => {
   recommendationEngine.clearCache(userId);
+};
+
+/**
+ * Get personalized bestsellers for user
+ */
+export const getPersonalizedBestsellers = async (user, limitParam) => {
+  const limit = Math.min(parseInt(limitParam) || 12, 50);
+  return recommendationEngine.getPersonalizedBestsellers(user, { limit });
+};
+
+/**
+ * Get personalized new arrivals for user
+ */
+export const getPersonalizedNewArrivals = async (user, limitParam) => {
+  const limit = Math.min(parseInt(limitParam) || 12, 50);
+  return recommendationEngine.getPersonalizedNewArrivals(user, { limit });
 };
 
 export default recommendationEngine;

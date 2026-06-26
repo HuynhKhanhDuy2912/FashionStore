@@ -39,17 +39,20 @@ function sortByCreatedAt(items) {
   );
 }
 
-function chunkArray(items, perColumn = 5) {
-  const result = [];
-  for (let i = 0; i < items.length; i += perColumn) {
-    result.push(items.slice(i, i + perColumn));
-  }
+function distributeIntoColumns(items, columnCount = 4) {
+  if (items.length === 0) return [];
+  const cols = Math.min(columnCount, items.length);
+  const result = Array.from({ length: cols }, () => []);
+  const perCol = Math.ceil(items.length / cols);
+  items.forEach((item, i) => {
+    const colIndex = Math.floor(i / perCol);
+    result[Math.min(colIndex, cols - 1)].push(item);
+  });
   return result;
 }
 
 const highlightItems = [
   { key: "new", label: "Hàng Mới", type: "new" },
-  { key: "easy-buy", label: "Easy Buy", type: "star" },
   { key: "sale", label: "Ưu đãi", type: "sale" },
   { key: "best-seller", label: "Bán Chạy", type: "hot" },
 ];
@@ -145,14 +148,6 @@ function HighlightIcon({ type }) {
     return (
       <div className="grid h-10 w-10 place-items-center bg-orange-600 text-[11px] font-bold uppercase text-white">
         SALE
-      </div>
-    );
-  }
-
-  if (type === "star") {
-    return (
-      <div className="grid h-10 w-10 place-items-center text-3xl leading-none text-amber-500">
-        ★
       </div>
     );
   }
@@ -305,7 +300,7 @@ export default function Layout() {
       });
     }
 
-    return chunkArray(flattened, 5);
+    return distributeIntoColumns(flattened, 4);
   }, [activeMegaRoot, categories]);
 
   const startCloseTimer = () => {
@@ -531,7 +526,7 @@ export default function Layout() {
               >
                 <X size={20} />
               </button>
-              <div className="mb-4 grid grid-cols-4 gap-12 border-b border-gray-100 pb-6">
+              <div className="mb-4 grid grid-cols-4 items-center justify-center gap-12 border-b border-gray-100 pb-6">
                 {highlightItems.map((item) => (
                   <button
                     key={item.key}
@@ -541,10 +536,7 @@ export default function Layout() {
                       if (item.key === "stores") navigate("/products");
                       if (item.key === "sale") navigate("/products?sale=1");
                       if (item.key === "new") navigate("/products?newArrivals=1");
-                      if (item.key === "easy-buy")
-                        navigate("/products?tag=easy-buy");
-                      if (item.key === "best-seller")
-                        navigate("/products?bestSeller=1");
+                      if (item.key === "best-seller") navigate("/products?bestSeller=1");
                       setActiveMegaMenu(null);
                     }}
                   >
@@ -559,7 +551,7 @@ export default function Layout() {
               <div
                 className="grid gap-12"
                 style={{
-                  gridTemplateColumns: `repeat(${Math.max(megaColumns.length, 1)}, minmax(0, 1fr))`,
+                  gridTemplateColumns: `repeat(${Math.min(Math.max(megaColumns.length, 1), 4)}, minmax(0, 1fr))`,
                 }}
               >
                 {megaColumns.map((col, colIndex) => (

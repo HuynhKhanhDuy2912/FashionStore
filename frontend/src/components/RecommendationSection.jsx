@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, TrendingUp, ArrowRight, ArrowLeft } from "lucide-react";
+import { Sparkles, TrendingUp, ArrowRight, ArrowLeft, Heart, PackagePlus } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { apiRequest } from "../lib/api";
 
@@ -60,6 +60,24 @@ export default function RecommendationSection({
             endpoint = `/recommendations/trending?limit=${limit}`;
             break;
 
+          case "personalized-bestsellers":
+            if (!token) {
+              setLoading(false);
+              return;
+            }
+            endpoint = `/recommendations/personalized-bestsellers?limit=${limit}`;
+            options = { token };
+            break;
+
+          case "personalized-new-arrivals":
+            if (!token) {
+              setLoading(false);
+              return;
+            }
+            endpoint = `/recommendations/personalized-new-arrivals?limit=${limit}`;
+            options = { token };
+            break;
+
           default:
             setError("Invalid recommendation type");
             setLoading(false);
@@ -109,25 +127,33 @@ export default function RecommendationSection({
   const defaultTitles = {
     personalized: "Gợi ý dành cho bạn",
     similar: "Sản phẩm tương tự",
-    trending: "Đang thịnh hành"
+    trending: "Đang thịnh hành",
+    "personalized-bestsellers": "Bán chạy trong phong cách của bạn",
+    "personalized-new-arrivals": "Mới về - phù hợp với bạn"
   };
 
   const defaultDescriptions = {
     personalized: "Được chọn lọc dựa trên sở thích và hành vi mua sắm của bạn",
     similar: "Những sản phẩm có đặc điểm tương tự với sản phẩm bạn đang xem",
-    trending: "Sản phẩm được quan tâm và mua nhiều nhất tuần này"
+    trending: "Sản phẩm được quan tâm và mua nhiều nhất tuần này",
+    "personalized-bestsellers": "Những sản phẩm được yêu thích nhất trong nhóm phong cách của bạn",
+    "personalized-new-arrivals": "Sản phẩm mới ra mắt phù hợp với gu thời trang của bạn"
   };
 
   const defaultEyebrows = {
     personalized: "Cá nhân hóa",
     similar: "Có thể bạn thích",
-    trending: "Hot trend"
+    trending: "Hot trend",
+    "personalized-bestsellers": "Sản phẩm bán chạy",
+    "personalized-new-arrivals": "Sản phẩm mới về"
   };
 
   const icons = {
     personalized: Sparkles,
     similar: ArrowRight,
-    trending: TrendingUp
+    trending: TrendingUp,
+    "personalized-bestsellers": Heart,
+    "personalized-new-arrivals": PackagePlus
   };
 
   const Icon = icons[type];
@@ -159,9 +185,9 @@ export default function RecommendationSection({
           ) : null}
         </div>
 
-        {type === "personalized" && token ? (
+        {(type === "personalized" || type === "personalized-bestsellers" || type === "personalized-new-arrivals") && token ? (
           <Link
-            to="/recommendations"
+            to={type === "personalized" ? "/recommendations" : (type === "personalized-bestsellers" ? "/products?bestSeller=1" : "/products?newArrivals=1")}
             className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-black transition hover:gap-3"
           >
             Xem tất cả
