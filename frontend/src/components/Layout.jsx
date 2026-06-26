@@ -721,28 +721,34 @@ export default function Layout() {
                 </button>
               </form>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                {["COD", "VNPay", "PayPal"].map((method) => (
+              <div className="mt-6 flex flex-wrap gap-4">
+                {[
+                  { name: "COD", icon: "/images/cod.png" },
+                  { name: "VNPay", icon: "/images/vnpay.png" },
+                  { name: "PayPal", icon: "/images/paypal.png" }
+                ].map((method) => (
                   <span
-                    key={method}
-                    className="border border-white/15 px-3 py-1.5 text-[11px] font-bold uppercase text-white/70"
+                    key={method.name}
+                    className="flex items-center gap-3 border border-white/15 px-3 py-1.5 text-[11px] font-bold uppercase text-white/70 bg-white/5"
                   >
-                    {method}
+                    <img src={`${method.icon}?v=2`} alt={method.name} className="h-5 w-5 object-contain rounded-sm" />
+                    {method.name}
                   </span>
                 ))}
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 {footerSocials.map((item) => (
                   <a
                     key={item.label}
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-white/70 transition hover:border-white hover:text-white"
+                    className="flex items-center gap-2 rounded-sm border border-white/15 px-2 py-2 text-[13px] font-medium text-white/70 transition hover:border-white hover:text-white hover:bg-white/5"
                     aria-label={item.label}
                   >
                     <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
                   </a>
                 ))}
               </div>
@@ -750,9 +756,8 @@ export default function Layout() {
           </div>
 
           <div className="border-t border-white/10">
-            <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-6 text-xs text-white/45 md:flex-row md:items-center md:justify-between lg:px-8">
+            <div className="mx-auto flex max-w-[1400px] px-4 py-6 text-xs text-white/45 lg:px-8">
               <p>© 2026 FashionStore. All rights reserved.</p>
-              <p>Thiết kế cho trải nghiệm e-commerce nhanh, rõ ràng và an toàn.</p>
             </div>
           </div>
         </footer>

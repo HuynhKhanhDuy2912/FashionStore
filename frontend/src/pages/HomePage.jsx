@@ -13,7 +13,8 @@ import {
   X,
   GalleryVerticalEnd,
   PackagePlus,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from "lucide-react";
 import ProductCard from "../components/ProductCard.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
@@ -735,43 +736,80 @@ export default function HomePage() {
         />
 
         {/* CTA banner */}
-        <section className="relative overflow-hidden bg-[#111] px-6 text-center text-white md:px-12 md:py-20">
-          <div className="relative z-10 mx-auto max-w-2xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.4em] text-white/60">
-              FashionStore
-            </p>
-            <h2 className="mt-4 text-3xl font-light tracking-tight md:text-4xl">
-              Gợi ý sản phẩm dành riêng cho bạn
-            </h2>
-            <p className="mt-6 text-[15px] leading-relaxed text-white/80">
-              Hệ thống học từ lịch sử xem và mua hàng của bạn để đề xuất sản phẩm phù
-              hợp nhất.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              {token ? (
-                <Link
-                  to="/recommendations"
-                  className="inline-flex items-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
-                >
-                  Xem gợi ý
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              ) : (
-                <>
+        <section className="relative overflow-hidden bg-neutral-900 mx-4 max-w-[1440px] rounded-none my-4 shadow-xl border border-gray-800">
+          {/* Animated Background Gradient */}
+          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-indigo-500/15 via-purple-500/15 to-pink-500/15 blur-[80px] opacity-70"></div>
+          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-blue-500/15 to-emerald-500/15 blur-[100px] opacity-60"></div>
+
+          <div className="relative z-10 grid md:grid-cols-2 items-center gap-8 p-6 sm:p-8 md:p-12 lg:px-16 lg:py-12">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-none bg-white/5 border border-white/10 px-4 py-1.5 backdrop-blur-md mb-6">
+                <Sparkles className="h-4 w-4 text-purple-300" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/90">Trải nghiệm cá nhân hóa</span>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-white leading-[1.2] mb-4">
+                Được tinh chỉnh <br />
+                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-pink-400">riêng cho bạn</span>
+              </h2>
+
+              <p className="text-sm md:text-base text-white/70 leading-relaxed mb-8 max-w-md">
+                Khám phá tủ đồ lý tưởng được FashionStore tuyển chọn dựa trên phong cách và tương tác của chính bạn.
+              </p>
+
+              <div className="flex flex-wrap gap-4">
+                {token ? (
                   <Link
-                    to="/register"
-                    className="inline-flex items-center gap-2 bg-white px-10 py-4 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-gray-200"
+                    to="/recommendations"
+                    className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-none bg-white px-8 py-3.5 text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-gray-200"
                   >
-                    Đăng ký ngay
+                    Khám phá ngay
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Link>
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center gap-2 border border-white/40 px-10 py-4 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-white hover:text-black"
-                  >
-                    Đăng nhập
-                  </Link>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Link
+                      to="/register"
+                      className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-none bg-white px-8 py-3.5 text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-gray-200"
+                    >
+                      Bắt đầu ngay
+                    </Link>
+                    <Link
+                      to="/login"
+                      className="group inline-flex items-center justify-center gap-3 rounded-none border border-white/30 bg-transparent px-8 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-all hover:border-white hover:bg-white/10"
+                    >
+                      Đăng nhập
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Right side visual: abstract UI cards */}
+            <div className="relative hidden md:block h-full min-h-[320px]">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-full h-full max-w-[450px]">
+                {/* Floating cards */}
+                <div className="absolute top-[5%] right-[20%] w-40 h-52 rounded-none bg-white/10 border border-white/10 backdrop-blur-xl shadow-2xl transform rotate-6 transition-all hover:rotate-3 hover:scale-105 duration-500 flex flex-col p-3 z-20">
+                  <div className="w-full h-24 rounded-none bg-gradient-to-br from-white/20 to-white/5 mb-3"></div>
+                  <div className="w-3/4 h-2.5 rounded-none bg-white/20 mb-2"></div>
+                  <div className="w-1/2 h-2.5 rounded-none bg-white/10"></div>
+                </div>
+
+                <div className="absolute bottom-[5%] left-[10%] w-48 h-60 rounded-none bg-white/5 border border-white/20 backdrop-blur-xl shadow-2xl transform -rotate-3 transition-all hover:-rotate-1 hover:scale-105 duration-500 flex flex-col p-4 z-30">
+                  <div className="w-full h-32 rounded-none bg-gradient-to-br from-purple-500/30 to-pink-500/10 mb-4 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-20 mix-blend-overlay"></div>
+                    <Sparkles className="h-8 w-8 text-white/50" />
+                  </div>
+                  <div className="w-4/5 h-3 rounded-none bg-white/30 mb-2"></div>
+                  <div className="w-2/3 h-3 rounded-none bg-white/20"></div>
+                </div>
+
+                <div className="absolute top-[35%] right-[-5%] -translate-y-1/2 w-32 h-44 rounded-none bg-black/40 border border-white/5 backdrop-blur-md shadow-2xl transform rotate-[-3deg] transition-all hover:rotate-0 hover:scale-105 duration-500 flex flex-col p-3 z-10">
+                  <div className="w-full h-20 rounded-none bg-white/5 mb-3"></div>
+                  <div className="w-full h-2 rounded-none bg-white/10 mb-2"></div>
+                  <div className="w-4/5 h-2 rounded-none bg-white/10"></div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

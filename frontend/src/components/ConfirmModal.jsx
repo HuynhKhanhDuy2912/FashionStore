@@ -5,7 +5,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-white p-6 shadow-xl">
+      <div className="relative rounded-md w-full max-w-md bg-white p-6 shadow-xl">
         <button
           type="button"
           onClick={onClose}
