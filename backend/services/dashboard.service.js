@@ -20,33 +20,47 @@ const PAYMENT_LABELS = {
   paypal: "PayPal",
 };
 
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000; // +07:00
+
+function getVNDateComponents(date) {
+  const vnTime = new Date(date.getTime() + VN_OFFSET_MS);
+  return {
+    year: vnTime.getUTCFullYear(),
+    month: vnTime.getUTCMonth(),
+    date: vnTime.getUTCDate(),
+  };
+}
+
+function createVNDate(year, month, date, hours = 0, minutes = 0, seconds = 0, ms = 0) {
+  const utcMs = Date.UTC(year, month, date, hours, minutes, seconds, ms);
+  return new Date(utcMs - VN_OFFSET_MS);
+}
+
 function startOfDay(date) {
-  const value = new Date(date);
-  value.setHours(0, 0, 0, 0);
-  return value;
+  const vnDate = getVNDateComponents(date);
+  return createVNDate(vnDate.year, vnDate.month, vnDate.date, 0, 0, 0, 0);
 }
 
 function fillDailySeries(rows, days = 30) {
   const map = new Map(rows.map((row) => [row._id, row]));
   const result = [];
-  const today = startOfDay(new Date());
+  const todayStartMs = startOfDay(new Date()).getTime();
 
   for (let index = days - 1; index >= 0; index -= 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - index);
+    const targetMs = todayStartMs - index * 24 * 60 * 60 * 1000;
+    const targetDate = new Date(targetMs);
+    const vnComponents = getVNDateComponents(targetDate);
+    
     const key = [
-      date.getFullYear(),
-      String(date.getMonth() + 1).padStart(2, "0"),
-      String(date.getDate()).padStart(2, "0"),
+      vnComponents.year,
+      String(vnComponents.month + 1).padStart(2, "0"),
+      String(vnComponents.date).padStart(2, "0"),
     ].join("-");
     const row = map.get(key);
 
     result.push({
       date: key,
-      label: date.toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-      }),
+      label: `${String(vnComponents.date).padStart(2, "0")}/${String(vnComponents.month + 1).padStart(2, "0")}`,
       revenue: row?.revenue || 0,
       orders: row?.orders || 0,
       refunds: row?.refunds || 0,
@@ -60,26 +74,31 @@ function fillDailySeries(rows, days = 30) {
 function fillMonthlySeries(rows) {
   const map = new Map(rows.map((row) => [row._id, row]));
   const now = new Date();
+  const vnNow = getVNDateComponents(now);
 
-  // Luôn hiển thị tối thiểu 12 tháng gần nhất để có khung biểu đồ; mở rộng thêm nếu
-  // có dữ liệu cũ hơn 12 tháng.
-  const minStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-  let start = minStart;
+  const minStartYear = vnNow.month - 11 < 0 ? vnNow.year - 1 : vnNow.year;
+  const minStartMonth = vnNow.month - 11 < 0 ? vnNow.month - 11 + 12 : vnNow.month - 11;
+  let startYear = minStartYear;
+  let startMonth = minStartMonth;
+
   if (rows.length > 0) {
     const [y, m] = rows[0]._id.split("-").map(Number);
-    const dataStart = new Date(y, m - 1, 1);
-    if (dataStart < minStart) start = dataStart;
+    if (y < minStartYear || (y === minStartYear && m - 1 < minStartMonth)) {
+      startYear = y;
+      startMonth = m - 1;
+    }
   }
 
   const result = [];
-  const cursor = new Date(start);
+  let currentYear = startYear;
+  let currentMonth = startMonth;
+
   while (
-    cursor.getFullYear() < now.getFullYear() ||
-    (cursor.getFullYear() === now.getFullYear() &&
-      cursor.getMonth() <= now.getMonth())
+    currentYear < vnNow.year ||
+    (currentYear === vnNow.year && currentMonth <= vnNow.month)
   ) {
-    const y = cursor.getFullYear();
-    const m = cursor.getMonth() + 1;
+    const y = currentYear;
+    const m = currentMonth + 1;
     const key = `${y}-${String(m).padStart(2, "0")}`;
     const row = map.get(key);
 
@@ -91,7 +110,11 @@ function fillMonthlySeries(rows) {
       refunds: row?.refunds || 0,
     });
 
-    cursor.setMonth(cursor.getMonth() + 1);
+    currentMonth++;
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
   }
 
   return result;
@@ -107,32 +130,26 @@ function parseDateOnly(value, endOfDay = false) {
   const [year, month, day] = String(value).split("-").map(Number);
   if (!year || !month || !day) return null;
 
-  const date = new Date(year, month - 1, day);
-  if (Number.isNaN(date.getTime())) return null;
-  if (endOfDay) date.setHours(23, 59, 59, 999);
-  return date;
+  if (endOfDay) {
+    return createVNDate(year, month - 1, day, 23, 59, 59, 999);
+  }
+  return createVNDate(year, month - 1, day, 0, 0, 0, 0);
 }
 
 export async function getAdminDashboardStats(filters = {}) {
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    0,
-    23,
-    59,
-    59,
-    999,
-  );
-  const chartStart = startOfDay(
-    new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
-  );
-  const sevenDaysAgo = startOfDay(
-    new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
-  );
+  const vnNow = getVNDateComponents(now);
+
+  const todayStart = createVNDate(vnNow.year, vnNow.month, vnNow.date, 0, 0, 0, 0);
+  const monthStart = createVNDate(vnNow.year, vnNow.month, 1, 0, 0, 0, 0);
+  
+  const lastMonthYear = vnNow.month === 0 ? vnNow.year - 1 : vnNow.year;
+  const lastMonthValue = vnNow.month === 0 ? 11 : vnNow.month - 1;
+  const lastMonthStart = createVNDate(lastMonthYear, lastMonthValue, 1, 0, 0, 0, 0);
+  
+  const lastMonthEnd = new Date(monthStart.getTime() - 1);
+  const chartStart = new Date(todayStart.getTime() - 29 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
 
   const revenueMatch = { status: { $in: REVENUE_STATUSES } };
   const statusFrom = parseDateOnly(filters.statusFrom);

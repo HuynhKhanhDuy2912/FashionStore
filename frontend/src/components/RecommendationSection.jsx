@@ -128,7 +128,7 @@ export default function RecommendationSection({
     personalized: "Gợi ý dành cho bạn",
     similar: "Sản phẩm tương tự",
     trending: "Đang thịnh hành",
-    "personalized-bestsellers": "Bán chạy trong phong cách của bạn",
+    "personalized-bestsellers": "Bán chạy bạn có thể thích",
     "personalized-new-arrivals": "Mới về - phù hợp với bạn"
   };
 
