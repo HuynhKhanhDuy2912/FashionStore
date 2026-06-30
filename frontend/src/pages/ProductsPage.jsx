@@ -1483,7 +1483,7 @@ export default function ProductsPage() {
                         <button
                           key={p}
                           onClick={() => setCurrentPage(p)}
-                          className={`h-10 w-10 rounded text-sm font-medium ${normalizedCurrentPage === p
+                          className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${normalizedCurrentPage === p
                             ? "bg-black text-white"
                             : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                             }`}

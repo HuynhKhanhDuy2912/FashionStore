@@ -541,7 +541,7 @@ export default function AdminInventoryPage() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 transition"
               >
                 <ChevronsLeft size={16} />
               </button>
@@ -557,9 +557,9 @@ export default function AdminInventoryPage() {
                     <button
                       key={p}
                       onClick={() => setCurrentPage(p)}
-                      className={`h-8 w-8 rounded text-sm font-medium ${currentPage === p
+                      className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${currentPage === p
                         ? "bg-black text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-100"
+                          : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                         }`}
                     >
                       {p}
@@ -571,7 +571,7 @@ export default function AdminInventoryPage() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 transition"
               >
                 <ChevronsRight size={16} />
               </button>

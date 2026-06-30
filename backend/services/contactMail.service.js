@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { sendEmail, hasEmailConfig } from "./emailTransport.js";
 
 function buildReplyText(contactRequest, replyMessage) {
   const lines = [
@@ -152,56 +152,22 @@ function buildReplyHtml(contactRequest, replyMessage) {
 </html>`;
 }
 
-function getMailFromAddress() {
-  const fromName = process.env.MAIL_FROM_NAME || "FashionStore";
-  const fromAddr = process.env.MAIL_FROM_ADDRESS || "no-reply@fashionstore.vn";
-  return `${fromName} <${fromAddr}>`;
-}
-
-function hasSmtpConfig() {
-  return Boolean(
-    process.env.MAIL_HOST &&
-    process.env.MAIL_USERNAME &&
-    process.env.MAIL_PASSWORD,
-  );
-}
-
-function getSmtpPassword() {
-  return String(process.env.MAIL_PASSWORD || "").replace(/\s/g, "");
-}
-
 export async function sendContactReplyEmail(
   contactRequest,
   replySubject,
   replyMessage,
 ) {
-  if (!hasSmtpConfig()) {
-    return { sent: false, error: "SMTP is not configured" };
+  if (!hasEmailConfig()) {
+    return { sent: false, error: "No email transport configured" };
   }
 
   try {
-    const port = Number(process.env.MAIL_PORT || 587);
-    const encryption = String(process.env.MAIL_ENCRYPTION || "").toLowerCase();
-    const secure = port === 465 || encryption === "ssl";
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST.trim(),
-      port,
-      secure,
-      auth: {
-        user: process.env.MAIL_USERNAME.trim(),
-        pass: getSmtpPassword(),
-      },
-      requireTLS: encryption === "tls" || port === 587,
-    });
-
-    await transporter.sendMail({
-      from: getMailFromAddress(),
-      replyTo: "no-reply@fashionstore.vn", // Ngăn khách reply lại
+    await sendEmail({
       to: contactRequest.email,
       subject: replySubject,
       text: buildReplyText(contactRequest, replyMessage),
       html: buildReplyHtml(contactRequest, replyMessage),
+      replyTo: "no-reply@fashionstore.vn", // Ngăn khách reply lại
     });
 
     return { sent: true, error: "" };

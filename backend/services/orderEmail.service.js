@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { sendEmail, hasEmailConfig } from "./emailTransport.js";
 
 // ─── Design Tokens (Dựa trên hình ảnh tham khảo) ─────────────────────────────
 const BRAND = {
@@ -32,41 +32,6 @@ function formatVND(amount) {
 function orderCode(order) {
   const id = order._id?.toString?.() || String(order._id || "");
   return id.slice(-8).toUpperCase();
-}
-
-function getMailFromAddress() {
-  const fromName = process.env.MAIL_FROM_NAME || "FashionStore";
-  const fromAddr = process.env.MAIL_FROM_ADDRESS || "no-reply@fashionstore.vn";
-  return `${fromName} <${fromAddr}>`;
-}
-
-function hasSmtpConfig() {
-  return Boolean(
-    process.env.MAIL_HOST &&
-    process.env.MAIL_USERNAME &&
-    process.env.MAIL_PASSWORD,
-  );
-}
-
-function getSmtpPassword() {
-  return String(process.env.MAIL_PASSWORD || "").replace(/\s/g, "");
-}
-
-function createSmtpTransporter() {
-  const port = Number(process.env.MAIL_PORT || 587);
-  const encryption = String(process.env.MAIL_ENCRYPTION || "").toLowerCase();
-  const secure = port === 465 || encryption === "ssl";
-
-  return nodemailer.createTransport({
-    host: process.env.MAIL_HOST.trim(),
-    port,
-    secure,
-    auth: {
-      user: process.env.MAIL_USERNAME.trim(),
-      pass: getSmtpPassword(),
-    },
-    requireTLS: encryption === "tls" || port === 587,
-  });
 }
 
 function getItemImage(item) {
@@ -293,23 +258,24 @@ function buildBaseHtml(order, items, user, title, greeting, message) {
 
 export async function sendOrderConfirmationEmail(order, items, user) {
   const email = user?.email;
-  if (!email || !hasSmtpConfig()) return { sent: false };
+  if (!email || !hasEmailConfig()) {
+    console.warn("[OrderEmail] Skipped confirmation: missing email or transport config");
+    return { sent: false };
+  }
 
   try {
     const code = orderCode(order);
-    const transporter = createSmtpTransporter();
 
     const title = "XÁC NHẬN ĐƠN HÀNG";
     const greeting = "cảm ơn bạn đã đặt hàng!";
     const message =
       "Chúng tôi đã nhận được đơn hàng của bạn và sẽ liên hệ với bạn ngay khi gói hàng được gửi đi. Bạn có thể xem thông tin mua hàng bên dưới.";
 
-    await transporter.sendMail({
-      from: getMailFromAddress(),
-      replyTo: "no-reply@fashionstore.vn",
+    await sendEmail({
       to: email,
       subject: `Đơn hàng #${code} đã được xác nhận - FashionStore`,
       html: buildBaseHtml(order, items, user, title, greeting, message),
+      replyTo: "no-reply@fashionstore.vn",
     });
 
     console.log(
@@ -327,23 +293,24 @@ export async function sendOrderConfirmationEmail(order, items, user) {
 
 export async function sendOrderCompletedEmail(order, items, user) {
   const email = user?.email;
-  if (!email || !hasSmtpConfig()) return { sent: false };
+  if (!email || !hasEmailConfig()) {
+    console.warn("[OrderEmail] Skipped completed: missing email or transport config");
+    return { sent: false };
+  }
 
   try {
     const code = orderCode(order);
-    const transporter = createSmtpTransporter();
 
     const title = "GIAO HÀNG THÀNH CÔNG";
     const greeting = "đơn hàng của bạn đã được giao!";
     const message =
       "Kiện hàng của bạn đã được giao thành công. Mong rằng bạn hài lòng với các sản phẩm. Bạn có thể xem lại thông tin đơn hàng bên dưới.";
 
-    await transporter.sendMail({
-      from: getMailFromAddress(),
-      replyTo: "no-reply@fashionstore.vn",
+    await sendEmail({
       to: email,
       subject: `Đơn hàng #${code} đã giao thành công - FashionStore`,
       html: buildBaseHtml(order, items, user, title, greeting, message),
+      replyTo: "no-reply@fashionstore.vn",
     });
 
     console.log(

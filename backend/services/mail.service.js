@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { sendEmail, hasEmailConfig } from "./emailTransport.js";
 
 function escapeHtml(value) {
   return String(value || "")
@@ -88,46 +88,13 @@ function buildOtpEmailHtml(otp, purpose, name = "Bạn") {
 </html>`;
 }
 
-function getMailFromAddress() {
-  const fromName = process.env.MAIL_FROM_NAME || "FashionStore";
-  const fromAddr = process.env.MAIL_FROM_ADDRESS || "no-reply@fashionstore.vn";
-  return `${fromName} <${fromAddr}>`;
-}
-
-function hasSmtpConfig() {
-  return Boolean(
-    process.env.MAIL_HOST &&
-    process.env.MAIL_USERNAME &&
-    process.env.MAIL_PASSWORD,
-  );
-}
-
-function getSmtpPassword() {
-  return String(process.env.MAIL_PASSWORD || "").replace(/\s/g, "");
-}
-
 export async function sendOTPEmail(email, otp, purpose) {
-  if (!hasSmtpConfig()) {
-    console.warn("SMTP is not configured. OTP:", otp);
-    return { sent: true, error: "" }; // Allow development without SMTP if not configured, or return false to strict check
+  if (!hasEmailConfig()) {
+    console.warn("[Mail] No email transport configured. OTP:", otp);
+    return { sent: true, error: "" };
   }
 
   try {
-    const port = Number(process.env.MAIL_PORT || 587);
-    const encryption = String(process.env.MAIL_ENCRYPTION || "").toLowerCase();
-    const secure = port === 465 || encryption === "ssl";
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST.trim(),
-      port,
-      secure,
-      auth: {
-        user: process.env.MAIL_USERNAME.trim(),
-        pass: getSmtpPassword(),
-      },
-      requireTLS: encryption === "tls" || port === 587,
-    });
-
     let subject = "Mã xác thực FashionStore";
     if (purpose === "register") {
       subject = "Xác nhận đăng ký tài khoản - FashionStore";
@@ -135,12 +102,11 @@ export async function sendOTPEmail(email, otp, purpose) {
       subject = "Đặt lại mật khẩu - FashionStore";
     }
 
-    await transporter.sendMail({
-      from: getMailFromAddress(),
-      replyTo: "no-reply@fashionstore.vn",
+    await sendEmail({
       to: email,
-      subject: subject,
+      subject,
       html: buildOtpEmailHtml(otp, purpose),
+      replyTo: "no-reply@fashionstore.vn",
     });
 
     return { sent: true, error: "" };

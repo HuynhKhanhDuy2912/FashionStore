@@ -12,7 +12,7 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     if (awardedCoupons) {
       toast.success(
-        "Chúc mừng! Bạn đã nhận được mã giảm giá phần thưởng. Vui lòng kiểm tra mục Mã giảm giá.",
+        "Chúc mừng! Bạn đã nhận được mã giảm giá phần thưởng. Vui lòng kiểm tra mục Ưu đãi của tôi.",
         { id: "reward-coupon-toast", duration: 5000 }
       );
     }

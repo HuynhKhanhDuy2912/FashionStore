@@ -10,8 +10,11 @@ import {
   XCircle,
   ShoppingCart,
   SlidersHorizontal,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
+import { getPaginationRange } from "../../lib/pagination.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { apiRequest } from "../../lib/api.js";
 import toast from "react-hot-toast";
@@ -91,12 +94,15 @@ const formatDateTime = (value) => {
 
 const formatCurrency = (value) => `${(value || 0).toLocaleString("vi-VN")} ₫`;
 
+const PAGE_SIZE = 10;
+
 export default function AdminOrdersPage() {
   const { token } = useAuth();
   const [searchParams] = useSearchParams();
   const globalSearch = searchParams.get("q") || "";
 
   const [orders, setOrders] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
@@ -132,6 +138,10 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     setSearchTerm(globalSearch);
   }, [globalSearch]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, paymentMethodFilter, dateFrom, dateTo]);
 
   const stats = useMemo(() => {
     const total = orders.length;
@@ -192,6 +202,13 @@ export default function AdminOrdersPage() {
 
     return result;
   }, [orders, searchTerm, statusFilter, paymentMethodFilter, dateFrom, dateTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+  const normalizedCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (normalizedCurrentPage - 1) * PAGE_SIZE;
+    return filteredOrders.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredOrders, normalizedCurrentPage]);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -480,7 +497,7 @@ export default function AdminOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => {
+                paginatedOrders.map((order) => {
                   const statusConfig =
                     statusMap[order.status] || statusMap.pending;
                   const StatusIcon = statusConfig.icon;
@@ -591,6 +608,50 @@ export default function AdminOrdersPage() {
             </tbody>
           </table>
         </div>
+
+        {filteredOrders.length > PAGE_SIZE && (
+          <div className="flex items-end justify-end border-t border-gray-200 px-6 py-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={normalizedCurrentPage === 1}
+                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 transition"
+              >
+                <ChevronsLeft size={18} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {getPaginationRange(normalizedCurrentPage, totalPages).map((p) => {
+                  if (p === "left-ellipsis" || p === "right-ellipsis") {
+                    return (
+                      <span key={`ellipsis-${p}`} className="px-2 text-gray-400">...</span>
+                    );
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${normalizedCurrentPage === p
+                          ? "bg-black text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                        }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={normalizedCurrentPage === totalPages}
+                className="flex items-center justify-center rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 border border-gray-200 transition"
+              >
+                <ChevronsRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {showCancelModal && (
