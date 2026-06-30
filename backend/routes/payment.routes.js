@@ -6,6 +6,7 @@ import OrderItem from "../models/OrderItem.js";
 import Payment from "../models/Payment.js";
 import PaymentSession from "../models/PaymentSession.js";
 import User from "../models/User.js";
+import { sendOrderConfirmationEmail } from "../services/orderEmail.service.js";
 import { createVNPayPaymentUrl, verifyVNPayCallback } from "../utils/vnpay.js";
 import {
   createPayPalOrder,
@@ -208,6 +209,12 @@ router.get("/vnpay/callback", async (req, res) => {
     await markPaymentPaid(order._id, vnpParams.vnp_TransactionNo);
     paid = true; // Đã thu tiền thành công → không rollback đơn này nữa
 
+    // Fire-and-forget: gửi email xác nhận đơn hàng (VNPay)
+    const emailItems = await OrderItem.find({ orderId: order._id });
+    sendOrderConfirmationEmail(order, emailItems, user).catch((err) =>
+      console.error("Failed to send VNPay confirmation email:", err.message),
+    );
+
     const awardedCoupons = await grantRewardCoupons(order.userId, order.subTotal);
     const queryParams = new URLSearchParams({ orderId: order._id.toString() });
     if (awardedCoupons && awardedCoupons.length > 0) {
@@ -396,6 +403,12 @@ router.get("/paypal/callback", async (req, res) => {
       });
       await markPaymentPaid(order._id, captureResult.id);
       paid = true; // Đã thu tiền thành công → không rollback đơn này nữa
+
+      // Fire-and-forget: gửi email xác nhận đơn hàng (PayPal)
+      const emailItems = await OrderItem.find({ orderId: order._id });
+      sendOrderConfirmationEmail(order, emailItems, user).catch((err) =>
+        console.error("Failed to send PayPal confirmation email:", err.message),
+      );
 
       const awardedCoupons = await grantRewardCoupons(order.userId, order.subTotal);
       const queryParams = new URLSearchParams({ orderId: order._id.toString() });

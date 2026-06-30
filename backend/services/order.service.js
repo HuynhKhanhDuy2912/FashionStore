@@ -1,4 +1,8 @@
 import Cart from "../models/Cart.js";
+import {
+  sendOrderConfirmationEmail,
+  sendOrderCompletedEmail,
+} from "./orderEmail.service.js";
 import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
@@ -301,6 +305,15 @@ export const createOrderFromCart = async (user, body) => {
   }
 
   const populatedOrder = await populateOrder(Order.findById(order._id)).lean();
+
+  // Fire-and-forget: gửi email xác nhận đơn hàng (chỉ COD, VNPay/PayPal xử lý ở payment callback)
+  if (orderData.paymentMethod === "cod") {
+    const emailItems = await OrderItem.find({ orderId: order._id });
+    sendOrderConfirmationEmail(populatedOrder, emailItems, user).catch((err) =>
+      console.error("Failed to send order confirmation email:", err.message),
+    );
+  }
+
   return { ...populatedOrder, awardedCoupons };
 };
 
@@ -516,6 +529,15 @@ export const markOrderAsReceivedByUser = async (userId, orderId) => {
   }
 
   await order.save();
+
+  // Fire-and-forget: gửi email thông báo đơn hàng hoàn thành
+  const completedItems = await OrderItem.find({ orderId: order._id });
+  const orderUser = await User.findById(userId);
+  sendOrderCompletedEmail(order.toObject(), completedItems, orderUser).catch(
+    (err) =>
+      console.error("Failed to send order completed email:", err.message),
+  );
+
   return order;
 };
 
@@ -641,5 +663,19 @@ export const updateAdminOrderStatus = async (
   }
 
   await order.save();
+
+  // Fire-and-forget: gửi email khi admin chuyển trạng thái sang "completed"
+  if (status === "completed") {
+    const completedItems = await OrderItem.find({ orderId });
+    const orderUser = await User.findById(order.userId);
+    sendOrderCompletedEmail(
+      order.toObject(),
+      completedItems,
+      orderUser,
+    ).catch((err) =>
+      console.error("Failed to send order completed email:", err.message),
+    );
+  }
+
   return order;
 };
