@@ -89,7 +89,7 @@ const footerServiceItems = [
   },
   {
     icon: RotateCcw,
-    title: "Đổi trả 30 ngày",
+    title: "Đổi trả 07 ngày",
     copy: "Linh hoạt, rõ ràng",
   },
   {

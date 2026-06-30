@@ -34,11 +34,11 @@ import {
 import { formatProductName } from "../../lib/productName.js";
 
 const STATUS_BADGE = {
-  pending: "bg-orange-50 text-orange-500 ring-orange-600/20",
-  confirmed: "bg-blue-50 text-blue-500 ring-blue-600/20",
-  shipping: "bg-violet-50 text-violet-500 ring-violet-600/20",
-  completed: "bg-green-50 text-green-500 ring-green-600/20",
-  cancelled: "bg-red-100 text-red-500 ring-red-500/20",
+  pending: "bg-orange-100 text-orange-700",
+  confirmed: "bg-blue-100 text-blue-700",
+  shipping: "bg-violet-100 text-violet-700",
+  completed: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 const STATUS_LABEL = {
@@ -723,7 +723,7 @@ export default function AdminDashboardPage() {
                   to="/admin/orders"
                   className="rounded-md border border-slate-200 px-4 py-2 text-xs font-semibold transition hover:bg-black hover:text-white"
                 >
-                  Xem tất cả đơn hàng →
+                  Xem tất cả đơn hàng
                 </Link>
               </div>
               <div className="overflow-x-auto">
@@ -758,7 +758,7 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="py-4 pr-4 text-center">
                           <span
-                            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase ring-1 ring-inset ${STATUS_BADGE[order.status] || STATUS_BADGE.pending
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${STATUS_BADGE[order.status] || STATUS_BADGE.pending
                               }`}
                           >
                             {STATUS_LABEL[order.status] || order.status}

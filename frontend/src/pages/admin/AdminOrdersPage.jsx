@@ -35,9 +35,22 @@ const paymentMethods = [
 ];
 
 const paymentStatusText = {
-  pending: "Chờ thanh toán",
-  paid: "Đã thanh toán",
-  failed: "Thanh toán thất bại",
+  pending: {
+    label: "Chờ thanh toán",
+    className: "text-yellow-500"
+  },
+  paid: {
+    label: "Đã thanh toán",
+    className: "text-green-500"
+  },
+  failed: {
+    label: "Thanh toán thất bại",
+    className: "text-red-500"
+  },
+  refunded: {
+    label: "Đã hoàn tiền",
+    className: "text-purple-500"
+  },
 };
 
 const statusMap = {
@@ -532,7 +545,7 @@ export default function AdminOrdersPage() {
                         </p>
                       </td>
 
-                      <td className="px-6 py-4 text-sm text-gray-700">
+                      <td className="py-4 text-sm text-gray-700">
                         <p className="font-medium text-gray-900">
                           {order.receiverName || "-"}
                         </p>
@@ -544,14 +557,20 @@ export default function AdminOrdersPage() {
                           <Wallet className="h-3.5 w-3.5" />
                           {order.paymentMethod?.toUpperCase() || "-"}
                         </div>
-                        <p className="mt-2 text-xs text-gray-600">
-                          {paymentStatusText[order.paymentStatus] ||
-                            order.paymentStatus ||
-                            "-"}
-                        </p>
+                        <div className="mt-2">
+                          <span
+                            className={`px-2.5 py-0.5 text-[11px] font-medium ${paymentStatusText[order.paymentStatus]?.className ||
+                              "border-gray-200 bg-gray-50 text-gray-600"
+                              }`}
+                          >
+                            {paymentStatusText[order.paymentStatus]?.label ||
+                              order.paymentStatus ||
+                              "-"}
+                          </span>
+                        </div>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${statusConfig.className}`}
                         >
@@ -632,8 +651,8 @@ export default function AdminOrdersPage() {
                       key={p}
                       onClick={() => setCurrentPage(p)}
                       className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${normalizedCurrentPage === p
-                          ? "bg-black text-white"
-                          : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                         }`}
                     >
                       {p}

@@ -168,16 +168,16 @@ export default function AdminProductQuestionsPage() {
       />
 
       {/* Filters & search */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-200">
         {/* Filter tabs */}
-        <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50/50 p-1">
           {filterOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setFilter(opt.value)}
-              className={`px-3 py-1.5 text-xs font-medium transition cursor-pointer border-none ${filter === opt.value
-                ? "bg-gray-900 text-white rounded-md"
-                : "bg-transparent text-gray-500 hover:text-gray-900"
+              className={`px-4 py-2 text-sm font-medium transition cursor-pointer border-none rounded-md ${filter === opt.value
+                ? "bg-gray-900 text-white shadow-sm"
+                : "bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
                 }`}
             >
               {opt.label}
@@ -186,25 +186,31 @@ export default function AdminProductQuestionsPage() {
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="flex items-center gap-2 ml-auto">
-          <div className="flex items-center border border-gray-200 bg-white px-3 py-1.5 rounded-lg">
-            <Search size={14} className="text-gray-400 mr-2" />
+        <form onSubmit={handleSearch} className="flex flex-1 max-w-lg items-center gap-3">
+          <div className="flex-1 flex items-center border border-gray-200 px-3 py-2 bg-white rounded-lg focus-within:border-gray-900 transition-all">
+            <Search size={18} className="text-gray-400 shrink-0" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Tìm kiếm câu hỏi..."
-              className="w-48 bg-transparent text-sm outline-none placeholder:text-gray-400"
+              className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
             />
             {searchInput && (
               <button
                 type="button"
                 onClick={() => { setSearchInput(""); setSearch(""); }}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent flex items-center pl-2"
               >
-                <X size={13} />
+                <X size={16} />
               </button>
             )}
           </div>
+          <button
+            type="submit"
+            className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-gray-800 transition-colors rounded-lg cursor-pointer shrink-0"
+          >
+            Tìm kiếm
+          </button>
         </form>
       </div>
 
@@ -391,7 +397,7 @@ export default function AdminProductQuestionsPage() {
                       onClick={() => loadQuestions(p)}
                       className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${pagination.page === p
                         ? "bg-black text-white"
-                          : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                        : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                         }`}
                     >
                       {p}
@@ -415,7 +421,7 @@ export default function AdminProductQuestionsPage() {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-lg border border-gray-300 bg-white p-4 shadow-xl">
             <h3 className="text-xl font-bold text-gray-900">Xóa câu hỏi</h3>
             <p className="mt-2 text-sm text-gray-500">
               Bạn có chắc chắn muốn xóa câu hỏi này?

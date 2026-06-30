@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   SortAsc,
   X,
+  ChevronRight,
   ChevronsRight,
   ChevronsLeft,
 } from "lucide-react";
@@ -499,6 +500,12 @@ export default function ProductsPage() {
     return breadcrumbPath[0]?._id || "";
   }, [selectedCategoryId, breadcrumbPath]);
 
+  const isMaleOrFemaleCategory = useMemo(() => {
+    if (!breadcrumbPath.length) return false;
+    const rootName = breadcrumbPath[0]?.name?.toLowerCase() || "";
+    return rootName.includes("nam") || rootName.includes("nữ");
+  }, [breadcrumbPath]);
+
   const categoryLevel2 = useMemo(() => {
     if (!selectedLevel1Id) return [];
     return sortByCreatedAt(
@@ -925,21 +932,43 @@ export default function ProductsPage() {
               </select>
             </label>
 
+            {!isMaleOrFemaleCategory && (
+              <label className="block min-w-0">
+                <span className={labelClass}>Giới tính</span>
+                <select
+                  className={`${inputClass} w-full`}
+                  value={filters.gender}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      gender: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Tất cả</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                </select>
+              </label>
+            )}
+
             <label className="block min-w-0">
-              <span className={labelClass}>Giới tính</span>
+              <span className={labelClass}>Danh mục</span>
               <select
                 className={`${inputClass} w-full`}
-                value={filters.gender}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    gender: event.target.value,
-                  }))
-                }
+                value={selectedCategoryId}
+                onChange={(event) => handleSelectCategory(event.target.value)}
               >
-                <option value="">Tất cả</option>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
+                <option value="">Tất cả danh mục</option>
+                {categoryLevel1.map((cat) => [
+                  <option key={cat._id} value={cat._id} className="font-semibold text-black">{cat.name}</option>,
+                  ...categories.filter(c => getParentId(c) === cat._id).map(sub => [
+                    <option key={sub._id} value={sub._id}>{sub.name}</option>,
+                    ...categories.filter(c2 => getParentId(c2) === sub._id).map(sub2 => (
+                      <option key={sub2._id} value={sub2._id}>{sub2.name}</option>
+                    ))
+                  ])
+                ])}
               </select>
             </label>
 
@@ -964,7 +993,7 @@ export default function ProductsPage() {
               </select>
             </label>
 
-            <div className="col-span-full flex flex-wrap items-end gap-5">
+            <div className={`flex flex-wrap items-end gap-5 ${isMaleOrFemaleCategory ? "col-span-full" : "col-span-full md:col-span-3"}`}>
               <div className="flex items-end gap-2">
                 <div>
                   <span className={labelClass}>Giá từ</span>
@@ -1000,19 +1029,21 @@ export default function ProductsPage() {
                   />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.discountOnly}
-                  onChange={(e) =>
+              <label className="block min-w-0">
+                <span className={labelClass}>Khuyến mãi</span>
+                <select
+                  className={`${inputClass} w-[200px]`}
+                  value={filters.discountOnly ? "true" : "false"}
+                  onChange={(event) =>
                     setFilters((current) => ({
                       ...current,
-                      discountOnly: e.target.checked,
+                      discountOnly: event.target.value === "true",
                     }))
                   }
-                  className="h-4 w-4"
-                />
-                Chỉ sản phẩm đang giảm giá
+                >
+                  <option value="false">Tất cả sản phẩm</option>
+                  <option value="true">Đang giảm giá</option>
+                </select>
               </label>
 
               <div className="ml-auto">

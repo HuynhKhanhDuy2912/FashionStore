@@ -57,7 +57,7 @@ const trustItems = [
   },
   {
     icon: RotateCcw,
-    title: "Đổi trả 30 ngày",
+    title: "Đổi trả 07 ngày",
     copy: "Quy trình đơn giản, nhanh chóng",
   },
   {

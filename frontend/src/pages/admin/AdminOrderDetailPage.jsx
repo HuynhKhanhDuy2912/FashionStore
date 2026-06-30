@@ -32,27 +32,27 @@ const orderStatuses = [
 const statusMap = {
   pending: {
     label: "Chờ xác nhận",
-    className: "border-yellow-200 bg-yellow-50 text-yellow-600",
+    className: "border-yellow-200 text-yellow-600",
     icon: Clock3,
   },
   confirmed: {
     label: "Đã xác nhận",
-    className: "border-blue-200 bg-blue-50 text-blue-600",
+    className: "border-blue-200 text-blue-600",
     icon: CheckCircle2,
   },
   shipping: {
     label: "Đang giao",
-    className: "border-purple-200 bg-purple-50 text-purple-600",
+    className: "border-purple-200 text-purple-600",
     icon: Truck,
   },
   completed: {
     label: "Hoàn thành",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-600",
+    className: "border-emerald-200 text-emerald-600",
     icon: CheckCircle2,
   },
   cancelled: {
     label: "Đã hủy",
-    className: "border-red-200 bg-red-50 text-red-600",
+    className: "border-red-200 text-red-600",
     icon: XCircle,
   },
 };
@@ -73,22 +73,22 @@ const getAllowedStatuses = (currentStatus) => {
 const paymentStatusMap = {
   pending: {
     label: "Chờ thanh toán",
-    className: "border-yellow-200 bg-yellow-50 text-yellow-600",
+    className: "border-yellow-200 text-yellow-500",
     icon: Clock3,
   },
   paid: {
     label: "Đã thanh toán",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-600",
+    className: "border-emerald-200 text-emerald-600",
     icon: CheckCircle2,
   },
   failed: {
     label: "Thanh toán thất bại",
-    className: "border-red-200 bg-red-50 text-red-600",
+    className: "border-red-200 text-red-600",
     icon: XCircle,
   },
   refunded: {
     label: "Đã hoàn tiền",
-    className: "border-purple-200 bg-purple-50 text-purple-600",
+    className: "border-purple-200 text-purple-600",
     icon: RotateCcw,
   },
 };
@@ -325,7 +325,7 @@ export default function AdminOrderDetailPage() {
                 </div>
 
                 <div
-                  className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${statusConfig.className}`}
+                  className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold bg-white ${statusConfig.className}`}
                 >
                   <StatusIcon className="h-4 w-4" />
                   {statusConfig.label}
