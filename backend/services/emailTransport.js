@@ -47,7 +47,7 @@ async function sendViaBrevo({ to, subject, html, text, replyTo }) {
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      "api-key": process.env.BREVO_API_KEY,
+      "api-key": process.env.BREVO_API_KEY.trim(),
       "Content-Type": "application/json",
       Accept: "application/json",
     },
