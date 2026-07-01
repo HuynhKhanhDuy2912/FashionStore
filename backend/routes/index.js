@@ -25,6 +25,7 @@ import sizeGuideRoutes from "./sizeGuide.routes.js";
 import contactRoutes from "./contact.routes.js";
 import productQuestionRoutes from "./productQuestion.routes.js";
 import couponRoutes from "./coupon.routes.js";
+import virtualTryOnRoutes from "./virtualTryOn.routes.js";
 
 const router = express.Router();
 
@@ -61,5 +62,6 @@ router.use("/size-guides", sizeGuideRoutes);
 router.use("/contact", contactRoutes);
 router.use("/product-questions", productQuestionRoutes);
 router.use("/coupons", couponRoutes);
+router.use("/virtual-try-on", virtualTryOnRoutes);
 
 export default router;

@@ -11,6 +11,7 @@
     "seed:destroy": "node scripts/seed.js --destroy"
   },
   "dependencies": {
+    "@gradio/client": "^2.3.0",
     "axios": "^1.16.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",

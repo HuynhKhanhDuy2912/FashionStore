@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, Check, Loader2, Tag, Truck, BadgePercent, Frown, X } from "lucide-react";
+import { Copy, Check, Loader2, Tag, Truck, BadgePercent, Ticket, X } from "lucide-react";
 import { apiRequest } from "../lib/api.js";
 
 const formatCurrency = (v = 0) => `${Number(v).toLocaleString("vi-VN")}đ`;
@@ -90,7 +90,7 @@ export default function CouponsTab({ token }) {
   if (coupons.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Frown className="mb-4 h-12 w-12 text-gray-300" strokeWidth={1} />
+        <Ticket className="mb-4 h-12 w-12 text-gray-300" strokeWidth={1} />
         <h3 className="text-lg font-medium text-gray-700">Chưa có mã giảm giá</h3>
         <p className="mt-2 max-w-md text-sm text-gray-500">
           Hiện tại chưa có mã giảm giá khả dụng. Hãy quay lại sau nhé!

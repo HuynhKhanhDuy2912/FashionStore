@@ -4,6 +4,7 @@ import ReviewModal from "../components/ReviewModal.jsx";
 import ReviewsModal from "../components/ReviewsModal.jsx";
 import ProductInfoModal from "../components/ProductInfoModal.jsx";
 import SizeGuideModal from "../components/SizeGuideModal.jsx";
+import VirtualTryOnPanel from "../components/VirtualTryOnPanel.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
 import BestSellersSection from "../components/BestSellersSection.jsx";
 import ProductQAModal from "../components/ProductQAModal.jsx";
@@ -13,7 +14,7 @@ import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { trackBehavior, trackBehaviorBeacon } from "../lib/tracking.js";
 import { formatProductName } from "../lib/productName.js";
-import { ChevronsRight, Star, Plus, Ruler, ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronsRight, Star, Plus, Ruler, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
@@ -61,6 +62,7 @@ export default function ProductDetailPage() {
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showProductInfoModal, setShowProductInfoModal] = useState(false);
   const [showQAModal, setShowQAModal] = useState(false);
+  const [showVirtualTryOnModal, setShowVirtualTryOnModal] = useState(false);
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuide, setSizeGuide] = useState(null);
@@ -648,6 +650,21 @@ export default function ProductDetailPage() {
   const roundedRating = Math.round(averageRating);
   const soldCount = Number(product.soldCount || 0);
   const displayName = formatProductName(product.name);
+  const tryOnGarmentImage = [
+    selectedVariant?.image,
+    !activeMediaIsVideo ? activeImage : "",
+    galleryImages.find((imageUrl) => imageUrl && !isVideoMedia(imageUrl)),
+    product.images?.find((imageUrl) => imageUrl && !isVideoMedia(imageUrl)),
+  ].find(Boolean);
+  const tryOnCategoryText = `${product.name} ${typeof product.categoryId === "object" ? product.categoryId?.name || "" : ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const tryOnCategory = /dam|vay|dress/.test(tryOnCategoryText)
+    ? "dress"
+    : /quan|pants|jean|short|skirt/.test(tryOnCategoryText)
+      ? "lower_body"
+      : "upper_body";
 
 
   return (
@@ -656,7 +673,7 @@ export default function ProductDetailPage() {
       <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 py-4 px-6">
         <Link to="/" className="hover:text-black">TRANG CHỦ</Link>
         <span>/</span>
-        <Link to="/products" className="hover:text-black">SẢN PHẨM</Link>
+        <Link to="/products" className="hover:text-sm">SẢN PHẨM</Link>
         <span>/</span>
         <span className="text-black truncate max-w-auto">{displayName}</span>
       </nav>
@@ -1061,21 +1078,39 @@ export default function ProductDetailPage() {
                 {!selectedVariant || selectedVariant.stock === 0 ? "HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG"}
               </button>
               {selectedVariant?.stock > 0 && (
-                <button
-                  onClick={handleBuyNow}
-                  className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center"
-                >
-                  MUA NGAY
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowVirtualTryOnModal(true)}
+                    className="flex-1 py-4 bg-white text-[#c58b45] font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-[#c58b45] text-center flex items-center justify-center gap-2"
+                  >
+                    <Sparkles size={16} />
+                    THỬ ĐỒ ẢO
+                  </button>
+                  <button
+                    onClick={handleBuyNow}
+                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center"
+                  >
+                    MUA NGAY
+                  </button>
+                </div>
               )}
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors text-center block mt-2"
-            >
-              ĐĂNG NHẬP ĐỂ MUA HÀNG
-            </Link>
+            <div className="flex flex-col gap-3 mt-2">
+              <button
+                onClick={() => setShowVirtualTryOnModal(true)}
+                className="w-full py-4 bg-white text-[#c58b45] font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-[#c58b45] text-center flex items-center justify-center gap-2"
+              >
+                <Sparkles size={16} />
+                THỬ ĐỒ ẢO
+              </button>
+              <Link
+                to="/login"
+                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors text-center block"
+              >
+                ĐĂNG NHẬP ĐỂ MUA HÀNG
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -1199,6 +1234,16 @@ export default function ProductDetailPage() {
           onClose={() => setShowQAModal(false)}
         />
       )}
+
+      <VirtualTryOnPanel
+        open={showVirtualTryOnModal}
+        onClose={() => setShowVirtualTryOnModal(false)}
+        productId={product._id}
+        productName={displayName}
+        garmentImageUrl={tryOnGarmentImage}
+        category={tryOnCategory}
+        token={token}
+      />
     </div>
   );
 }
