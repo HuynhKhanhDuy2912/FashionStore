@@ -31,10 +31,6 @@ export function buildCatalogFilters(productsWithVariants) {
 
 export function filterProducts(products, filters) {
   return products.filter((product) => {
-    const matchesSearch =
-      !filters.search ||
-      product.name.toLowerCase().includes(filters.search.toLowerCase());
-
     const matchesStyle = !filters.style || (
       Array.isArray(product.style)
         ? product.style.includes(filters.style)
@@ -79,7 +75,6 @@ export function filterProducts(products, filters) {
     }
 
     return (
-      matchesSearch &&
       matchesStyle &&
       matchesGender &&
       matchesOccasion &&

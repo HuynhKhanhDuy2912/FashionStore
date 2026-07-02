@@ -168,6 +168,10 @@ function HighlightIcon({ type }) {
   );
 }
 
+function formatSearchPrice(price) {
+  return `${Number(price || 0).toLocaleString("vi-VN")} đ`;
+}
+
 export default function Layout() {
   const { isAuthenticated, user, logout } = useAuth();
   const { cartCount } = useCart();
@@ -177,12 +181,18 @@ export default function Layout() {
   const megaPanelRef = useRef(null);
   const megaTriggerRef = useRef(null);
   const closeTimeoutRef = useRef(null);
-
-  const [search, setSearch] = useState("");
+  const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
+  const searchDebounceRef = useRef(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const isAdminView = location.pathname.startsWith("/admin");
   const isAdminUser = user?.role === "admin";
@@ -191,16 +201,82 @@ export default function Layout() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname, location.search]);
 
-  const searchHref = useMemo(
-    () =>
-      `/products${search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ""}`,
-    [search],
-  );
-
   useEffect(() => {
     setActiveMegaMenu(null);
-    setSearch("");
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
   }, [location.pathname, location.search]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await apiRequest(
+          `/products/search?q=${encodeURIComponent(trimmed)}&limit=12`
+        );
+        setSearchResults(response.data || []);
+        setHasSearched(true);
+      } catch {
+        setSearchResults([]);
+        setHasSearched(true);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
+
+  // Close search on click outside
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSearchOpen]);
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    closeSearch();
+    navigate(`/products?search=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Escape") closeSearch();
+  };
 
   const loadCategories = useCallback(() => {
     apiRequest("/categories?limit=1000")
@@ -393,27 +469,15 @@ export default function Layout() {
                 FS
               </NavLink>
 
-              <div className="flex items-center gap-4 justify-self-end">
-                <form
-                  className="hidden w-[280px] items-center border border-gray-200 px-3 py-2 lg:flex rounded-md"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    navigate(searchHref);
-                  }}
+              <div className="flex items-center gap-3 justify-self-end">
+                <button
+                  type="button"
+                  onClick={openSearch}
+                  className="grid h-10 w-10 place-items-center text-black transition hover:text-red-600"
+                  aria-label="Tìm kiếm"
                 >
-                  <Search
-                    size={18}
-                    strokeWidth={1.75}
-                    className="shrink-0 text-gray-500"
-                  />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Tìm kiếm sản phẩm"
-                    className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
-                  />
-                </form>
-
+                  <Search className="h-[22px] w-[22px]" strokeWidth={1.9} />
+                </button>
                 {isAuthenticated ? (
                   <div className="relative" ref={accountRef}>
                     <button
@@ -503,6 +567,134 @@ export default function Layout() {
               </div>
             </div>
           </header>
+
+          {/* Search overlay */}
+          <div
+            className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${isSearchOpen
+              ? "pointer-events-auto opacity-100"
+              : "pointer-events-none opacity-0"
+              }`}
+            onClick={closeSearch}
+          />
+          <div
+            ref={searchContainerRef}
+            className={`fixed left-0 right-0 top-0 z-[70] bg-white shadow-xl transition-all duration-300 ${isSearchOpen
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-full opacity-0 pointer-events-none"
+              }`}
+          >
+            <div className="mx-auto flex max-h-screen w-full max-w-[1400px] flex-col px-4 lg:px-8">
+              <form onSubmit={handleSearchSubmit} className="flex shrink-0 items-center gap-3 py-4">
+                <Search className="h-5 w-5 shrink-0 text-gray-400" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Nhập từ khóa tìm kiếm sản phẩm..."
+                  className="w-full border-none bg-transparent text-lg font-light text-black placeholder-gray-400 outline-none"
+                  autoComplete="off"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeSearch}
+                  className="ml-2 shrink-0 text-sm font-medium transition hover:text-black"
+                >
+                  Đóng
+                </button>
+              </form>
+
+              {/* Search results dropdown */}
+              {searchQuery.trim() && (
+                <div className="flex-1 overflow-y-auto border-t border-gray-100 pb-6 pt-2">
+                  {isSearching ? (
+                    <div className="space-y-3 py-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex animate-pulse items-center gap-4">
+                          <div className="h-16 w-16 rounded bg-gray-200" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 w-3/4 rounded bg-gray-200" />
+                            <div className="h-3 w-1/3 rounded bg-gray-200" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : hasSearched && searchResults.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <p className="text-gray-500">
+                        Không tìm thấy sản phẩm nào cho &ldquo;
+                        <span className="font-medium text-black">{searchQuery.trim()}</span>
+                        &rdquo;
+                      </p>
+                      <p className="mt-1 text-sm text-gray-400">
+                        Hãy thử tìm kiếm với từ khóa khác
+                      </p>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div>
+                      <div className="divide-y divide-gray-50">
+                        {searchResults.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="flex w-full items-center gap-4 px-1 py-3 text-left transition hover:bg-gray-50"
+                            onClick={() => {
+                              closeSearch();
+                              navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                            }}
+                          >
+                            <img
+                              src={item.imageUrl || "/placeholder-product.png"}
+                              alt={item.name}
+                              className="h-16 w-16 rounded border border-gray-100 object-cover"
+                              onError={(e) => { e.target.onerror = null; e.target.src = "/placeholder-product.png"; }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-black">
+                                {item.name}
+                              </p>
+                              <div className="mt-1 flex items-center gap-2">
+                                <span className="text-sm font-semibold text-red-600">
+                                  {formatSearchPrice(item.currentPrice)}
+                                </span>
+                                {item.discount > 0 && (
+                                  <span className="text-xs text-gray-400 line-through">
+                                    {formatSearchPrice(item.originalPrice)}
+                                  </span>
+                                )}
+                                {item.discount > 0 && (
+                                  <span className="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-600">
+                                    -{item.discount}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSearchSubmit}
+                        className="mt-3 w-full border border-black py-2.5 text-center text-sm font-semibold text-black transition hover:bg-black hover:text-white"
+                      >
+                        Xem tất cả kết quả ({searchResults.length > 11 ? "12+" : searchResults.length})
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
 
           <div
             className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity duration-300 ${activeMegaMenu

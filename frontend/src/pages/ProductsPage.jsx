@@ -213,7 +213,6 @@ export default function ProductsPage() {
   const [quickAddByProduct, setQuickAddByProduct] = useState({});
   const [wishlistProductIds, setWishlistProductIds] = useState(new Set());
   const [filters, setFilters] = useState({
-    search: searchParams.get("search") || "",
     style: "",
     gender: searchParams.get("gender") || "",
     occasion: "",
@@ -225,12 +224,14 @@ export default function ProductsPage() {
   });
 
   const selectedCategoryId = searchParams.get("categoryId") || "";
+  const searchKeyword = searchParams.get("search") || "";
   const isBestSellerContext = searchParams.get("bestSeller") === "1";
   const isNewArrivalsContext = searchParams.get("newArrivals") === "1";
   const isSaleContext =
     searchParams.get("sale") === "1" || searchParams.get("tag") === "uu-dai";
   const isCategoryContext = Boolean(selectedCategoryId);
-  const useNewAllProductsLayout = !isCategoryContext;
+  const isSearchContext = Boolean(searchKeyword);
+  const useNewAllProductsLayout = !isCategoryContext && !isSearchContext;
 
   // Map productId -> collection name
   const productCollectionMap = useMemo(() => {
@@ -282,6 +283,35 @@ export default function ProductsPage() {
 
     loadData();
   }, [token]);
+
+  // Search results state
+  const [searchMatchIds, setSearchMatchIds] = useState(null);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+
+  useEffect(() => {
+    if (!searchKeyword) {
+      setSearchMatchIds(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSearchLoading(true);
+
+    apiRequest(`/products/search?q=${encodeURIComponent(searchKeyword)}&limit=50`)
+      .then((response) => {
+        if (cancelled) return;
+        const ids = new Set((response.data || []).map((item) => item.id));
+        setSearchMatchIds(ids);
+      })
+      .catch(() => {
+        if (!cancelled) setSearchMatchIds(new Set());
+      })
+      .finally(() => {
+        if (!cancelled) setIsSearchLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [searchKeyword]);
 
   const toggleWishlist = async (product) => {
     if (!token) {
@@ -342,7 +372,6 @@ export default function ProductsPage() {
   useEffect(() => {
     setFilters((current) => ({
       ...current,
-      search: searchParams.get("search") || "",
       gender: searchParams.get("gender") || "",
       soldOnly: searchParams.get("bestSeller") === "1",
       discountOnly:
@@ -357,18 +386,13 @@ export default function ProductsPage() {
 
   useEffect(() => {
     if (!token) return;
-    const searchFromUrl = searchParams.get("search")?.trim() || "";
-    const searchFromFilter = filters.search.trim();
-    const actualSearch = searchFromUrl || searchFromFilter;
-
-    const hasSearch = actualSearch.length > 0;
     const hasFilters = filters.style || filters.gender || filters.occasion || selectedCategoryId;
 
-    if (!hasSearch && !hasFilters) return;
+    if (!hasFilters) return;
 
     const timer = setTimeout(() => {
-      let keyword = actualSearch;
-      if (!keyword && hasFilters) {
+      let keyword = "";
+      if (hasFilters) {
         const filterParts = [];
         if (selectedCategoryId) {
           const catName = categories.find(c => c._id === selectedCategoryId)?.name || "";
@@ -381,9 +405,8 @@ export default function ProductsPage() {
       }
 
       trackBehavior(token, {
-        // "search" chỉ dành cho từ khóa user thực sự gõ; thao tác bộ lọc -> "filter"
-        actionType: hasSearch ? "search" : "filter",
-        source: hasSearch ? "search" : "category",
+        actionType: "filter",
+        source: "category",
         searchKeyword: keyword,
         metadata: {
           categoryId: selectedCategoryId || null,
@@ -412,12 +435,18 @@ export default function ProductsPage() {
   );
 
   const baseFilteredProducts = useMemo(() => {
-    const byPanelFilters = filterProducts(productsWithVariants, filters);
-    if (!selectedCategoryId) return byPanelFilters;
-    return byPanelFilters.filter((product) =>
-      categoryScope.has(getCategoryIdFromProduct(product)),
-    );
-  }, [productsWithVariants, filters, selectedCategoryId, categoryScope]);
+    let result = filterProducts(productsWithVariants, filters);
+    if (selectedCategoryId) {
+      result = result.filter((product) =>
+        categoryScope.has(getCategoryIdFromProduct(product)),
+      );
+    }
+    // Filter by search results
+    if (searchMatchIds) {
+      result = result.filter((product) => searchMatchIds.has(product._id));
+    }
+    return result;
+  }, [productsWithVariants, filters, selectedCategoryId, categoryScope, searchMatchIds]);
 
   const filteredProducts = useMemo(() => {
     const data = [...baseFilteredProducts];
@@ -565,7 +594,6 @@ export default function ProductsPage() {
 
   const clearFiltersKeepCategory = () => {
     setFilters({
-      search: "",
       style: "",
       gender: "",
       occasion: "",
@@ -577,12 +605,19 @@ export default function ProductsPage() {
     setSortBy("newest");
   };
 
+  const hasClearableFilters = Boolean(
+    filters.style ||
+    filters.gender ||
+    filters.occasion ||
+    filters.minPrice ||
+    filters.maxPrice ||
+    (filters.discountOnly && !isSaleContext) ||
+    sortBy !== "newest"
+  );
+
   const activeFilterChips = [
     selectedCategoryId
       ? { key: "category", label: `Danh mục: ${selectedCategoryLabel}` }
-      : null,
-    filters.search
-      ? { key: "search", label: `Từ khóa: ${filters.search}` }
       : null,
     filters.style
       ? { key: "style", label: `Phong cách: ${getStyleLabel(filters.style)}` }
@@ -755,7 +790,15 @@ export default function ProductsPage() {
               </Link>
               <span className="text-gray-400">&gt;</span>
 
-              {breadcrumbPath.length ? (
+              {isSearchContext ? (
+                <>
+                  <span className="text-gray-600">Tìm kiếm</span>
+                  <span className="text-gray-400">&gt;</span>
+                  <span className="font-semibold text-black">
+                    &ldquo;{searchKeyword}&rdquo;
+                  </span>
+                </>
+              ) : breadcrumbPath.length ? (
                 breadcrumbPath.map((item, index) => (
                   <span
                     key={item._id}
@@ -896,20 +939,6 @@ export default function ProductsPage() {
         {showFilterPanel ? (
           <div className={`mt-2 mb-6 grid grid-cols-1 gap-5 border border-gray-200 bg-white p-5 md:grid-cols-4 ${hasQuickTags ? "mt-2" : "mt-4"
             }`}>
-            <label className="block min-w-0">
-              <span className={labelClass}>Tìm kiếm</span>
-              <input
-                className={`${inputClass} w-full`}
-                placeholder="Tìm kiếm sản phẩm..."
-                value={filters.search}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    search: event.target.value,
-                  }))
-                }
-              />
-            </label>
 
             <label className="block min-w-0">
               <span className={labelClass}>Phong cách</span>
@@ -929,46 +958,6 @@ export default function ProductsPage() {
                     {getStyleLabel(item)}
                   </option>
                 ))}
-              </select>
-            </label>
-
-            {!isMaleOrFemaleCategory && (
-              <label className="block min-w-0">
-                <span className={labelClass}>Giới tính</span>
-                <select
-                  className={`${inputClass} w-full`}
-                  value={filters.gender}
-                  onChange={(event) =>
-                    setFilters((current) => ({
-                      ...current,
-                      gender: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Tất cả</option>
-                  <option value="male">Nam</option>
-                  <option value="female">Nữ</option>
-                </select>
-              </label>
-            )}
-
-            <label className="block min-w-0">
-              <span className={labelClass}>Danh mục</span>
-              <select
-                className={`${inputClass} w-full`}
-                value={selectedCategoryId}
-                onChange={(event) => handleSelectCategory(event.target.value)}
-              >
-                <option value="">Tất cả danh mục</option>
-                {categoryLevel1.map((cat) => [
-                  <option key={cat._id} value={cat._id} className="font-semibold text-black">{cat.name}</option>,
-                  ...categories.filter(c => getParentId(c) === cat._id).map(sub => [
-                    <option key={sub._id} value={sub._id}>{sub.name}</option>,
-                    ...categories.filter(c2 => getParentId(c2) === sub._id).map(sub2 => (
-                      <option key={sub2._id} value={sub2._id}>{sub2.name}</option>
-                    ))
-                  ])
-                ])}
               </select>
             </label>
 
@@ -993,14 +982,54 @@ export default function ProductsPage() {
               </select>
             </label>
 
-            <div className={`flex flex-wrap items-end gap-5 ${isMaleOrFemaleCategory ? "col-span-full" : "col-span-full md:col-span-3"}`}>
+            <label className="block min-w-0">
+              <span className={labelClass}>Danh mục</span>
+              <select
+                className={`${inputClass} w-full`}
+                value={selectedCategoryId}
+                onChange={(event) => handleSelectCategory(event.target.value)}
+              >
+                <option value="">Tất cả danh mục</option>
+                {categoryLevel1.map((cat) => [
+                  <option key={cat._id} value={cat._id} className="font-semibold text-black">{cat.name}</option>,
+                  ...categories.filter(c => getParentId(c) === cat._id).map(sub => [
+                    <option key={sub._id} value={sub._id}>{sub.name}</option>,
+                    ...categories.filter(c2 => getParentId(c2) === sub._id).map(sub2 => (
+                      <option key={sub2._id} value={sub2._id}>{sub2.name}</option>
+                    ))
+                  ])
+                ])}
+              </select>
+            </label>
+
+            {!isMaleOrFemaleCategory && (
+              <label className="block min-w-0">
+                <span className={labelClass}>Giới tính</span>
+                <select
+                  className={`${inputClass} w-full`}
+                  value={filters.gender}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      gender: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Tất cả</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                </select>
+              </label>
+            )}
+
+            <div className="block min-w-0">
               <div className="flex items-end gap-2">
-                <div>
+                <div className="flex-1">
                   <span className={labelClass}>Giá từ</span>
                   <input
                     type="number"
                     min="0"
-                    className={`${inputClass} w-[140px]`}
+                    className={`${inputClass} w-full px-3`}
                     placeholder="0"
                     value={filters.minPrice}
                     onChange={(event) =>
@@ -1012,12 +1041,12 @@ export default function ProductsPage() {
                   />
                 </div>
                 <span className="pb-2.5 text-gray-400">–</span>
-                <div>
+                <div className="flex-1">
                   <span className={labelClass}>Giá đến</span>
                   <input
                     type="number"
                     min="0"
-                    className={`${inputClass} w-[140px]`}
+                    className={`${inputClass} w-full px-3`}
                     placeholder="∞"
                     value={filters.maxPrice}
                     onChange={(event) =>
@@ -1029,32 +1058,39 @@ export default function ProductsPage() {
                   />
                 </div>
               </div>
-              <label className="block min-w-0">
-                <span className={labelClass}>Khuyến mãi</span>
-                <select
-                  className={`${inputClass} w-[200px]`}
-                  value={filters.discountOnly ? "true" : "false"}
-                  onChange={(event) =>
-                    setFilters((current) => ({
-                      ...current,
-                      discountOnly: event.target.value === "true",
-                    }))
-                  }
-                >
-                  <option value="false">Tất cả sản phẩm</option>
-                  <option value="true">Đang giảm giá</option>
-                </select>
-              </label>
+            </div>
 
-              <div className="ml-auto">
-                <button
-                  type="button"
-                  className="border border-black px-4 py-2 text-[13px] font-bold transition hover:bg-black hover:text-white"
-                  onClick={clearFiltersKeepCategory}
-                >
-                  Xóa bộ lọc
-                </button>
-              </div>
+            <label className="block min-w-0">
+              <span className={labelClass}>Khuyến mãi</span>
+              <select
+                className={`${inputClass} w-full`}
+                value={filters.discountOnly ? "true" : "false"}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    discountOnly: event.target.value === "true",
+                  }))
+                }
+              >
+                <option value="false">Tất cả sản phẩm</option>
+                <option value="true">Đang giảm giá</option>
+              </select>
+            </label>
+
+            <div className="flex items-end justify-end md:col-start-4">
+              <button
+                type="button"
+                className="border border-black px-4 py-2 text-[13px] font-bold transition hover:bg-black hover:text-white"
+                onClick={() => {
+                  if (hasClearableFilters) {
+                    clearFiltersKeepCategory();
+                  } else {
+                    setShowFilterPanel(false);
+                  }
+                }}
+              >
+                {hasClearableFilters ? "Xóa bộ lọc" : "Đóng bộ lọc"}
+              </button>
             </div>
           </div>
         ) : null}
@@ -1481,7 +1517,7 @@ export default function ProductsPage() {
                               disabled={!selectedVariant || Number(selectedVariant?.stock || 0) <= 0}
                               className="w-full border border-black bg-black py-2.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              {Number(selectedVariant?.stock || 0) <= 0 ? "Hết hàng" : "Thêm vào giỏ"}
+                              {Number(selectedVariant?.stock || 0) <= 0 ? "Hết hàng" : "Thêm vào giỏ hàng"}
                             </button>
                           </div>
                         </div>
