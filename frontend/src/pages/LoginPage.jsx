@@ -3,6 +3,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFirebasePhone } from "../hooks/useFirebasePhone.js";
+import { Mail, Lock, Phone } from "lucide-react";
 
 const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -204,15 +205,15 @@ export default function LoginPage() {
 
         <div className="px-8 py-10 md:px-10">
           <div className="mb-8">
-            <h2 className="text-2xl font-extrabold uppercase tracking-widest text-black">
+            <h2 className="text-2xl text-center font-extrabold uppercase tracking-widest text-black">
               Đăng nhập
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
-              Chọn phương thức đăng nhập để tiếp tục mua sắm.
+            <p className="mt-2 text-sm text-center text-gray-500">
+              Chào mừng bạn quay lại với FashionStore.
             </p>
           </div>
 
-          <div className="mb-10 flex gap-2 border-b border-gray-200 pb-px">
+          <div className="mb-10 flex justify-center gap-2 border-b border-gray-200 pb-px">
             {loginModes.map((item) => (
               <button
                 key={item.key}
@@ -246,39 +247,45 @@ export default function LoginPage() {
           {mode === "email" ? (
             <form className="space-y-5" onSubmit={handleEmailLogin}>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Email
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  value={emailForm.email}
-                  onChange={(event) =>
-                    setEmailForm((current) => ({ ...current, email: event.target.value }))
-                  }
-                  placeholder="email@example.com"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={emailForm.email}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                    placeholder="abc@gmail.com"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Mật khẩu
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  type="password"
-                  value={emailForm.password}
-                  onChange={(event) =>
-                    setEmailForm((current) => ({ ...current, password: event.target.value }))
-                  }
-                  placeholder="Nhập mật khẩu"
-                />
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    type="password"
+                    value={emailForm.password}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({ ...current, password: event.target.value }))
+                    }
+                    placeholder="Nhập mật khẩu"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => navigate("/forgot-password")}
-                  className="text-xs font-bold text-gray-500 hover:text-black hover:underline"
+                  className="text-sm font-bold text-gray-500 hover:text-black hover:underline"
                 >
                   Quên mật khẩu?
                 </button>
@@ -286,7 +293,7 @@ export default function LoginPage() {
 
               <div className="pt-2">
                 <button
-                  className="w-full border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="w-full border border-black bg-black px-6 py-4 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading}
                 >
@@ -330,21 +337,21 @@ export default function LoginPage() {
               <div id="recaptcha-container"></div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Số điện thoại
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  value={phoneForm.phone_number}
-                  onChange={(event) =>
-                    setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
-                  }
-                  placeholder="Ví dụ: 0987654321 hoặc +84987654321"
-                  disabled={phoneStep === "verify"}
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  Nhập số điện thoại Việt Nam. Hệ thống sẽ tự thêm mã +84 nếu bạn bắt đầu bằng số 0.
-                </p>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={phoneForm.phone_number}
+                    onChange={(event) =>
+                      setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
+                    }
+                    placeholder="0987654321 hoặc +84987654321"
+                    disabled={phoneStep === "verify"}
+                  />
+                </div>
               </div>
 
               {phoneStep === "verify" ? (
@@ -370,7 +377,7 @@ export default function LoginPage() {
 
               <div className="flex gap-3 pt-2">
                 <button
-                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading || firebaseLoading || (phoneStep === "request" && resendCountdown > 0)}
                 >
@@ -404,12 +411,12 @@ export default function LoginPage() {
           ) : null}
 
           <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-              Chưa có tài khoản?
+            <p className="text-sm font-bold text-gray-500">
+              Bạn chưa có tài khoản?
               <button
                 type="button"
                 onClick={() => navigate("/register")}
-                className="ml-2 border-none bg-transparent p-0 font-extrabold text-black hover:underline"
+                className="ml-2 border-none bg-transparent p-0 font-bold text-black hover:underline"
               >
                 Đăng ký ngay
               </button>

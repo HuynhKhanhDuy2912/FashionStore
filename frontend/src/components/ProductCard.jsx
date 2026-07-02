@@ -247,7 +247,7 @@ export default function ProductCard({
                 <p className="m-0 text-[15px] font-normal text-gray-400 line-through decoration-gray-400 decoration-[1px]">
                   {formatPrice(priceBeforeDiscount)}
                 </p>
-                <span className="inline-flex items-center bg-[#b91c1c] px-1.5 py-0.5 text-[10px] font-bold text-white tracking-wider">
+                <span className="inline-flex items-center justify-center rounded-full bg-[#ff0000] px-2.5 py-[3px] text-[12px] font-extrabold leading-none text-white shadow-sm">
                   -{effectiveDiscount}%
                 </span>
               </>

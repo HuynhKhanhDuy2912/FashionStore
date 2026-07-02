@@ -23,7 +23,7 @@ const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
 const formatCurrency = (value = 0) => `${Number(value).toLocaleString("vi-VN")} đ`;
 
 export default function CartPage() {
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const { refreshCartCount } = useCart();
   const navigate = useNavigate();
   const initializedSelection = useRef(false);
@@ -35,6 +35,10 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
 
   const loadCart = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return null;
+    }
     setLoading(true);
     try {
       const response = await apiRequest("/carts/me", { token });
@@ -205,13 +209,37 @@ export default function CartPage() {
         }
       />
 
-      {error ? (
+      {error && isAuthenticated ? (
         <p className="mb-6 border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
           {error}
         </p>
       ) : null}
 
-      {!hasItems && !loading ? (
+      {!isAuthenticated ? (
+        <div className="border border-gray-200 bg-gray-50 px-6 py-24 text-center">
+          <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-white text-black shadow-sm">
+            <ShoppingCart className="h-8 w-8" strokeWidth={1.6} />
+          </div>
+          <h3 className="mb-3 text-xl font-bold uppercase tracking-widest text-black">Vui lòng đăng nhập</h3>
+          <p className="mx-auto mb-8 max-w-md text-sm leading-6 text-gray-500">
+            Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng và tận hưởng trải nghiệm mua sắm tuyệt vời nhất cùng với các ưu đãi đặc quyền từ <span className="font-bold">FashionStore</span>.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center bg-black px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 w-full sm:w-auto"
+            >
+              Đăng nhập ngay
+            </Link>
+            <Link
+              to="/products"
+              className="inline-flex items-center justify-center border border-black bg-white px-8 py-4 text-xs font-bold uppercase tracking-widest text-black transition hover:bg-gray-50 w-full sm:w-auto"
+            >
+              Tiếp tục mua sắm
+            </Link>
+          </div>
+        </div>
+      ) : !hasItems && !loading ? (
         <div className="border border-gray-200 bg-gray-50 px-6 py-24 text-center">
           <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-white text-black shadow-sm">
             <ShoppingCart className="h-8 w-8" strokeWidth={1.6} />

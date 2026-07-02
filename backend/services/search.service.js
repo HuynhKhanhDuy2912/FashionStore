@@ -27,16 +27,23 @@ export async function searchProducts(query, { limit = 10 } = {}) {
   const normalizedQuery = normalizeVietnamese(trimmedQuery);
   const words = trimmedQuery.split(/\s+/);
 
-  const mustClauses = words.map((word) => ({
-    text: {
+  const mustClauses = words.map((word) => {
+    const textClause = {
       query: word,
       path: "name",
-      fuzzy: {
+    };
+    
+    // Only apply fuzzy matching to words with 3 or more characters
+    // Applying fuzzy to short words like "áo" or "nữ" can cause Atlas Search to drop results or match wildly
+    if (word.length > 2) {
+      textClause.fuzzy = {
         maxEdits: 1,
         prefixLength: 0,
-      },
-    },
-  }));
+      };
+    }
+
+    return { text: textClause };
+  });
 
   const pipeline = [
     {
@@ -63,7 +70,9 @@ export async function searchProducts(query, { limit = 10 } = {}) {
           ],
           filter: [
             { equals: { path: "isActive", value: true } },
-            { equals: { path: "isDeleted", value: false } },
+          ],
+          mustNot: [
+            { equals: { path: "isDeleted", value: true } },
           ],
         },
       },

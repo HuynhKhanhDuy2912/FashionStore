@@ -71,7 +71,7 @@ const adminNavItems = [
 ];
 
 const utilityNavItems = [
-  { to: "/", label: "Về trang chủ", icon: Home },
+  { to: "/", label: "Về cửa hàng", icon: Home },
 ];
 
 const adminSearchTargets = [

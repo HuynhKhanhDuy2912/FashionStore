@@ -36,7 +36,7 @@ export const validateCoupon = async (code, userId, subtotal) => {
   // Check per-user usage limit
   const userUsageCount = await CouponUsage.countDocuments({
     couponId: coupon._id,
-    userId
+    userId,
   });
 
   if (userUsageCount >= coupon.maxUsagePerUser) {
@@ -53,7 +53,7 @@ export const validateCoupon = async (code, userId, subtotal) => {
   if (coupon.isFirstOrderOnly) {
     const completedOrderCount = await Order.countDocuments({
       userId,
-      status: { $ne: "cancelled" }
+      status: { $ne: "cancelled" },
     });
 
     if (completedOrderCount > 0) {
@@ -66,11 +66,13 @@ export const validateCoupon = async (code, userId, subtotal) => {
     const user = await User.findById(userId).select("savedCoupons").lean();
     const savedCoupons = user?.savedCoupons || [];
     const hasCoupon = savedCoupons.some(
-      (savedId) => savedId.toString() === coupon._id.toString()
+      (savedId) => savedId.toString() === coupon._id.toString(),
     );
 
     if (!hasCoupon) {
-      throw new Error("Mã giảm giá này là phần thưởng đặc quyền, bạn chưa đủ điều kiện sử dụng");
+      throw new Error(
+        "Mã giảm giá này là phần thưởng đặc quyền, bạn chưa đủ điều kiện sử dụng",
+      );
     }
   }
 
@@ -123,14 +125,14 @@ export const validateAndCalculateCoupon = async (
   code,
   userId,
   subtotal,
-  shippingFee = 0
+  shippingFee = 0,
 ) => {
   const coupon = await validateCoupon(code, userId, subtotal);
 
   // Đơn đã được miễn phí vận chuyển thì không cho áp mã giảm phí vận chuyển
   if (coupon.discountType === "free_shipping" && shippingFee <= 0) {
     throw new Error(
-      "Đơn hàng đã được miễn phí vận chuyển, không thể áp dụng mã giảm phí vận chuyển"
+      "Đơn hàng đã được miễn phí vận chuyển, không thể áp dụng mã giảm phí vận chuyển",
     );
   }
 
@@ -142,16 +144,21 @@ export const validateAndCalculateCoupon = async (
 /**
  * Record a coupon usage after order creation.
  */
-export const applyCoupon = async (couponId, userId, orderId, discountAmount) => {
+export const applyCoupon = async (
+  couponId,
+  userId,
+  orderId,
+  discountAmount,
+) => {
   await CouponUsage.create({
     couponId,
     userId,
     orderId,
-    discountAmount
+    discountAmount,
   });
 
   await Coupon.findByIdAndUpdate(couponId, {
-    $inc: { currentUsage: 1 }
+    $inc: { currentUsage: 1 },
   });
 };
 
@@ -164,7 +171,7 @@ export const revokeCoupon = async (orderId) => {
 
   for (const usage of usages) {
     await Coupon.findByIdAndUpdate(usage.couponId, {
-      $inc: { currentUsage: -1 }
+      $inc: { currentUsage: -1 },
     });
   }
 
@@ -180,13 +187,13 @@ export const getAvailableCoupons = async (userId, subtotal = 0) => {
 
   const user = await User.findById(userId).select("savedCoupons").lean();
   const savedCouponIds = new Set(
-    (user?.savedCoupons || []).map((id) => id.toString())
+    (user?.savedCoupons || []).map((id) => id.toString()),
   );
 
   const coupons = await Coupon.find({
     isActive: true,
     startDate: { $lte: now },
-    endDate: { $gte: now }
+    endDate: { $gte: now },
   })
     .sort({ createdAt: -1 })
     .lean();
@@ -194,12 +201,10 @@ export const getAvailableCoupons = async (userId, subtotal = 0) => {
   // Get user's usage counts for all coupons
   const userUsages = await CouponUsage.aggregate([
     { $match: { userId } },
-    { $group: { _id: "$couponId", count: { $sum: 1 } } }
+    { $group: { _id: "$couponId", count: { $sum: 1 } } },
   ]);
 
-  const usageMap = new Map(
-    userUsages.map((u) => [u._id.toString(), u.count])
-  );
+  const usageMap = new Map(userUsages.map((u) => [u._id.toString(), u.count]));
 
   // Check first order eligibility once
   let hasCompletedOrders = null;
@@ -231,7 +236,7 @@ export const getAvailableCoupons = async (userId, subtotal = 0) => {
         hasCompletedOrders =
           (await Order.countDocuments({
             userId,
-            status: { $ne: "cancelled" }
+            status: { $ne: "cancelled" },
           })) > 0;
       }
       if (hasCompletedOrders) {
@@ -251,7 +256,7 @@ export const getAvailableCoupons = async (userId, subtotal = 0) => {
       isEligible,
       reason: !isEligible
         ? `Đơn tối thiểu ${coupon.minOrderAmount.toLocaleString("vi-VN")}đ`
-        : null
+        : null,
     });
   }
 
@@ -272,8 +277,8 @@ export const saveCouponForUser = async (userId, code) => {
     endDate: { $gte: now },
     $or: [
       { maxUsage: null },
-      { $expr: { $lt: ["$currentUsage", "$maxUsage"] } }
-    ]
+      { $expr: { $lt: ["$currentUsage", "$maxUsage"] } },
+    ],
   }).lean();
 
   if (!coupon) {
@@ -281,12 +286,14 @@ export const saveCouponForUser = async (userId, code) => {
   }
 
   if (coupon.isReward) {
-    throw new Error("Mã giảm giá này là phần thưởng đặc quyền, không thể tự lưu");
+    throw new Error(
+      "Mã giảm giá này là phần thưởng đặc quyền, không thể tự lưu",
+    );
   }
 
   const userUsageCount = await CouponUsage.countDocuments({
     couponId: coupon._id,
-    userId
+    userId,
   });
 
   if (userUsageCount >= coupon.maxUsagePerUser) {
@@ -296,7 +303,7 @@ export const saveCouponForUser = async (userId, code) => {
   if (coupon.isFirstOrderOnly) {
     const completedOrderCount = await Order.countDocuments({
       userId,
-      status: { $ne: "cancelled" }
+      status: { $ne: "cancelled" },
     });
 
     if (completedOrderCount > 0) {
@@ -305,7 +312,7 @@ export const saveCouponForUser = async (userId, code) => {
   }
 
   await User.findByIdAndUpdate(userId, {
-    $addToSet: { savedCoupons: coupon._id }
+    $addToSet: { savedCoupons: coupon._id },
   });
 
   return coupon;
@@ -318,7 +325,7 @@ export const getSavedCoupons = async (userId, subtotal = 0) => {
   }
 
   const savedCouponIds = new Set(
-    (user.savedCoupons || []).map((couponId) => couponId.toString())
+    (user.savedCoupons || []).map((couponId) => couponId.toString()),
   );
 
   if (savedCouponIds.size === 0) {
@@ -327,7 +334,7 @@ export const getSavedCoupons = async (userId, subtotal = 0) => {
 
   const availableCoupons = await getAvailableCoupons(userId, subtotal);
   return availableCoupons.filter((coupon) =>
-    savedCouponIds.has(coupon._id.toString())
+    savedCouponIds.has(coupon._id.toString()),
   );
 };
 
@@ -344,10 +351,12 @@ export const getPublicCoupons = async () => {
     endDate: { $gte: now },
     $or: [
       { maxUsage: null },
-      { $expr: { $lt: ["$currentUsage", "$maxUsage"] } }
-    ]
+      { $expr: { $lt: ["$currentUsage", "$maxUsage"] } },
+    ],
   })
-    .select("code description discountType discountValue maxDiscountAmount minOrderAmount startDate endDate maxUsage currentUsage")
+    .select(
+      "code description discountType discountValue maxDiscountAmount minOrderAmount startDate endDate maxUsage currentUsage",
+    )
     .sort({ createdAt: -1 })
     .lean();
 };
@@ -386,7 +395,7 @@ export const getAdminCoupons = async (query = {}) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
-    Coupon.countDocuments(filters)
+    Coupon.countDocuments(filters),
   ]);
 
   return {
@@ -395,8 +404,8 @@ export const getAdminCoupons = async (query = {}) => {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit)
-    }
+      totalPages: Math.ceil(total / limit),
+    },
   };
 };
 
@@ -436,7 +445,7 @@ export const createCoupon = async (data, adminId) => {
 
   // Check code uniqueness
   const existing = await Coupon.findOne({
-    code: data.code.toUpperCase().trim()
+    code: data.code.toUpperCase().trim(),
   });
   if (existing) {
     throw new Error("Mã giảm giá này đã tồn tại");
@@ -445,7 +454,7 @@ export const createCoupon = async (data, adminId) => {
   return Coupon.create({
     ...data,
     code: data.code.toUpperCase().trim(),
-    createdBy: adminId
+    createdBy: adminId,
   });
 };
 
@@ -466,7 +475,7 @@ export const updateCoupon = async (couponId, data) => {
   if (data.code) {
     const existing = await Coupon.findOne({
       code: data.code.toUpperCase().trim(),
-      _id: { $ne: couponId }
+      _id: { $ne: couponId },
     });
     if (existing) {
       throw new Error("Mã giảm giá này đã tồn tại");
@@ -476,7 +485,7 @@ export const updateCoupon = async (couponId, data) => {
 
   const coupon = await Coupon.findByIdAndUpdate(couponId, data, {
     new: true,
-    runValidators: true
+    runValidators: true,
   });
 
   if (!coupon) throw new Error("Không tìm thấy mã giảm giá");
@@ -517,34 +526,38 @@ export const generateDynamicRewardCoupon = async (
   prefix,
   discountType,
   discountValue,
-  description
+  description,
+  maxDiscountAmount = null,
+  minOrderAmount = 0,
 ) => {
   const admin = await User.findOne({ role: "admin" }).select("_id").lean();
-  
+
   const now = new Date();
   const day = String(now.getDate()).padStart(2, "0");
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const ddmm = `${day}${month}`;
-  
+
   // Random 4 chars to ensure uniqueness
   const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
   const code = `${prefix}-GG${ddmm}-${randomStr}`;
 
   const endDate = new Date(now);
-  endDate.setDate(endDate.getDate() + 15); // Hết hạn sau 15 ngày
-  
+  endDate.setDate(endDate.getDate() + 15);
+
   const coupon = await Coupon.create({
     code,
     discountType,
     discountValue,
     description,
+    maxDiscountAmount,
+    minOrderAmount,
     startDate: now,
     endDate,
     maxUsage: null,
     maxUsagePerUser: 1,
     isReward: true,
     isActive: true,
-    createdBy: admin?._id || null
+    createdBy: admin?._id || null,
   });
 
   return coupon;

@@ -319,22 +319,55 @@ export const createOrderFromCart = async (user, body) => {
 
 export const grantRewardCoupons = async (userId, subTotal) => {
   const awardedCoupons = [];
-  if (subTotal >= 999000) {
+  
+  if (subTotal >= 1499000) {
+    const rewardVIP = await generateDynamicRewardCoupon(
+      "VIP15",
+      "percentage",
+      15,
+      "Giảm VIP 15% (tối đa 250k) cho đơn từ 499k",
+      250000,
+      499000
+    );
+    awardedCoupons.push(rewardVIP);
+
+    const rewardFreeShipMax = await generateDynamicRewardCoupon(
+      "FSMAX",
+      "free_shipping",
+      0, // 0 nghĩa là freeship hoàn toàn
+      "Miễn phí vận chuyển hoàn toàn",
+      null,
+      0
+    );
+    awardedCoupons.push(rewardFreeShipMax);
+  } else if (subTotal >= 999000) {
     const reward10 = await generateDynamicRewardCoupon(
       "G10",
       "percentage",
       10,
-      "Giảm 10% cho đơn hàng đặc quyền",
+      "Giảm 10% (tối đa 100k)",
+      100000,
+      0
     );
     awardedCoupons.push(reward10);
-  }
 
-  if (subTotal >= 1499000) {
     const rewardFree = await generateDynamicRewardCoupon(
       "F20K",
       "free_shipping",
       20000,
-      "Miễn phí vận chuyển 20k cho đơn hàng đặc quyền",
+      "Miễn phí vận chuyển 20k",
+      null,
+      0
+    );
+    awardedCoupons.push(rewardFree);
+  } else if (subTotal >= 500000) {
+    const rewardFree = await generateDynamicRewardCoupon(
+      "F20K",
+      "free_shipping",
+      20000,
+      "Miễn phí vận chuyển 20k",
+      null,
+      0
     );
     awardedCoupons.push(rewardFree);
   }

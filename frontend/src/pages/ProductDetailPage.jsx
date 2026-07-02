@@ -14,7 +14,7 @@ import { getProductPath } from "../lib/slug.js";
 import { sortSizes } from "../lib/sizes.js";
 import { trackBehavior, trackBehaviorBeacon } from "../lib/tracking.js";
 import { formatProductName } from "../lib/productName.js";
-import { ChevronsRight, Star, Plus, Ruler, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ChevronsRight, Star, Plus, Ruler, PackageCheck, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 
 const CHECKOUT_SELECTION_KEY = "fashionstore_checkout_cart_item_ids";
@@ -349,11 +349,9 @@ export default function ProductDetailPage() {
     const handleNativeWheel = (e) => {
       e.preventDefault();
 
-      // Bỏ qua các sự kiện cuộn quá nhỏ (quán tính của trackpad)
       if (Math.abs(e.deltaY) < 15) return;
 
       const now = Date.now();
-      // Tăng thời gian chờ lên 800ms để tránh nhận nhiều lệnh từ một lần vuốt trackpad
       if (now - lastWheelTime.current < 800) return;
 
       if (e.deltaY > 0) {
@@ -402,7 +400,6 @@ export default function ProductDetailPage() {
         duration: 3000
       });
 
-      // add_to_cart được track phía server (cart.service.js) — không track ở client để tránh double-count
     } catch (e) {
       toast.error(e.message);
     }
@@ -426,8 +423,6 @@ export default function ProductDetailPage() {
           token,
           body: { productId: product._id, variantId: selectedVariant._id, quantity, source: "buy_now" }
         });
-
-      // add_to_cart được track phía server (cart.service.js, source="buy_now") — không track ở client để tránh double-count
 
       const cartItemId = response.data?._id;
       if (cartItemId) {
@@ -469,7 +464,6 @@ export default function ProductDetailPage() {
         });
         toast.success(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
 
-        // Track remove_from_wishlist behavior
         trackBehavior(token, {
           actionType: "remove_from_wishlist",
           productId,
@@ -491,7 +485,6 @@ export default function ProductDetailPage() {
         });
         toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
 
-        // Track add_to_wishlist behavior (đối xứng với remove_from_wishlist)
         trackBehavior(token, {
           actionType: "add_to_wishlist",
           productId,
@@ -919,14 +912,14 @@ export default function ProductDetailPage() {
                       <span className="text-sm text-gray-400 line-through">
                         {variantPrice.toLocaleString("vi-VN")}₫
                       </span>
-                      <span className="text-xs font-bold bg-red-600 text-white px-2 py-0.5">
+                      <span className="text-xs font-bold bg-[#ff0000] text-white px-2 py-0.5">
                         -{effectiveDiscount}%
                       </span>
                     </>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  {soldCount.toLocaleString("vi-VN")} sản phẩm đã bán
+                <p className="flex gap-1 mt-1 text-sm text-gray-700">
+                  < PackageCheck size={15} className="mt-1" />{soldCount.toLocaleString("vi-VN")} sản phẩm đã bán
                 </p>
               </div>
             );
@@ -1081,7 +1074,7 @@ export default function ProductDetailPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowVirtualTryOnModal(true)}
-                    className="flex-1 py-4 bg-white text-[#c58b45] font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-[#c58b45] text-center flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center flex items-center justify-center gap-2"
                   >
                     <Sparkles size={16} />
                     THỬ ĐỒ ẢO
@@ -1099,7 +1092,7 @@ export default function ProductDetailPage() {
             <div className="flex flex-col gap-3 mt-2">
               <button
                 onClick={() => setShowVirtualTryOnModal(true)}
-                className="w-full py-4 bg-white text-[#c58b45] font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-[#c58b45] text-center flex items-center justify-center gap-2"
+                className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
                 THỬ ĐỒ ẢO

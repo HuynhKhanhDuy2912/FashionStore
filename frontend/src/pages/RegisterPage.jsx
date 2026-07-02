@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useFirebasePhone } from "../hooks/useFirebasePhone.js";
 import { apiRequest } from "../lib/api.js";
+import { Mail, Lock, Phone, User } from "lucide-react";
 
 const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
@@ -234,15 +235,15 @@ export default function RegisterPage() {
 
         <div className="px-8 py-10 md:px-10">
           <div className="mb-8">
-            <h2 className="text-2xl font-extrabold uppercase tracking-widest text-black">
+            <h2 className="text-2xl text-center font-extrabold uppercase tracking-widest text-black">
               Đăng ký
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-center text-gray-500">
               Tạo tài khoản để nhận ưu đãi và mua sắm dễ dàng hơn
             </p>
           </div>
 
-          <div className="mb-10 flex gap-2 border-b border-gray-200 pb-px">
+          <div className="mb-10 flex justify-center gap-2 border-b border-gray-200 pb-px">
             {registerModes.map((item) => (
               <button
                 key={item.key}
@@ -276,53 +277,62 @@ export default function RegisterPage() {
           {mode === "email" ? (
             <form className="space-y-5" onSubmit={emailStep === "request" ? handleRequestEmailOtp : handleEmailRegister}>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Email
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  value={emailForm.email}
-                  onChange={(event) =>
-                    setEmailForm((current) => ({ ...current, email: event.target.value }))
-                  }
-                  placeholder="abc@gmail.com"
-                  disabled={emailStep === "verify"}
-                />
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={emailForm.email}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({ ...current, email: event.target.value }))
+                    }
+                    placeholder="abc@gmail.com"
+                    disabled={emailStep === "verify"}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Mật khẩu
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  type="password"
-                  value={emailForm.password}
-                  onChange={(event) =>
-                    setEmailForm((current) => ({ ...current, password: event.target.value }))
-                  }
-                  placeholder="Ít nhất 6 ký tự"
-                  disabled={emailStep === "verify"}
-                />
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    type="password"
+                    value={emailForm.password}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({ ...current, password: event.target.value }))
+                    }
+                    placeholder="Tối thiểu 6 ký tự"
+                    disabled={emailStep === "verify"}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Xác nhận mật khẩu
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  type="password"
-                  value={emailForm.confirmPassword}
-                  onChange={(event) =>
-                    setEmailForm((current) => ({
-                      ...current,
-                      confirmPassword: event.target.value
-                    }))
-                  }
-                  placeholder="Nhập lại mật khẩu"
-                  disabled={emailStep === "verify"}
-                />
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    type="password"
+                    value={emailForm.confirmPassword}
+                    onChange={(event) =>
+                      setEmailForm((current) => ({
+                        ...current,
+                        confirmPassword: event.target.value
+                      }))
+                    }
+                    placeholder="Nhập lại mật khẩu"
+                    disabled={emailStep === "verify"}
+                  />
+                </div>
               </div>
 
               {emailStep === "verify" ? (
@@ -348,7 +358,7 @@ export default function RegisterPage() {
 
               <div className="flex gap-3 pt-2">
                 <button
-                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading || (emailStep === "request" && resendCountdown > 0)}
                 >
@@ -414,36 +424,39 @@ export default function RegisterPage() {
               <div id="recaptcha-container"></div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Họ và tên
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  value={phoneForm.fullname}
-                  onChange={(event) =>
-                    setPhoneForm((current) => ({ ...current, fullname: event.target.value }))
-                  }
-                  placeholder="Nguyễn Văn A"
-                  disabled={phoneStep === "verify"}
-                />
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={phoneForm.fullname}
+                    onChange={(event) =>
+                      setPhoneForm((current) => ({ ...current, fullname: event.target.value }))
+                    }
+                    placeholder="Nguyễn Văn A"
+                    disabled={phoneStep === "verify"}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-black">
+                <label className="mb-2 block text-sm font-bold text-black">
                   Số điện thoại
                 </label>
-                <input
-                  className="w-full border border-gray-200 bg-gray-50 px-4 py-3.5 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
-                  value={phoneForm.phone_number}
-                  onChange={(event) =>
-                    setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
-                  }
-                  placeholder="Ví dụ: 0987654321 hoặc +84987654321"
-                  disabled={phoneStep === "verify"}
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  Nhập số điện thoại Việt Nam. Hệ thống sẽ tự thêm mã +84 nếu bạn bắt đầu bằng số 0.
-                </p>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className="w-full border border-gray-200 bg-gray-50 py-3.5 pl-11 pr-4 text-sm outline-none transition-all focus:border-black focus:bg-white focus:ring-1 focus:ring-black"
+                    value={phoneForm.phone_number}
+                    onChange={(event) =>
+                      setPhoneForm((current) => ({ ...current, phone_number: event.target.value }))
+                    }
+                    placeholder="0987654321 hoặc +84987654321"
+                    disabled={phoneStep === "verify"}
+                  />
+                </div>
               </div>
 
               {phoneStep === "verify" ? (
@@ -469,7 +482,7 @@ export default function RegisterPage() {
 
               <div className="flex gap-3 pt-2">
                 <button
-                  className="flex-1 border border-black bg-black px-6 py-4 text-[13px] font-bold uppercase tracking-widest text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-black bg-black px-6 py-4 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-70"
                   type="submit"
                   disabled={loading || firebaseLoading || (phoneStep === "request" && resendCountdown > 0)}
                 >
@@ -503,12 +516,12 @@ export default function RegisterPage() {
           ) : null}
 
           <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-              Đã có tài khoản?
+            <p className="text-sm font-bold text-gray-500">
+              Bạn đã có tài khoản?
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="ml-2 border-none bg-transparent p-0 font-extrabold text-black hover:underline"
+                className="ml-2 border-none bg-transparent p-0 font-bold text-black hover:underline"
               >
                 Đăng nhập ngay
               </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, ChevronRight, CreditCard, Loader2, MapPin, Plus, Tag, Truck, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -70,6 +70,7 @@ export default function CheckoutPage() {
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [appliedShippingCoupon, setAppliedShippingCoupon] = useState(null);
+  const hasAutoApplied = useRef(false);
 
   useEffect(() => {
     loadAddresses();
@@ -174,6 +175,60 @@ export default function CheckoutPage() {
       toast("Đơn đã được miễn phí vận chuyển nên mã giảm phí ship đã được gỡ.");
     }
   }, [shippingFee, appliedShippingCoupon]);
+
+  // Tự động áp dụng mã giảm giá tốt nhất
+  useEffect(() => {
+    const autoApplyCoupons = async () => {
+      if (hasAutoApplied.current) return;
+      if (cartItems.length === 0) return;
+      if (shippingLoading) return; // Chờ tính xong phí vận chuyển
+      // Chờ có token và subtotal hợp lệ
+      if (!token || subtotal === 0) return;
+      
+      try {
+        const res = await apiRequest(`/coupons/saved?subtotal=${subtotal}`, { token });
+        const coupons = res.data || [];
+        
+        let bestProductCoupon = null;
+        let maxProductDiscount = 0;
+        
+        let bestShippingCoupon = null;
+        let maxShippingDiscount = 0;
+
+        for (const coupon of coupons) {
+          if (!coupon.isEligible) continue;
+          
+          if (coupon.discountType === "free_shipping") {
+            if (shippingFee > 0) {
+               const discount = coupon.discountValue > 0 ? Math.min(coupon.discountValue, shippingFee) : shippingFee;
+               if (discount > maxShippingDiscount) {
+                 maxShippingDiscount = discount;
+                 bestShippingCoupon = coupon;
+               }
+            }
+          } else {
+             const discount = coupon.potentialDiscount || 0;
+             if (discount > maxProductDiscount) {
+               maxProductDiscount = discount;
+               bestProductCoupon = coupon;
+             }
+          }
+        }
+        
+        if (bestProductCoupon || bestShippingCoupon) {
+          if (bestProductCoupon) setAppliedCoupon(bestProductCoupon);
+          if (bestShippingCoupon) setAppliedShippingCoupon(bestShippingCoupon);
+          toast.success("Đã tự động áp dụng mã giảm giá tốt nhất cho bạn!");
+        }
+        // Đánh dấu đã chạy để không chạy lại (kể cả khi không có mã nào)
+        hasAutoApplied.current = true;
+      } catch (err) {
+        console.error("Lỗi khi tự động áp dụng mã giảm giá:", err);
+      }
+    };
+
+    autoApplyCoupons();
+  }, [cartItems.length, subtotal, shippingFee, shippingLoading, token]);
 
   const couponDiscount = appliedCoupon?.potentialDiscount || 0;
   const shippingDiscount =
