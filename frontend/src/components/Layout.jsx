@@ -461,7 +461,7 @@ export default function Layout() {
       {!isAdminView ? (
         <>
           <header className={`sticky top-0 z-50 border-b border-gray-200 bg-white transition-transform duration-300 ${isHeaderVisible || activeMegaMenu || isSearchOpen ? "translate-y-0" : "-translate-y-full"}`}>
-            <div className="mx-auto grid h-16 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-4 lg:px-8">
+            <div className="mx-auto grid h-16 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-6 lg:px-6">
               <nav
                 ref={megaTriggerRef}
                 className="hidden items-center gap-5 justify-self-start lg:flex"

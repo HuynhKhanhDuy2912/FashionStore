@@ -60,7 +60,7 @@ const styleOptions = [
   { value: "elegant", label: "Thanh lịch (Elegant)" },
   { value: "sporty", label: "Thể thao (Sporty)" },
   { value: "vintage", label: "Cổ điển (Vintage)" },
-  { value: "smart_casual", label: "Công sở năng động (Smart Casual)" },
+  { value: "smart_casual", label: "Lịch sự (Smart Casual)" },
 ];
 
 const seasonOptions = [
@@ -684,6 +684,10 @@ export default function AdminProductAddPage() {
     }
   };
   const handleEditVariant = (v) => {
+    const effectiveDiscount =
+      v.discount !== null && v.discount !== undefined
+        ? v.discount
+        : Number(form.discount || 0);
     setEditingVariantId(v._id);
     setVariantForm({
       size: v.size,
@@ -691,7 +695,7 @@ export default function AdminProductAddPage() {
       stock: v.stock || 0,
       costPrice: v.costPrice || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
-      discount: v.discount ?? null,
+      discount: effectiveDiscount,
       images: v.image ? [v.image] : [],
       mainImage: v.image || "",
     });
@@ -706,6 +710,10 @@ export default function AdminProductAddPage() {
     }
   };
   const handleCloneVariant = (v) => {
+    const effectiveDiscount =
+      v.discount !== null && v.discount !== undefined
+        ? v.discount
+        : Number(form.discount || 0);
     setEditingVariantId("");
     setVariantForm({
       size: v.size || "",
@@ -713,7 +721,7 @@ export default function AdminProductAddPage() {
       stock: v.stock || 0,
       costPrice: v.costPrice || 0,
       price: Number(form.price) + (v.priceAdjustment || 0),
-      discount: v.discount ?? null,
+      discount: effectiveDiscount,
       images: v.image ? [v.image] : [],
       mainImage: v.image || "",
     });
