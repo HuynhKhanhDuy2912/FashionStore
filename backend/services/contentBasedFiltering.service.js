@@ -7,10 +7,34 @@ import { distance } from "ml-distance";
 export class ContentBasedFilteringEngine {
   constructor() {
     this.similarityCache = new Map();
+
+    /**
+     * Feature importance weights cho 21 dimensions.
+     * Vector: [style×2, gender, season×2, occasion×2, price, discount, rating, popularity, tfidf×10]
+     *
+     * Preference dimensions (style, occasion) có trọng số cao hơn metadata
+     * (price, rating, tfidf) để cosine similarity phản ánh đúng sở thích cá nhân.
+     *
+     * Phân bổ trọng số thực tế:
+     *   Preference (style+gender+season+occasion): ~53%
+     *   Text features (tfidf): ~30%
+     *   Metadata (price, discount, rating, popularity): ~17%
+     */
+    this.featureWeights = [
+      3.0, 3.0,       // style (formality, trendiness) — ƯU TIÊN CAO
+      2.0,             // gender
+      2.0, 2.0,        // season (temperature, versatility)
+      3.0, 3.0,        // occasion (formality, energy) — ƯU TIÊN CAO
+      1.0,             // price — giữ nguyên
+      0.5,             // discount — giảm
+      0.5,             // rating — giảm
+      0.3,             // popularity — giảm mạnh
+      0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8  // tfidf×10
+    ];
   }
 
   /**
-   * Tính cosine similarity giữa 2 vectors
+   * Tính cosine similarity giữa 2 vectors (unweighted — dùng cho item-to-item)
    */
   cosineSimilarity(vecA, vecB) {
     if (!vecA || !vecB || vecA.length !== vecB.length) {
@@ -38,6 +62,44 @@ export class ContentBasedFilteringEngine {
   }
 
   /**
+   * Weighted Cosine Similarity — áp dụng feature importance weights.
+   *
+   * Thay vì coi mọi chiều đều quan trọng như nhau, nhân mỗi chiều với trọng
+   * số tương ứng trước khi tính cosine. Điều này giúp preference dimensions
+   * (style, occasion) có ảnh hưởng lớn hơn metadata (price, rating, tfidf).
+   *
+   * Công thức: cos(W·a, W·b) trong đó W = diag(featureWeights)
+   */
+  weightedCosineSimilarity(vecA, vecB) {
+    if (!vecA || !vecB || vecA.length !== vecB.length) {
+      return 0;
+    }
+
+    const weights = this.featureWeights;
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < vecA.length; i++) {
+      const w = weights[i] !== undefined ? weights[i] : 1.0;
+      const wa = vecA[i] * w;
+      const wb = vecB[i] * w;
+      dotProduct += wa * wb;
+      normA += wa * wa;
+      normB += wb * wb;
+    }
+
+    normA = Math.sqrt(normA);
+    normB = Math.sqrt(normB);
+
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+
+    return dotProduct / (normA * normB);
+  }
+
+  /**
    * Tính Euclidean distance (normalized)
    */
   euclideanSimilarity(vecA, vecB) {
@@ -51,10 +113,13 @@ export class ContentBasedFilteringEngine {
   }
 
   /**
-   * Tính similarity score giữa user profile và product
+   * Tính similarity score giữa user profile và product.
+   * Mặc định dùng weighted cosine để ưu tiên preference dimensions.
    */
-  calculateSimilarity(userVector, productVector, method = "cosine") {
-    if (method === "cosine") {
+  calculateSimilarity(userVector, productVector, method = "weighted_cosine") {
+    if (method === "weighted_cosine") {
+      return this.weightedCosineSimilarity(userVector, productVector);
+    } else if (method === "cosine") {
       return this.cosineSimilarity(userVector, productVector);
     } else if (method === "euclidean") {
       return this.euclideanSimilarity(userVector, productVector);
@@ -108,21 +173,30 @@ export class ContentBasedFilteringEngine {
   }
 
   /**
-   * Hybrid scoring: kết hợp user-based và item-based
+   * Hybrid Content Score — kết hợp user-based và item-based.
+   *
+   * User-based (70%): weighted cosine giữa user profile và product
+   * Item-based (30%): average weighted cosine với top sản phẩm đã tương tác
+   *
+   * Item-based giúp bắt được "implicit preferences" mà user vector trung bình
+   * có thể bỏ lỡ, ví dụ: user xem nhiều áo polo nhưng cũng xem 1 quần jeans →
+   * user vector bị kéo về giữa, nhưng item-based vẫn match polo cao.
    */
   hybridContentScore(userVector, productVector, interactedProductVectors, weights = { user: 0.7, item: 0.3 }) {
     let userBasedScore = 0;
     let itemBasedScore = 0;
 
-    // User-based: similarity với user profile
+    // User-based: weighted cosine similarity với user profile
     if (userVector) {
-      userBasedScore = this.calculateSimilarity(userVector, productVector);
+      userBasedScore = this.weightedCosineSimilarity(userVector, productVector);
     }
 
-    // Item-based: average similarity với products đã tương tác
+    // Item-based: average weighted cosine với sản phẩm đã tương tác
+    // Chỉ lấy top 20 sản phẩm gần nhất để tránh noise từ quá nhiều items
     if (interactedProductVectors && interactedProductVectors.length > 0) {
-      const similarities = interactedProductVectors.map(ipv =>
-        this.calculateProductSimilarity(ipv, productVector)
+      const limited = interactedProductVectors.slice(0, 20);
+      const similarities = limited.map(ipv =>
+        this.weightedCosineSimilarity(ipv, productVector)
       );
       itemBasedScore = similarities.reduce((a, b) => a + b, 0) / similarities.length;
     }

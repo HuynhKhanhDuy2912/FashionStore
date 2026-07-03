@@ -247,17 +247,18 @@ export class RuleBasedEngine {
     const freshnessScore = this.calculateFreshnessScore(product);
     const wishlistScore = this.calculateWishlistScore(product, wishlistProductIds);
 
-    // Weighted combination — v2.2: Removed recency (was 0.15), redistributed
+    // Weighted combination — v3.0: Tăng cá nhân hóa, giảm yếu tố chung chung
+    // popularity đã loại khỏi top-level → đây là chỗ duy nhất, giảm từ 15% → 8%
     const weights = {
-      popularity: 0.15,
-      seasonal: 0.10,
-      discount: 0.08,
-      occasion: 0.19,    // +7% (was 0.12) — absorbed from recency
-      style: 0.23,       // +8% (was 0.15) — absorbed from recency
-      priceRange: 0.08,
-      stock: 0.07,
-      freshness: 0.05,
-      wishlist: 0.05
+      style: 0.27,       // +4% (was 0.23) — sở thích phong cách cá nhân
+      occasion: 0.23,    // +4% (was 0.19) — dịp quan tâm cá nhân
+      priceRange: 0.12,  // +4% (was 0.08) — phù hợp túi tiền cá nhân
+      wishlist: 0.08,    // +3% (was 0.05) — ý định rõ ràng nhất
+      popularity: 0.08,  // -7% (was 0.15) — chung chung, chỉ giữ làm tín hiệu
+      seasonal: 0.07,    // -3% (was 0.10) — chung chung
+      freshness: 0.05,   // giữ nguyên
+      stock: 0.05,       // -2% (was 0.07) — chung chung
+      discount: 0.05,    // -3% (was 0.08) — chung chung
     };
 
     const ruleScore =

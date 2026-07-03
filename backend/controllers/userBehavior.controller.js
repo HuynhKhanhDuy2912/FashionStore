@@ -13,7 +13,11 @@ const baseUserBehaviorController = createCrudControllers(UserBehavior, {
   ]
 });
 
-const STRONG_ACTIONS = new Set([
+// Mọi hành vi đều clear cache user đó → gợi ý cập nhật gần real-time
+// Cache TTL = 60s + clear on every behavior = gợi ý phản ánh hành vi mới nhất
+// Không gây quá tải vì cache per-user (chỉ rebuild khi user ĐÓ có hành vi mới)
+const INTENT_ACTIONS = new Set([
+  "search", "filter", "view_product", "click",
   "purchase", "add_to_cart", "add_to_wishlist",
   "remove_from_cart", "remove_from_wishlist"
 ]);
@@ -44,7 +48,8 @@ const saveTrackedBehavior = async (userId, body) => {
     });
   }
 
-  if (STRONG_ACTIONS.has(behaviorData.actionType)) {
+  // Clear cache cho mọi hành vi có intent → gợi ý cập nhật real-time
+  if (INTENT_ACTIONS.has(behaviorData.actionType)) {
     clearRecommendationCache(userId);
   }
 

@@ -313,6 +313,16 @@ export default function ProductsPage() {
     return () => { cancelled = true; };
   }, [searchKeyword]);
 
+  useEffect(() => {
+    if (!token || !searchKeyword) return;
+
+    trackBehavior(token, {
+      actionType: "search",
+      source: "search",
+      searchKeyword: searchKeyword,
+    });
+  }, [searchKeyword, token]);
+
   const toggleWishlist = async (product) => {
     if (!token) {
       navigate("/login");

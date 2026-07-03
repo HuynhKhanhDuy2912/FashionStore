@@ -45,8 +45,9 @@ const MIN_MATCH_THRESHOLD = 60;
  */
 class HybridRecommendationEngine {
   constructor() {
-    // Cache recommendations for 5 minutes
-    this.cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+    // Cache recommendations for 1 minute — gần real-time
+    // Kết hợp với clear cache on every behavior → gợi ý cập nhật ngay
+    this.cache = new NodeCache({ stdTTL: 60, checkperiod: 20 });
 
     this.featureExtractor = new ProductFeatureExtractor();
     this.contentEngine = new ContentBasedFilteringEngine();
@@ -54,14 +55,15 @@ class HybridRecommendationEngine {
     this.collaborativeEngine = new ItemBasedCollaborativeEngine();
     this.outfitEngine = new OutfitRecommendationEngine();
 
-    // Weights for hybrid scoring v2.0
+    // Weights for hybrid scoring v3.0
+    // Loại bỏ popularity top-level (đã tính bên trong rule-based)
+    // → phân bổ lại cho content-based và collaborative (cá nhân hóa ~87%)
     this.weights = {
-      content: 0.3, // Content-based similarity (giảm từ 0.40)
-      collaborative: 0.2, // Collaborative filtering (MỚI)
-      rule: 0.2, // Rule-based score (giảm từ 0.30)
-      behavior: 0.15, // Behavior weight (giảm từ 0.20)
-      popularity: 0.1, // Popularity boost (giữ nguyên)
-      category: 0.05, // Category boost (chính thức hóa)
+      content: 0.35,       // +5% — hybrid content (user-based + item-based)
+      collaborative: 0.25, // +5% — co-occurrence từ hành vi tất cả users
+      rule: 0.20,          // giữ nguyên — 9 business rules
+      behavior: 0.15,      // giữ nguyên — category/style/occasion overlap
+      category: 0.05,      // giữ nguyên — boost danh mục ưa thích
     };
   }
 
@@ -118,6 +120,23 @@ class HybridRecommendationEngine {
         this.featureExtractor.getProductVector(p),
       );
 
+      // 3.5 Build interacted product IDs và vectors (dùng cho collaborative + hybridContentScore)
+      const allInteractedIds = [
+        ...new Set(
+          behaviors.map((b) => b.productId?.toString()).filter(Boolean),
+        ),
+      ];
+      const interactedProductVectors = allInteractedIds
+        .map((id) => {
+          const product = filteredProducts.find(
+            (p) => p._id.toString() === id,
+          );
+          return product
+            ? this.featureExtractor.getProductVector(product)
+            : null;
+        })
+        .filter(Boolean);
+
       // 4. Build user profile (temporal: ngắn hạn vs dài hạn)
       const userVector = this.userProfileBuilder.buildTemporalProfile(
         behaviors,
@@ -158,12 +177,6 @@ class HybridRecommendationEngine {
       const wishlistProductIds = wishlistItems.map((w) =>
         w.productId.toString(),
       );
-      // allInteractedIds: luôn tính để dùng cho collaborative scoring
-      const allInteractedIds = [
-        ...new Set(
-          behaviors.map((b) => b.productId?.toString()).filter(Boolean),
-        ),
-      ];
       // excludeIds: chỉ dùng để loại sản phẩm đã tương tác khỏi kết quả
       const excludeIds = excludeInteracted ? allInteractedIds : [];
 
@@ -196,11 +209,13 @@ class HybridRecommendationEngine {
             return null;
           }
 
-          // Content-based score
+          // Content-based score (hybrid: user-based 70% + item-based 30%)
+          // hybridContentScore sử dụng weighted cosine → ưu tiên style/occasion
           const contentScore = userVector
-            ? this.contentEngine.calculateSimilarity(
+            ? this.contentEngine.hybridContentScore(
                 userVector,
                 productVectors[idx],
+                interactedProductVectors,
               )
             : 0.5;
 
@@ -237,17 +252,13 @@ class HybridRecommendationEngine {
             filteredProducts,
           );
 
-          // Popularity score
-          const popularityScore =
-            RuleBasedEngine.calculatePopularityScore(product);
-
-          // Final hybrid score v2.0
+          // Final hybrid score v3.0
+          // Loại bỏ popularity top-level (đã tính trong rule-based)
           const finalScore =
             contentScore * this.weights.content +
             collaborativeScore * this.weights.collaborative +
             ruleScore * this.weights.rule +
             behaviorWeight * this.weights.behavior +
-            popularityScore * this.weights.popularity +
             categoryScore * this.weights.category;
 
           return {
@@ -257,7 +268,6 @@ class HybridRecommendationEngine {
             collaborativeScore,
             ruleScore,
             behaviorWeight,
-            popularityScore,
             categoryScore,
             ruleBreakdown: breakdown,
           };
@@ -365,7 +375,7 @@ class HybridRecommendationEngine {
       },
       {
         reason: "Được nhiều người yêu thích",
-        score: scoredItem.popularityScore,
+        score: bd.popularity,
         threshold: 0.75,
         category: "social",
       },
@@ -459,7 +469,7 @@ class HybridRecommendationEngine {
           scoredItem.categoryScore || 0,
         ),
       },
-      { group: "popular", score: scoredItem.popularityScore || 0 },
+      { group: "popular", score: bd.popularity || 0 },
       { group: "new_arrivals", score: bd.freshness || 0 },
       { group: "deals", score: bd.discount || 0 },
     ];

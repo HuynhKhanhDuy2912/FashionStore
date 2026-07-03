@@ -31,7 +31,15 @@ function getVNDateComponents(date) {
   };
 }
 
-function createVNDate(year, month, date, hours = 0, minutes = 0, seconds = 0, ms = 0) {
+function createVNDate(
+  year,
+  month,
+  date,
+  hours = 0,
+  minutes = 0,
+  seconds = 0,
+  ms = 0,
+) {
   const utcMs = Date.UTC(year, month, date, hours, minutes, seconds, ms);
   return new Date(utcMs - VN_OFFSET_MS);
 }
@@ -50,7 +58,7 @@ function fillDailySeries(rows, days = 30) {
     const targetMs = todayStartMs - index * 24 * 60 * 60 * 1000;
     const targetDate = new Date(targetMs);
     const vnComponents = getVNDateComponents(targetDate);
-    
+
     const key = [
       vnComponents.year,
       String(vnComponents.month + 1).padStart(2, "0"),
@@ -77,7 +85,8 @@ function fillMonthlySeries(rows) {
   const vnNow = getVNDateComponents(now);
 
   const minStartYear = vnNow.month - 11 < 0 ? vnNow.year - 1 : vnNow.year;
-  const minStartMonth = vnNow.month - 11 < 0 ? vnNow.month - 11 + 12 : vnNow.month - 11;
+  const minStartMonth =
+    vnNow.month - 11 < 0 ? vnNow.month - 11 + 12 : vnNow.month - 11;
   let startYear = minStartYear;
   let startMonth = minStartMonth;
 
@@ -140,13 +149,29 @@ export async function getAdminDashboardStats(filters = {}) {
   const now = new Date();
   const vnNow = getVNDateComponents(now);
 
-  const todayStart = createVNDate(vnNow.year, vnNow.month, vnNow.date, 0, 0, 0, 0);
+  const todayStart = createVNDate(
+    vnNow.year,
+    vnNow.month,
+    vnNow.date,
+    0,
+    0,
+    0,
+    0,
+  );
   const monthStart = createVNDate(vnNow.year, vnNow.month, 1, 0, 0, 0, 0);
-  
+
   const lastMonthYear = vnNow.month === 0 ? vnNow.year - 1 : vnNow.year;
   const lastMonthValue = vnNow.month === 0 ? 11 : vnNow.month - 1;
-  const lastMonthStart = createVNDate(lastMonthYear, lastMonthValue, 1, 0, 0, 0, 0);
-  
+  const lastMonthStart = createVNDate(
+    lastMonthYear,
+    lastMonthValue,
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
+
   const lastMonthEnd = new Date(monthStart.getTime() - 1);
   const chartStart = new Date(todayStart.getTime() - 29 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
@@ -477,7 +502,7 @@ export async function getAdminDashboardStats(filters = {}) {
     ]),
     Order.find({})
       .sort({ createdAt: -1 })
-      .limit(6)
+      .limit(5)
       .populate("userId", "username email fullname")
       .lean(),
     User.countDocuments(),
@@ -485,7 +510,7 @@ export async function getAdminDashboardStats(filters = {}) {
     Product.countDocuments(),
     ProductVariant.find({ stock: { $lte: 5 } })
       .sort({ stock: 1 })
-      .limit(6)
+      .limit(5)
       .populate("productId", "name")
       .lean(),
     ProductVariant.countDocuments({ stock: { $lte: 5, $gt: 0 } }),
