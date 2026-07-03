@@ -5,10 +5,21 @@ import Wishlist from "../models/Wishlist.js";
 import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import ProductVariant from "../models/ProductVariant.js";
-import { ProductFeatureExtractor, UserProfileBuilder } from "./featureExtraction.service.js";
-import { ContentBasedFilteringEngine, CategoryFilter, DiversityHelper } from "./contentBasedFiltering.service.js";
-import { RuleBasedEngine, BusinessRulesHelper } from "./ruleBasedRecommendation.service.js";
+import {
+  ProductFeatureExtractor,
+  UserProfileBuilder,
+} from "./featureExtraction.service.js";
+import {
+  ContentBasedFilteringEngine,
+  CategoryFilter,
+  DiversityHelper,
+} from "./contentBasedFiltering.service.js";
+import {
+  RuleBasedEngine,
+  BusinessRulesHelper,
+} from "./ruleBasedRecommendation.service.js";
 import { ItemBasedCollaborativeEngine } from "./collaborativeFiltering.service.js";
+import { OutfitRecommendationEngine } from "./outfitRecommendation.service.js";
 
 /**
  * Ngưỡng điểm sàn (0–100) để hiển thị badge "Match %".
@@ -27,7 +38,7 @@ const MIN_MATCH_THRESHOLD = 60;
  * Kết hợp 5 engines:
  * 1. Content-Based Filtering (30%) — Cosine similarity giữa user profile và product vectors
  * 2. Collaborative Filtering (20%) — Item co-occurrence từ hành vi TẤT CẢ users
- * 3. Rule-Based Recommendation (20%) — 10 business rules
+ * 3. Rule-Based Recommendation (20%) — 9 business rules
  * 4. Behavior-Based Scoring (15%) — Category/style/occasion overlap
  * 5. Popularity Scoring (10%) — Bayesian average rating
  * + Category Boost (5%) + Diversity (MMR)
@@ -41,15 +52,16 @@ class HybridRecommendationEngine {
     this.contentEngine = new ContentBasedFilteringEngine();
     this.userProfileBuilder = new UserProfileBuilder();
     this.collaborativeEngine = new ItemBasedCollaborativeEngine();
+    this.outfitEngine = new OutfitRecommendationEngine();
 
     // Weights for hybrid scoring v2.0
     this.weights = {
-      content: 0.30,        // Content-based similarity (giảm từ 0.40)
-      collaborative: 0.20,  // Collaborative filtering (MỚI)
-      rule: 0.20,           // Rule-based score (giảm từ 0.30)
-      behavior: 0.15,       // Behavior weight (giảm từ 0.20)
-      popularity: 0.10,     // Popularity boost (giữ nguyên)
-      category: 0.05        // Category boost (chính thức hóa)
+      content: 0.3, // Content-based similarity (giảm từ 0.40)
+      collaborative: 0.2, // Collaborative filtering (MỚI)
+      rule: 0.2, // Rule-based score (giảm từ 0.30)
+      behavior: 0.15, // Behavior weight (giảm từ 0.20)
+      popularity: 0.1, // Popularity boost (giữ nguyên)
+      category: 0.05, // Category boost (chính thức hóa)
     };
   }
 
@@ -61,7 +73,7 @@ class HybridRecommendationEngine {
       limit = 12,
       excludeInteracted = true,
       enableCache = true,
-      filters = {}
+      filters = {},
     } = options;
 
     // Check cache
@@ -81,7 +93,7 @@ class HybridRecommendationEngine {
           .limit(100)
           .lean(),
         Wishlist.find({ userId: user._id }).lean(),
-        Product.find({ isActive: true }).lean()
+        Product.find({ isActive: true }).lean(),
       ]);
 
       if (products.length === 0) {
@@ -96,130 +108,170 @@ class HybridRecommendationEngine {
       // 2. Apply hard filters
       let filteredProducts = RuleBasedEngine.applyHardFilters(products, {
         gender: user.gender,
-        ...filters
+        ...filters,
       });
 
       // 3. Build TF-IDF trên TOÀN BỘ products (index ổn định cho mọi user)
       this.featureExtractor.buildTfIdfModel(products);
       // Tạo vectors chỉ cho filtered products, dùng index ổn định từ full list
       const productVectors = filteredProducts.map((p) =>
-        this.featureExtractor.getProductVector(p)
+        this.featureExtractor.getProductVector(p),
       );
 
       // 4. Build user profile (temporal: ngắn hạn vs dài hạn)
       const userVector = this.userProfileBuilder.buildTemporalProfile(
         behaviors,
         filteredProducts,
-        this.featureExtractor
+        this.featureExtractor,
       );
 
       // 5. Extract user preferences
-      let preferredStyles = this.userProfileBuilder.extractStylePreferences(behaviors, filteredProducts);
-      let preferredOccasions = this.userProfileBuilder.extractOccasionPreferences(behaviors, filteredProducts);
-      const preferredCategories = CategoryFilter.extractPreferredCategories(behaviors, filteredProducts);
+      let preferredStyles = this.userProfileBuilder.extractStylePreferences(
+        behaviors,
+        filteredProducts,
+      );
+      let preferredOccasions =
+        this.userProfileBuilder.extractOccasionPreferences(
+          behaviors,
+          filteredProducts,
+        );
+      const preferredCategories = CategoryFilter.extractPreferredCategories(
+        behaviors,
+        filteredProducts,
+      );
 
       // 5.5 Extract search intents và merge vào preferences
-      const searchIntents = this.userProfileBuilder.extractSearchIntents(behaviors);
+      const searchIntents =
+        this.userProfileBuilder.extractSearchIntents(behaviors);
       if (searchIntents.styles.length > 0) {
-        preferredStyles = [...new Set([...preferredStyles, ...searchIntents.styles])];
+        preferredStyles = [
+          ...new Set([...preferredStyles, ...searchIntents.styles]),
+        ];
       }
       if (searchIntents.occasions.length > 0) {
-        preferredOccasions = [...new Set([...preferredOccasions, ...searchIntents.occasions])];
+        preferredOccasions = [
+          ...new Set([...preferredOccasions, ...searchIntents.occasions]),
+        ];
       }
 
       // 6. Get wishlist and interacted product IDs
-      const wishlistProductIds = wishlistItems.map(w => w.productId.toString());
+      const wishlistProductIds = wishlistItems.map((w) =>
+        w.productId.toString(),
+      );
       // allInteractedIds: luôn tính để dùng cho collaborative scoring
-      const allInteractedIds = [...new Set(behaviors.map(b => b.productId?.toString()).filter(Boolean))];
+      const allInteractedIds = [
+        ...new Set(
+          behaviors.map((b) => b.productId?.toString()).filter(Boolean),
+        ),
+      ];
       // excludeIds: chỉ dùng để loại sản phẩm đã tương tác khỏi kết quả
       const excludeIds = excludeInteracted ? allInteractedIds : [];
 
       // 7. Calculate average purchase price
-      const userAveragePurchasePrice = await BusinessRulesHelper.calculateAveragePurchasePrice(
-        user._id,
-        Order,
-        OrderItem
-      );
+      const userAveragePurchasePrice =
+        await BusinessRulesHelper.calculateAveragePurchasePrice(
+          user._id,
+          Order,
+          OrderItem,
+        );
 
       // 8. Get product variants for stock checking
-      const productIds = filteredProducts.map(p => p._id);
+      const productIds = filteredProducts.map((p) => p._id);
       const variantsByProduct = await BusinessRulesHelper.getProductVariants(
         productIds,
-        ProductVariant
+        ProductVariant,
       );
 
       // 8.5 Build co-occurrence matrix cho Collaborative Filtering (cached 30 phút)
-      const coOccurrenceMatrix = await this.collaborativeEngine.getOrBuildMatrix(UserBehavior);
+      const coOccurrenceMatrix =
+        await this.collaborativeEngine.getOrBuildMatrix(UserBehavior);
 
       // 9. Score all products
-      const scoredProducts = filteredProducts.map((product, idx) => {
-        const productId = product._id.toString();
+      const scoredProducts = filteredProducts
+        .map((product, idx) => {
+          const productId = product._id.toString();
 
-        // Skip interacted products if enabled
-        if (excludeInteracted && excludeIds.includes(productId)) {
-          return null;
-        }
+          // Skip interacted products if enabled
+          if (excludeInteracted && excludeIds.includes(productId)) {
+            return null;
+          }
 
-        // Content-based score
-        const contentScore = userVector
-          ? this.contentEngine.calculateSimilarity(userVector, productVectors[idx])
-          : 0.5;
+          // Content-based score
+          const contentScore = userVector
+            ? this.contentEngine.calculateSimilarity(
+                userVector,
+                productVectors[idx],
+              )
+            : 0.5;
 
-        // Collaborative filtering score — luôn dùng allInteractedIds
-        const collaborativeScore = this.collaborativeEngine.getCollaborativeScore(
-          productId,
-          allInteractedIds,
-          coOccurrenceMatrix
-        );
+          // Collaborative filtering score — luôn dùng allInteractedIds
+          const collaborativeScore =
+            this.collaborativeEngine.getCollaborativeScore(
+              productId,
+              allInteractedIds,
+              coOccurrenceMatrix,
+            );
 
-        // Rule-based score
-        const ruleContext = {
-          behaviors,
-          preferredOccasions,
-          preferredStyles,
-          userAveragePurchasePrice,
-          wishlistProductIds,
-          variants: variantsByProduct[productId] || []
-        };
-        const { ruleScore, breakdown } = RuleBasedEngine.calculateRuleBasedScore(product, ruleContext);
+          // Rule-based score
+          const ruleContext = {
+            behaviors,
+            preferredOccasions,
+            preferredStyles,
+            userAveragePurchasePrice,
+            wishlistProductIds,
+            variants: variantsByProduct[productId] || [],
+          };
+          const { ruleScore, breakdown } =
+            RuleBasedEngine.calculateRuleBasedScore(product, ruleContext);
 
-        // Category score
-        const categoryScore = CategoryFilter.calculateCategoryScore(product, preferredCategories);
+          // Category score
+          const categoryScore = CategoryFilter.calculateCategoryScore(
+            product,
+            preferredCategories,
+          );
 
-        // Behavior weight (how much user interacted with similar products)
-        const behaviorWeight = this.calculateBehaviorWeight(product, behaviors, filteredProducts);
+          // Behavior weight (how much user interacted with similar products)
+          const behaviorWeight = this.calculateBehaviorWeight(
+            product,
+            behaviors,
+            filteredProducts,
+          );
 
-        // Popularity score
-        const popularityScore = RuleBasedEngine.calculatePopularityScore(product);
+          // Popularity score
+          const popularityScore =
+            RuleBasedEngine.calculatePopularityScore(product);
 
-        // Final hybrid score v2.0
-        const finalScore =
-          contentScore * this.weights.content +
-          collaborativeScore * this.weights.collaborative +
-          ruleScore * this.weights.rule +
-          behaviorWeight * this.weights.behavior +
-          popularityScore * this.weights.popularity +
-          categoryScore * this.weights.category;
+          // Final hybrid score v2.0
+          const finalScore =
+            contentScore * this.weights.content +
+            collaborativeScore * this.weights.collaborative +
+            ruleScore * this.weights.rule +
+            behaviorWeight * this.weights.behavior +
+            popularityScore * this.weights.popularity +
+            categoryScore * this.weights.category;
 
-        return {
-          product,
-          finalScore,
-          contentScore,
-          collaborativeScore,
-          ruleScore,
-          behaviorWeight,
-          popularityScore,
-          categoryScore,
-          ruleBreakdown: breakdown
-        };
-      }).filter(Boolean); // Remove nulls
+          return {
+            product,
+            finalScore,
+            contentScore,
+            collaborativeScore,
+            ruleScore,
+            behaviorWeight,
+            popularityScore,
+            categoryScore,
+            ruleBreakdown: breakdown,
+          };
+        })
+        .filter(Boolean); // Remove nulls
 
       // 10. Sort by final score
       scoredProducts.sort((a, b) => b.finalScore - a.finalScore);
 
       // 11. Apply diversity (MMR: cân bằng relevance vs diversity tốt hơn hard constraints)
       const diverseProducts = DiversityHelper.maximalMarginalRelevance(
-        scoredProducts, 0.7, limit * 2
+        scoredProducts,
+        0.7,
+        limit * 2,
       );
 
       // 12. Take top N — enrich products with recommendation metadata.
@@ -227,11 +279,11 @@ class HybridRecommendationEngine {
       //     chuẩn hóa theo maxScore cục bộ nên top-1 không mặc nhiên = 100%.
       const topItems = diverseProducts.slice(0, limit);
 
-      const recommendations = topItems.map(item => ({
+      const recommendations = topItems.map((item) => ({
         ...item.product,
         ...this.buildMatchMeta(item.finalScore),
         recommendationReasons: this.generateRecommendationReasons(item),
-        recommendationGroup: this.classifyRecommendationGroup(item)
+        recommendationGroup: this.classifyRecommendationGroup(item),
       }));
 
       // Cache results
@@ -240,7 +292,6 @@ class HybridRecommendationEngine {
       }
 
       return recommendations;
-
     } catch (error) {
       console.error("Recommendation error:", error);
 
@@ -250,11 +301,11 @@ class HybridRecommendationEngine {
         .limit(limit)
         .lean();
 
-      return popularProducts.map(p => ({
+      return popularProducts.map((p) => ({
         ...p,
         matchScore: 0,
         recommendationReasons: ["Sản phẩm phổ biến"],
-        recommendationGroup: "popular"
+        recommendationGroup: "popular",
       }));
     }
   }
@@ -288,23 +339,83 @@ class HybridRecommendationEngine {
     //   timeliness — tính thời điểm (seasonal, freshness)
     //   wishlist   — danh sách yêu thích
     const candidateRules = [
-      { reason: "Phù hợp phong cách của bạn",    score: scoredItem.contentScore,       threshold: 0.75, category: "style" },
-      { reason: "Đúng phong cách bạn yêu thích", score: bd.style,                      threshold: 0.8,  category: "style" },
-      { reason: "Phù hợp dịp bạn quan tâm",     score: bd.occasion,                   threshold: 0.7,  category: "style" },
-      { reason: "Người mua tương tự cũng thích", score: scoredItem.collaborativeScore,  threshold: 0.4,  category: "social" },
-      { reason: "Được nhiều người yêu thích",    score: scoredItem.popularityScore,     threshold: 0.75, category: "social" },
-      { reason: "Danh mục bạn hay xem",          score: scoredItem.categoryScore,       threshold: 0.7,  category: "behavior" },
-      { reason: "Dựa trên sản phẩm bạn đã xem", score: scoredItem.behaviorWeight,      threshold: 0.6,  category: "behavior" },
-      { reason: "Phù hợp tầm giá của bạn",      score: bd.priceRange,                  threshold: 0.8,  category: "value" },
-      { reason: "Đang có ưu đãi tốt",           score: bd.discount,                    threshold: 0.7,  category: "value" },
-      { reason: "Phù hợp mùa hiện tại",         score: bd.seasonal,                    threshold: 0.8,  category: "timeliness" },
-      { reason: "Sản phẩm mới về",              score: bd.freshness,                    threshold: 0.8,  category: "timeliness" },
-      { reason: "Trong danh sách yêu thích",    score: bd.wishlist,                     threshold: 0.9,  category: "wishlist" }
+      {
+        reason: "Phù hợp phong cách của bạn",
+        score: scoredItem.contentScore,
+        threshold: 0.75,
+        category: "style",
+      },
+      {
+        reason: "Đúng phong cách bạn yêu thích",
+        score: bd.style,
+        threshold: 0.8,
+        category: "style",
+      },
+      {
+        reason: "Phù hợp dịp bạn quan tâm",
+        score: bd.occasion,
+        threshold: 0.7,
+        category: "style",
+      },
+      {
+        reason: "Người mua tương tự cũng thích",
+        score: scoredItem.collaborativeScore,
+        threshold: 0.4,
+        category: "social",
+      },
+      {
+        reason: "Được nhiều người yêu thích",
+        score: scoredItem.popularityScore,
+        threshold: 0.75,
+        category: "social",
+      },
+      {
+        reason: "Danh mục bạn hay xem",
+        score: scoredItem.categoryScore,
+        threshold: 0.7,
+        category: "behavior",
+      },
+      {
+        reason: "Dựa trên sản phẩm bạn đã xem",
+        score: scoredItem.behaviorWeight,
+        threshold: 0.6,
+        category: "behavior",
+      },
+      {
+        reason: "Phù hợp tầm giá của bạn",
+        score: bd.priceRange,
+        threshold: 0.8,
+        category: "value",
+      },
+      {
+        reason: "Đang có ưu đãi tốt",
+        score: bd.discount,
+        threshold: 0.7,
+        category: "value",
+      },
+      {
+        reason: "Phù hợp mùa hiện tại",
+        score: bd.seasonal,
+        threshold: 0.8,
+        category: "timeliness",
+      },
+      {
+        reason: "Sản phẩm mới về",
+        score: bd.freshness,
+        threshold: 0.8,
+        category: "timeliness",
+      },
+      {
+        reason: "Trong danh sách yêu thích",
+        score: bd.wishlist,
+        threshold: 0.9,
+        category: "wishlist",
+      },
     ];
 
     // Lọc candidates thỏa ngưỡng, sắp xếp theo score giảm dần
     const qualified = candidateRules
-      .filter(c => (c.score ?? 0) >= c.threshold)
+      .filter((c) => (c.score ?? 0) >= c.threshold)
       .sort((a, b) => b.score - a.score);
 
     // Chọn top 3 với ràng buộc: tối đa 1 reason / category
@@ -336,12 +447,21 @@ class HybridRecommendationEngine {
 
     // Mỗi group được đại diện bởi một score (hoặc max của nhiều scores liên quan)
     const groupScores = [
-      { group: "style_match",      score: Math.max(scoredItem.contentScore || 0, bd.style || 0) },
-      { group: "similar_users",    score: scoredItem.collaborativeScore || 0 },
-      { group: "browsing_history", score: Math.max(scoredItem.behaviorWeight || 0, scoredItem.categoryScore || 0) },
-      { group: "popular",          score: scoredItem.popularityScore || 0 },
-      { group: "new_arrivals",     score: bd.freshness || 0 },
-      { group: "deals",            score: bd.discount || 0 }
+      {
+        group: "style_match",
+        score: Math.max(scoredItem.contentScore || 0, bd.style || 0),
+      },
+      { group: "similar_users", score: scoredItem.collaborativeScore || 0 },
+      {
+        group: "browsing_history",
+        score: Math.max(
+          scoredItem.behaviorWeight || 0,
+          scoredItem.categoryScore || 0,
+        ),
+      },
+      { group: "popular", score: scoredItem.popularityScore || 0 },
+      { group: "new_arrivals", score: bd.freshness || 0 },
+      { group: "deals", score: bd.discount || 0 },
     ];
 
     // Sắp xếp theo score giảm dần, lấy group có điểm cao nhất
@@ -380,7 +500,7 @@ class HybridRecommendationEngine {
       // Dưới ngưỡng → null để Frontend ẩn badge. Điều kiện `matchScore > 0` sẵn có
       // ở ProductCard coi null là falsy nên KHÔNG cần sửa Frontend.
       matchScore: isHighMatch ? absoluteMatch : null,
-      isHighMatch
+      isHighMatch,
     };
   }
 
@@ -390,27 +510,34 @@ class HybridRecommendationEngine {
   calculateBehaviorWeight(product, behaviors, allProducts) {
     if (!behaviors || behaviors.length === 0) return 0.5;
 
-    const productMap = new Map(allProducts.map(p => [p._id.toString(), p]));
+    const productMap = new Map(allProducts.map((p) => [p._id.toString(), p]));
     let totalWeight = 0;
     let matchCount = 0;
 
-    behaviors.forEach(behavior => {
+    behaviors.forEach((behavior) => {
       const behaviorProductId = behavior.productId?.toString();
       if (!behaviorProductId || !productMap.has(behaviorProductId)) return;
 
       const behaviorProduct = productMap.get(behaviorProductId);
 
       // Check similarity
-      const isSameCategory = behaviorProduct.categoryId?.toString() === product.categoryId?.toString();
-      const bStyles = Array.isArray(behaviorProduct.style) ? behaviorProduct.style : [behaviorProduct.style];
-      const pStyles = Array.isArray(product.style) ? product.style : [product.style];
-      const isSameStyle = bStyles.some(s => pStyles.includes(s));
-      const hasOccasionOverlap = (behaviorProduct.occasion || []).some(o =>
-        (product.occasion || []).includes(o)
+      const isSameCategory =
+        behaviorProduct.categoryId?.toString() ===
+        product.categoryId?.toString();
+      const bStyles = Array.isArray(behaviorProduct.style)
+        ? behaviorProduct.style
+        : [behaviorProduct.style];
+      const pStyles = Array.isArray(product.style)
+        ? product.style
+        : [product.style];
+      const isSameStyle = bStyles.some((s) => pStyles.includes(s));
+      const hasOccasionOverlap = (behaviorProduct.occasion || []).some((o) =>
+        (product.occasion || []).includes(o),
       );
 
       if (isSameCategory || isSameStyle || hasOccasionOverlap) {
-        const actionWeight = this.userProfileBuilder.actionWeights[behavior.actionType] || 1;
+        const actionWeight =
+          this.userProfileBuilder.actionWeights[behavior.actionType] || 1;
         totalWeight += actionWeight;
         matchCount++;
       }
@@ -440,7 +567,7 @@ class HybridRecommendationEngine {
     try {
       const [targetProduct, allProducts] = await Promise.all([
         Product.findById(productId).lean(),
-        Product.find({ isActive: true, _id: { $ne: productId } }).lean()
+        Product.find({ isActive: true, _id: { $ne: productId } }).lean(),
       ]);
 
       if (!targetProduct || allProducts.length === 0) {
@@ -449,33 +576,43 @@ class HybridRecommendationEngine {
 
       // Build feature vectors
       this.featureExtractor.buildTfIdfModel([targetProduct, ...allProducts]);
-      const targetVector = this.featureExtractor.getProductVector(targetProduct, 0);
+      const targetVector = this.featureExtractor.getProductVector(
+        targetProduct,
+        0,
+      );
       const productVectors = allProducts.map((p, idx) =>
-        this.featureExtractor.getProductVector(p, idx + 1)
+        this.featureExtractor.getProductVector(p, idx + 1),
       );
 
       // Calculate similarities
       const similarities = allProducts.map((product, idx) => {
         const similarity = this.contentEngine.calculateProductSimilarity(
           targetVector,
-          productVectors[idx]
+          productVectors[idx],
         );
 
         // Boost if same category or style
         let boost = 1.0;
-        if (product.categoryId?.toString() === targetProduct.categoryId?.toString()) {
+        if (
+          product.categoryId?.toString() ===
+          targetProduct.categoryId?.toString()
+        ) {
           boost += 0.2;
         }
-        const tStyles = Array.isArray(targetProduct.style) ? targetProduct.style : [targetProduct.style];
-        const pStyles = Array.isArray(product.style) ? product.style : [product.style];
-        if (tStyles.some(s => pStyles.includes(s))) {
+        const tStyles = Array.isArray(targetProduct.style)
+          ? targetProduct.style
+          : [targetProduct.style];
+        const pStyles = Array.isArray(product.style)
+          ? product.style
+          : [product.style];
+        if (tStyles.some((s) => pStyles.includes(s))) {
           boost += 0.15;
         }
 
         return {
           product,
           score: similarity * boost,
-          rawSimilarity: similarity
+          rawSimilarity: similarity,
         };
       });
 
@@ -484,11 +621,11 @@ class HybridRecommendationEngine {
       // KHÔNG dùng score đã nhân boost (boost chỉ phục vụ xếp hạng, không phải %match).
       similarities.sort((a, b) => b.score - a.score);
       const topItems = similarities.slice(0, limit);
-      const recommendations = topItems.map(item => ({
+      const recommendations = topItems.map((item) => ({
         ...item.product,
         ...this.buildMatchMeta(item.rawSimilarity),
         recommendationReasons: ["Sản phẩm tương tự"],
-        recommendationGroup: "similar_products"
+        recommendationGroup: "similar_products",
       }));
 
       // Cache results
@@ -497,7 +634,6 @@ class HybridRecommendationEngine {
       }
 
       return recommendations;
-
     } catch (error) {
       console.error("Similar products error:", error);
 
@@ -508,17 +644,17 @@ class HybridRecommendationEngine {
       const popularProducts = await Product.find({
         isActive: true,
         categoryId: targetProduct.categoryId,
-        _id: { $ne: productId }
+        _id: { $ne: productId },
       })
         .sort({ averageRating: -1 })
         .limit(limit)
         .lean();
 
-      return popularProducts.map(p => ({
+      return popularProducts.map((p) => ({
         ...p,
         matchScore: 0,
         recommendationReasons: ["Sản phẩm cùng danh mục"],
-        recommendationGroup: "similar_products"
+        recommendationGroup: "similar_products",
       }));
     }
   }
@@ -540,17 +676,22 @@ class HybridRecommendationEngine {
     try {
       // Get products with high recent activity
       const recentBehaviors = await UserBehavior.find({
-        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
       }).lean();
 
       // Count interactions per product
       const productInteractions = {};
-      recentBehaviors.forEach(b => {
+      recentBehaviors.forEach((b) => {
         const pid = b.productId?.toString();
         if (pid) {
-          const weight = b.actionType === "purchase" ? 5 :
-                        b.actionType === "add_to_cart" ? 3 :
-                        b.actionType === "add_to_wishlist" ? 2 : 1;
+          const weight =
+            b.actionType === "purchase"
+              ? 5
+              : b.actionType === "add_to_cart"
+                ? 3
+                : b.actionType === "add_to_wishlist"
+                  ? 2
+                  : 1;
           productInteractions[pid] = (productInteractions[pid] || 0) + weight;
         }
       });
@@ -568,11 +709,11 @@ class HybridRecommendationEngine {
           .limit(limit)
           .lean();
 
-        const popular = popularProducts.map(p => ({
+        const popular = popularProducts.map((p) => ({
           ...p,
           matchScore: 0,
           recommendationReasons: ["Sản phẩm phổ biến"],
-          recommendationGroup: "trending"
+          recommendationGroup: "trending",
         }));
 
         if (enableCache) {
@@ -584,13 +725,13 @@ class HybridRecommendationEngine {
       // Fetch products and sort by interaction count
       const products = await Product.find({
         _id: { $in: trendingIds },
-        isActive: true
+        isActive: true,
       }).lean();
 
       const topItems = products
-        .map(p => ({
+        .map((p) => ({
           product: p,
-          score: productInteractions[p._id.toString()] || 0
+          score: productInteractions[p._id.toString()] || 0,
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
@@ -598,12 +739,12 @@ class HybridRecommendationEngine {
       // Trending là XẾP HẠNG PHỔ BIẾN TOÀN CỤC (đếm tương tác, không có trần lý
       // thuyết), KHÔNG phải độ phù hợp cá nhân hóa → không gán "% MATCH" để tránh
       // lặp lại đúng kiểu lừa "top = 100%". Reason "Đang thịnh hành" đã đủ giải thích.
-      const sorted = topItems.map(item => ({
+      const sorted = topItems.map((item) => ({
         ...item.product,
         matchScore: null,
         isHighMatch: false,
         recommendationReasons: ["Đang thịnh hành"],
-        recommendationGroup: "trending"
+        recommendationGroup: "trending",
       }));
 
       if (enableCache) {
@@ -611,7 +752,6 @@ class HybridRecommendationEngine {
       }
 
       return sorted;
-
     } catch (error) {
       console.error("Trending products error:", error);
       const popularProducts = await Product.find({ isActive: true })
@@ -619,11 +759,11 @@ class HybridRecommendationEngine {
         .limit(limit)
         .lean();
 
-      return popularProducts.map(p => ({
+      return popularProducts.map((p) => ({
         ...p,
         matchScore: 0,
         recommendationReasons: ["Sản phẩm phổ biến"],
-        recommendationGroup: "trending"
+        recommendationGroup: "trending",
       }));
     }
   }
@@ -646,15 +786,15 @@ class HybridRecommendationEngine {
     // Apply hard filters
     let filteredProducts = RuleBasedEngine.applyHardFilters(products, {
       gender: user.gender,
-      ...filters
+      ...filters,
     });
 
     if (filteredProducts.length === 0) {
       filteredProducts = products;
     }
 
-    const exploitCount = Math.ceil(limit * 0.7);  // 70% exploit
-    const exploreCount = limit - exploitCount;     // 30% explore
+    const exploitCount = Math.ceil(limit * 0.7); // 70% exploit
+    const exploreCount = limit - exploitCount; // 30% explore
 
     // --- EXPLOIT: Sản phẩm phổ biến trong demographic của user ---
     // Tìm behaviors của users cùng gender trong 30 ngày gần đây
@@ -668,19 +808,19 @@ class HybridRecommendationEngine {
           $match: {
             actionType: { $in: ["purchase", "add_to_cart", "add_to_wishlist"] },
             createdAt: { $gte: thirtyDaysAgo },
-            productId: { $ne: null }
-          }
+            productId: { $ne: null },
+          },
         },
         {
           $lookup: {
             from: "users",
             localField: "userId",
             foreignField: "_id",
-            as: "userInfo"
-          }
+            as: "userInfo",
+          },
         },
         {
-          $match: user.gender ? { "userInfo.gender": user.gender } : {}
+          $match: user.gender ? { "userInfo.gender": user.gender } : {},
         },
         {
           $group: {
@@ -691,16 +831,19 @@ class HybridRecommendationEngine {
                   branches: [
                     { case: { $eq: ["$actionType", "purchase"] }, then: 5 },
                     { case: { $eq: ["$actionType", "add_to_cart"] }, then: 3 },
-                    { case: { $eq: ["$actionType", "add_to_wishlist"] }, then: 2 }
+                    {
+                      case: { $eq: ["$actionType", "add_to_wishlist"] },
+                      then: 2,
+                    },
                   ],
-                  default: 1
-                }
-              }
-            }
-          }
+                  default: 1,
+                },
+              },
+            },
+          },
         },
         { $sort: { score: -1 } },
-        { $limit: exploitCount * 3 } // Lấy dư để filter
+        { $limit: exploitCount * 3 }, // Lấy dư để filter
       ]);
     } catch (err) {
       console.error("Cold start demographic query error:", err);
@@ -708,21 +851,24 @@ class HybridRecommendationEngine {
 
     // Map demographic product IDs và tìm trong filteredProducts
     const demographicIds = new Set(
-      demographicBehaviors.map(d => d._id.toString())
+      demographicBehaviors.map((d) => d._id.toString()),
     );
     const productMap = new Map(
-      filteredProducts.map(p => [p._id.toString(), p])
+      filteredProducts.map((p) => [p._id.toString(), p]),
     );
 
     // Score tất cả filtered products cho cold start
-    const scoredProducts = filteredProducts.map(product => {
+    const scoredProducts = filteredProducts.map((product) => {
       const pid = product._id.toString();
       let score = 0;
 
       // Demographic popularity boost
-      const demoBehavior = demographicBehaviors.find(d => d._id.toString() === pid);
+      const demoBehavior = demographicBehaviors.find(
+        (d) => d._id.toString() === pid,
+      );
       if (demoBehavior) {
-        score += Math.min(Math.log1p(demoBehavior.score) / Math.log1p(50), 1.0) * 0.4;
+        score +=
+          Math.min(Math.log1p(demoBehavior.score) / Math.log1p(50), 1.0) * 0.4;
       }
 
       // General popularity
@@ -745,20 +891,28 @@ class HybridRecommendationEngine {
     const exploitProducts = scoredProducts.slice(0, exploitCount);
 
     // --- EXPLORE: Đa dạng từ categories/styles khác nhau ---
-    const usedIds = new Set(exploitProducts.map(p => p.product._id.toString()));
-    const usedCategories = new Set(exploitProducts.map(p => p.product.categoryId?.toString()));
+    const usedIds = new Set(
+      exploitProducts.map((p) => p.product._id.toString()),
+    );
+    const usedCategories = new Set(
+      exploitProducts.map((p) => p.product.categoryId?.toString()),
+    );
     const usedStyles = new Set();
-    exploitProducts.forEach(p => {
-      const styles = Array.isArray(p.product.style) ? p.product.style : [p.product.style];
-      styles.forEach(s => usedStyles.add(s));
+    exploitProducts.forEach((p) => {
+      const styles = Array.isArray(p.product.style)
+        ? p.product.style
+        : [p.product.style];
+      styles.forEach((s) => usedStyles.add(s));
     });
 
     // Lấy products từ categories/styles CHƯA có trong exploit
-    const explorePool = scoredProducts.filter(p => {
+    const explorePool = scoredProducts.filter((p) => {
       const pid = p.product._id.toString();
       const catId = p.product.categoryId?.toString();
-      const styles = Array.isArray(p.product.style) ? p.product.style : [p.product.style];
-      const hasNewStyle = styles.some(s => !usedStyles.has(s));
+      const styles = Array.isArray(p.product.style)
+        ? p.product.style
+        : [p.product.style];
+      const hasNewStyle = styles.some((s) => !usedStyles.has(s));
       const hasNewCategory = !usedCategories.has(catId);
 
       return !usedIds.has(pid) && (hasNewCategory || hasNewStyle);
@@ -768,7 +922,8 @@ class HybridRecommendationEngine {
 
     // Kết hợp và xen kẽ (interleave) để user không nhận ra pattern
     const combined = [];
-    let ei = 0, xi = 0;
+    let ei = 0,
+      xi = 0;
     for (let i = 0; i < limit; i++) {
       if (i % 3 === 2 && xi < exploreProducts.length) {
         // Mỗi 3 products, chèn 1 explore
@@ -782,16 +937,20 @@ class HybridRecommendationEngine {
 
     // Nếu chưa đủ limit, bổ sung từ remaining
     if (combined.length < limit) {
-      const usedFinalIds = new Set(combined.map(p => p.product._id.toString()));
-      const remaining = scoredProducts.filter(p => !usedFinalIds.has(p.product._id.toString()));
+      const usedFinalIds = new Set(
+        combined.map((p) => p.product._id.toString()),
+      );
+      const remaining = scoredProducts.filter(
+        (p) => !usedFinalIds.has(p.product._id.toString()),
+      );
       combined.push(...remaining.slice(0, limit - combined.length));
     }
 
-    return combined.slice(0, limit).map(item => ({
+    return combined.slice(0, limit).map((item) => ({
       ...item.product,
       ...this.buildMatchMeta(item.finalScore),
       recommendationReasons: ["Phổ biến trong nhóm của bạn"],
-      recommendationGroup: "popular"
+      recommendationGroup: "popular",
     }));
   }
 
@@ -801,7 +960,7 @@ class HybridRecommendationEngine {
   clearCache(userId = null) {
     if (userId) {
       const keys = this.cache.keys();
-      keys.forEach(key => {
+      keys.forEach((key) => {
         if (key.includes(userId.toString())) {
           this.cache.del(key);
         }
@@ -817,9 +976,10 @@ class HybridRecommendationEngine {
   /**
    * Personalized Bestsellers — Bán chạy trong phong cách của bạn
    *
-   * Chiến lược: Giữ bản chất "bán chạy" (soldCount chiếm 40%)
-   * nhưng re-rank theo sở thích cá nhân (category 25%, style 20%, popularity 15%).
-   * Cold start (0 behaviors) → fallback về bestsellers đại trà.
+   * Chiến lược: Giữ bản chất "bán chạy" (soldCount chiếm 25%) làm bối cảnh,
+   * nhưng CÁ NHÂN HÓA là yếu tố dẫn đầu (category 30% + style 30% = 60%)
+   * để phù hợp đề tài "gợi ý cá nhân hóa dựa trên hành vi người dùng".
+   * Cold start (0 behaviors) → fallback về bestsellers đại trà (sort soldCount).
    *
    * @param {Object} user - User object
    * @param {Object} options - { limit }
@@ -841,25 +1001,38 @@ class HybridRecommendationEngine {
           .sort({ createdAt: -1 })
           .limit(100)
           .lean(),
-        Product.find({ isActive: true }).lean()
+        Product.find({ isActive: true }).lean(),
       ]);
 
       // Cold start → fallback đại trà (sort by soldCount via aggregation)
       if (!behaviors || behaviors.length === 0) {
-        const filtered = RuleBasedEngine.applyHardFilters(products, { gender: user.gender });
-        return this._getUnpersonalizedBestsellers(filtered.length > 0 ? filtered : products, limit);
+        const filtered = RuleBasedEngine.applyHardFilters(products, {
+          gender: user.gender,
+        });
+        return this._getUnpersonalizedBestsellers(
+          filtered.length > 0 ? filtered : products,
+          limit,
+        );
       }
 
       // 2. Apply gender hard filter
-      let filteredProducts = RuleBasedEngine.applyHardFilters(products, { gender: user.gender });
+      let filteredProducts = RuleBasedEngine.applyHardFilters(products, {
+        gender: user.gender,
+      });
       if (filteredProducts.length === 0) filteredProducts = products;
 
       // 3. Extract preferences
-      const preferredCategories = CategoryFilter.extractPreferredCategories(behaviors, filteredProducts);
-      const preferredStyles = this.userProfileBuilder.extractStylePreferences(behaviors, filteredProducts);
+      const preferredCategories = CategoryFilter.extractPreferredCategories(
+        behaviors,
+        filteredProducts,
+      );
+      const preferredStyles = this.userProfileBuilder.extractStylePreferences(
+        behaviors,
+        filteredProducts,
+      );
 
       // 4. Compute soldCount via aggregation (exclude cancelled orders)
-      const productIds = filteredProducts.map(p => p._id);
+      const productIds = filteredProducts.map((p) => p._id);
       const soldRows = await OrderItem.aggregate([
         { $match: { productId: { $in: productIds } } },
         {
@@ -867,38 +1040,44 @@ class HybridRecommendationEngine {
             from: "orders",
             localField: "orderId",
             foreignField: "_id",
-            as: "order"
-          }
+            as: "order",
+          },
         },
         { $unwind: "$order" },
         { $match: { "order.status": { $ne: "cancelled" } } },
-        { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } }
+        { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } },
       ]);
-      const soldMap = new Map(soldRows.map(r => [r._id.toString(), r.soldCount]));
+      const soldMap = new Map(
+        soldRows.map((r) => [r._id.toString(), r.soldCount]),
+      );
 
       // 5. Filter: only products with sales
       const bestsellers = filteredProducts
-        .map(p => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
-        .filter(p => p.soldCount > 0);
+        .map((p) => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
+        .filter((p) => p.soldCount > 0);
 
       if (bestsellers.length === 0) {
         return [];
       }
 
       // 6. Normalize soldCount to [0,1]
-      const maxSold = Math.max(...bestsellers.map(p => p.soldCount));
+      const maxSold = Math.max(...bestsellers.map((p) => p.soldCount));
 
       // 7. Score with hybrid weights
-      const scored = bestsellers.map(product => {
+      const scored = bestsellers.map((product) => {
         const soldNorm = maxSold > 0 ? product.soldCount / maxSold : 0;
-        const categoryScore = this._calculateCategoryMatch(product, preferredCategories);
+        const categoryScore = this._calculateCategoryMatch(
+          product,
+          preferredCategories,
+        );
         const styleScore = this._calculateStyleMatch(product, preferredStyles);
-        const popularityScore = RuleBasedEngine.calculatePopularityScore(product);
+        const popularityScore =
+          RuleBasedEngine.calculatePopularityScore(product);
 
         const finalScore =
-          soldNorm       * 0.25 +
-          categoryScore  * 0.30 +
-          styleScore     * 0.30 +
+          soldNorm * 0.25 +
+          categoryScore * 0.3 +
+          styleScore * 0.3 +
           popularityScore * 0.15;
 
         return { product, finalScore, soldNorm, categoryScore, styleScore };
@@ -907,12 +1086,12 @@ class HybridRecommendationEngine {
       scored.sort((a, b) => b.finalScore - a.finalScore);
       const topItems = scored.slice(0, limit);
 
-      const results = topItems.map(item => ({
+      const results = topItems.map((item) => ({
         ...item.product,
         matchScore: null,
         isHighMatch: false,
         recommendationReasons: this._buildBestsellerReasons(item),
-        recommendationGroup: "personalized_bestseller"
+        recommendationGroup: "personalized_bestseller",
       }));
 
       if (enableCache) {
@@ -958,64 +1137,87 @@ class HybridRecommendationEngine {
           .lean(),
         Product.find({
           isActive: true,
-          createdAt: { $gte: cutoffDate }
+          createdAt: { $gte: cutoffDate },
         })
           .sort({ createdAt: -1 })
-          .lean()
+          .lean(),
       ]);
 
       // Cold start → fallback đại trà (sort by createdAt) — vẫn lọc gender
       if (!behaviors || behaviors.length === 0) {
-        const genderFiltered = RuleBasedEngine.applyHardFilters(newProducts, { gender: user.gender });
-        const coldStartProducts = genderFiltered.length > 0 ? genderFiltered : newProducts;
-        const results = coldStartProducts.slice(0, limit).map(p => ({
+        const genderFiltered = RuleBasedEngine.applyHardFilters(newProducts, {
+          gender: user.gender,
+        });
+        const coldStartProducts =
+          genderFiltered.length > 0 ? genderFiltered : newProducts;
+        const results = coldStartProducts.slice(0, limit).map((p) => ({
           ...p,
           matchScore: null,
           isHighMatch: false,
           recommendationReasons: ["Sản phẩm mới về"],
-          recommendationGroup: "new_arrival"
+          recommendationGroup: "new_arrival",
         }));
         if (enableCache) this.cache.set(cacheKey, results);
         return results;
       }
 
       // 2. Apply gender hard filter
-      let filteredNewProducts = RuleBasedEngine.applyHardFilters(newProducts, { gender: user.gender });
+      let filteredNewProducts = RuleBasedEngine.applyHardFilters(newProducts, {
+        gender: user.gender,
+      });
       if (filteredNewProducts.length === 0) filteredNewProducts = newProducts;
 
       if (filteredNewProducts.length === 0) return [];
 
       // 3. Extract preferences — dùng ALL products cho context đầy đủ
       const allProducts = await Product.find({ isActive: true }).lean();
-      const filteredAllProducts = RuleBasedEngine.applyHardFilters(allProducts, { gender: user.gender });
-      const preferredCategories = CategoryFilter.extractPreferredCategories(behaviors, filteredAllProducts.length > 0 ? filteredAllProducts : allProducts);
-      const preferredStyles = this.userProfileBuilder.extractStylePreferences(behaviors, filteredAllProducts.length > 0 ? filteredAllProducts : allProducts);
+      const filteredAllProducts = RuleBasedEngine.applyHardFilters(
+        allProducts,
+        { gender: user.gender },
+      );
+      const preferredCategories = CategoryFilter.extractPreferredCategories(
+        behaviors,
+        filteredAllProducts.length > 0 ? filteredAllProducts : allProducts,
+      );
+      const preferredStyles = this.userProfileBuilder.extractStylePreferences(
+        behaviors,
+        filteredAllProducts.length > 0 ? filteredAllProducts : allProducts,
+      );
 
       // 4. Score new products
-      const scored = filteredNewProducts.map(product => {
+      const scored = filteredNewProducts.map((product) => {
         const freshnessScore = RuleBasedEngine.calculateFreshnessScore(product);
         const styleScore = this._calculateStyleMatch(product, preferredStyles);
-        const categoryScore = this._calculateCategoryMatch(product, preferredCategories);
+        const categoryScore = this._calculateCategoryMatch(
+          product,
+          preferredCategories,
+        );
         const seasonalScore = RuleBasedEngine.calculateSeasonalScore(product);
 
         const finalScore =
-          freshnessScore  * 0.20 +
-          styleScore      * 0.35 +
-          categoryScore   * 0.30 +
-          seasonalScore   * 0.15;
+          freshnessScore * 0.2 +
+          styleScore * 0.35 +
+          categoryScore * 0.3 +
+          seasonalScore * 0.15;
 
-        return { product, finalScore, freshnessScore, styleScore, categoryScore };
+        return {
+          product,
+          finalScore,
+          freshnessScore,
+          styleScore,
+          categoryScore,
+        };
       });
 
       scored.sort((a, b) => b.finalScore - a.finalScore);
       const topItems = scored.slice(0, limit);
 
-      const results = topItems.map(item => ({
+      const results = topItems.map((item) => ({
         ...item.product,
         matchScore: null,
         isHighMatch: false,
         recommendationReasons: this._buildNewArrivalReasons(item),
-        recommendationGroup: "personalized_new_arrival"
+        recommendationGroup: "personalized_new_arrival",
       }));
 
       if (enableCache) {
@@ -1030,12 +1232,12 @@ class HybridRecommendationEngine {
         .sort({ createdAt: -1 })
         .limit(limit)
         .lean();
-      return fallback.map(p => ({
+      return fallback.map((p) => ({
         ...p,
         matchScore: null,
         isHighMatch: false,
         recommendationReasons: ["Sản phẩm mới về"],
-        recommendationGroup: "new_arrival"
+        recommendationGroup: "new_arrival",
       }));
     }
   }
@@ -1053,7 +1255,9 @@ class HybridRecommendationEngine {
 
     if (productStyles.length === 0) return 0.05;
 
-    const matchCount = productStyles.filter(s => preferredStyles.includes(s)).length;
+    const matchCount = productStyles.filter((s) =>
+      preferredStyles.includes(s),
+    ).length;
     if (matchCount === 0) return 0.05;
 
     // Partial match: 0.75, full match: 1.0
@@ -1082,8 +1286,10 @@ class HybridRecommendationEngine {
    */
   _buildBestsellerReasons(scoredItem) {
     const reasons = [];
-    if (scoredItem.categoryScore >= 0.8) reasons.push("Bán chạy trong danh mục bạn hay xem");
-    if (scoredItem.styleScore >= 0.7) reasons.push("Phù hợp phong cách của bạn");
+    if (scoredItem.categoryScore >= 0.8)
+      reasons.push("Bán chạy trong danh mục bạn hay xem");
+    if (scoredItem.styleScore >= 0.7)
+      reasons.push("Phù hợp phong cách của bạn");
     if (reasons.length === 0) reasons.push("Được nhiều người mua");
     return reasons.slice(0, 2);
   }
@@ -1104,42 +1310,27 @@ class HybridRecommendationEngine {
    * Fallback: unpersonalized bestsellers (used for cold start)
    */
   async _getUnpersonalizedBestsellers(products, limit) {
-    const productIds = products.map(p => p._id);
+    const productIds = products.map((p) => p._id);
     const soldRows = await OrderItem.aggregate([
       { $match: { productId: { $in: productIds } } },
-      { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } }
+      { $group: { _id: "$productId", soldCount: { $sum: "$quantity" } } },
     ]);
-    const soldMap = new Map(soldRows.map(r => [r._id.toString(), r.soldCount]));
+    const soldMap = new Map(
+      soldRows.map((r) => [r._id.toString(), r.soldCount]),
+    );
 
     return products
-      .map(p => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
-      .filter(p => p.soldCount > 0)
+      .map((p) => ({ ...p, soldCount: soldMap.get(p._id.toString()) || 0 }))
+      .filter((p) => p.soldCount > 0)
       .sort((a, b) => b.soldCount - a.soldCount)
       .slice(0, limit)
-      .map(p => ({
+      .map((p) => ({
         ...p,
         matchScore: null,
         isHighMatch: false,
         recommendationReasons: ["Được nhiều người mua"],
-        recommendationGroup: "bestseller"
+        recommendationGroup: "bestseller",
       }));
-  }
-
-  /**
-   * Clear cache (recommendation cache + collaborative matrix nếu cần)
-   */
-  clearCache(userId = null) {
-    if (userId) {
-      const keys = this.cache.keys();
-      keys.forEach(key => {
-        if (key.includes(userId.toString())) {
-          this.cache.del(key);
-        }
-      });
-    } else {
-      this.cache.flushAll();
-      this.collaborativeEngine.clearMatrixCache();
-    }
   }
 }
 
@@ -1191,6 +1382,18 @@ export const getPersonalizedBestsellers = async (user, limitParam) => {
 export const getPersonalizedNewArrivals = async (user, limitParam) => {
   const limit = Math.min(parseInt(limitParam) || 12, 50);
   return recommendationEngine.getPersonalizedNewArrivals(user, { limit });
+};
+
+/**
+ * Get outfit recommendations (complementary products) for a product
+ */
+export const getOutfitRecommendations = async (productId, user, limitParam) => {
+  const limit = Math.min(parseInt(limitParam) || 8, 20);
+  return recommendationEngine.outfitEngine.getOutfitRecommendations(
+    productId,
+    user,
+    { limit },
+  );
 };
 
 export default recommendationEngine;

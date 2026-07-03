@@ -5,9 +5,10 @@ import {
   getTrendingProductsController,
   getPersonalizedBestsellersController,
   getPersonalizedNewArrivalsController,
+  getOutfitRecommendationsController,
   clearCacheController
 } from "../controllers/recommendation.controller.js";
-import { protect } from "../middlewares/auth.middleware.js";
+import { protect, optionalAuth } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -20,6 +21,9 @@ router.get("/personalized-bestsellers", protect, getPersonalizedBestsellersContr
 // Personalized new arrivals (re-ranked by user preferences)
 router.get("/personalized-new-arrivals", protect, getPersonalizedNewArrivalsController);
 
+// Outfit recommendations — complementary products (public, enhanced when logged in)
+router.get("/outfit/:productId", optionalAuth, getOutfitRecommendationsController);
+
 // Similar products (item-to-item)
 router.get("/similar/:productId", getSimilarProductsController);
 
@@ -30,3 +34,4 @@ router.get("/trending", getTrendingProductsController);
 router.delete("/cache", protect, clearCacheController);
 
 export default router;
+

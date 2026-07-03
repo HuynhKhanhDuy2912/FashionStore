@@ -43,7 +43,7 @@ const STYLE_OPTIONS = [
   { value: "elegant", label: "Elegant", labelVi: "Thanh lịch" },
   { value: "sporty", label: "Sporty", labelVi: "Thể thao" },
   { value: "vintage", label: "Vintage", labelVi: "Cổ điển" },
-  { value: "smart_casual", label: "Smart Casual", labelVi: "Lịch sự thoải mái" }
+  { value: "smart_casual", label: "Smart Casual", labelVi: "Lịch sự" }
 ];
 
 export default function ProfilePage() {

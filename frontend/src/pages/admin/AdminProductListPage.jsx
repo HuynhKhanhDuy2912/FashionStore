@@ -33,7 +33,7 @@ const styleLabels = {
   elegant: "Thanh lịch (Elegant)",
   sporty: "Thể thao (Sporty)",
   vintage: "Cổ điển (Vintage)",
-  smart_casual: "Công sở năng động (Smart Casual)",
+  smart_casual: "Lịch sự (Smart Casual)",
 };
 
 // Giá bán thực tế = giá gốc + điều chỉnh của từng biến thể (priceAdjustment).

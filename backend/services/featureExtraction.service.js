@@ -23,40 +23,43 @@ export class ProductFeatureExtractor {
 
     // Style: [formality (0=rất casual → 1=rất formal), trendiness (0=classic → 1=trendy)]
     this.styleEmbeddings = {
-      casual:       [0.1, 0.3],   // rất casual, hơi classic
-      minimal:      [0.3, 0.4],   // hơi casual, trung tính
-      streetwear:   [0.15, 0.9],  // casual, rất trendy
-      sporty:       [0.1, 0.7],   // casual, khá trendy
-      smart_casual: [0.55, 0.5],  // hơi formal, trung tính
-      elegant:      [0.85, 0.4],  // rất formal, hơi classic
-      vintage:      [0.5, 0.1],   // trung tính, rất classic
+      casual: [0.1, 0.3], // rất casual, hơi classic
+      minimal: [0.3, 0.4], // hơi casual, trung tính
+      streetwear: [0.15, 0.9], // casual, rất trendy
+      sporty: [0.1, 0.7], // casual, khá trendy
+      smart_casual: [0.55, 0.5], // hơi formal, trung tính
+      elegant: [0.85, 0.4], // rất formal, hơi classic
+      vintage: [0.5, 0.1], // trung tính, rất classic
     };
 
     // Season: [temperature (0=lạnh → 1=nóng), versatility (0=specific → 1=versatile)]
     this.seasonEmbeddings = {
-      winter:     [0.0, 0.2],   // rất lạnh, specific
-      autumn:     [0.3, 0.3],   // hơi lạnh, hơi specific
-      spring:     [0.6, 0.4],   // hơi nóng, trung tính
-      summer:     [1.0, 0.2],   // rất nóng, specific
-      all_season: [0.5, 1.0],   // trung tính, rất versatile
+      winter: [0.0, 0.2], // rất lạnh, specific
+      autumn: [0.3, 0.3], // hơi lạnh, hơi specific
+      spring: [0.6, 0.4], // hơi nóng, trung tính
+      summer: [1.0, 0.2], // rất nóng, specific
+      all_season: [0.5, 1.0], // trung tính, rất versatile
     };
 
     // Occasion: [formality (0=casual → 1=formal), energy (0=calm → 1=active)]
     this.occasionEmbeddings = {
-      casual:  [0.1, 0.3],   // rất casual, calm
-      street:  [0.1, 0.6],   // casual, hơi active
-      sport:   [0.05, 1.0],  // rất casual, rất active
-      travel:  [0.2, 0.7],   // casual, khá active
-      date:    [0.5, 0.5],   // trung tính
-      work:    [0.7, 0.3],   // khá formal, calm
-      party:   [0.6, 0.9],   // hơi formal, rất active
-      formal:  [1.0, 0.2],   // rất formal, calm
+      casual: [0.1, 0.3], // rất casual, calm
+      street: [0.1, 0.6], // casual, hơi active
+      sport: [0.05, 1.0], // rất casual, rất active
+      travel: [0.2, 0.7], // casual, khá active
+      date: [0.5, 0.5], // trung tính
+      work: [0.7, 0.3], // khá formal, calm
+      party: [0.6, 0.9], // hơi formal, rất active
+      formal: [1.0, 0.2], // rất formal, calm
     };
   }
 
   /**
    * Chuẩn bị TF-IDF từ danh sách products
    * Tạo productIdToIndex map để đảm bảo TF-IDF index ổn định
+   *
+   * v2.2: Sau khi addDocument, build Global Vocabulary (top-K terms từ
+   * toàn bộ corpus) để mọi product dùng CÙNG basis khi trích vector.
    */
   buildTfIdfModel(products) {
     this.tfidf = new TfIdf();
@@ -71,6 +74,44 @@ export class ProductFeatureExtractor {
       this.tfidf.addDocument(textFeatures.toLowerCase());
       this.productIdToIndex.set(product._id.toString(), index);
     });
+
+    // Build global vocabulary SAU KHI tất cả documents đã được thêm
+    this._buildGlobalVocabulary();
+  }
+
+  /**
+   * Xây dựng Global Vocabulary — top 10 terms có tổng TF-IDF cao nhất
+   * trên TOÀN BỘ corpus.
+   *
+   * Lý do: Nếu mỗi sản phẩm lấy top-10 terms RIÊNG (per-document),
+   * chiều thứ i của sản phẩm A ("cotton") khác hoàn toàn chiều thứ i
+   * của sản phẩm B ("polyester") → cosine similarity VÔ NGHĨA vì
+   * không cùng basis.
+   *
+   * Giải pháp: Chọn top-10 terms từ toàn corpus → mọi sản phẩm tính
+   * TF-IDF trên CÙNG 10 terms → cosine similarity có ý nghĩa.
+   */
+  _buildGlobalVocabulary() {
+    const termScores = {};
+    const numDocs = this.tfidf.documents.length;
+
+    for (let docIdx = 0; docIdx < numDocs; docIdx++) {
+      const terms = this.tfidf.listTerms(docIdx);
+      terms.forEach(({ term, tfidf: score }) => {
+        termScores[term] = (termScores[term] || 0) + score;
+      });
+    }
+
+    // Sắp xếp giảm dần theo tổng TF-IDF score, lấy top 10
+    this.globalVocabulary = Object.entries(termScores)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([term]) => term);
+
+    // Fallback nếu corpus quá nhỏ
+    while (this.globalVocabulary.length < 10) {
+      this.globalVocabulary.push(`__pad_${this.globalVocabulary.length}__`);
+    }
   }
 
   /**
@@ -86,8 +127,12 @@ export class ProductFeatureExtractor {
     const defaultOccasionEmb = [0.1, 0.3]; // casual default
 
     // 1. Style features (2D semantic embedding)
-    const styleArr = Array.isArray(product.style) ? product.style : [product.style || "casual"];
-    const styleEmbeddings = styleArr.map(s => this.styleEmbeddings[s] || defaultStyleEmb);
+    const styleArr = Array.isArray(product.style)
+      ? product.style
+      : [product.style || "casual"];
+    const styleEmbeddings = styleArr.map(
+      (s) => this.styleEmbeddings[s] || defaultStyleEmb,
+    );
     features.style = this._averageEmbeddings(styleEmbeddings, defaultStyleEmb);
 
     // Gender (binary)
@@ -96,7 +141,9 @@ export class ProductFeatureExtractor {
 
     // 2. Season features (2D semantic embedding)
     if (product.season && product.season.length > 0) {
-      const seasonEmbs = product.season.map(s => this.seasonEmbeddings[s] || defaultSeasonEmb);
+      const seasonEmbs = product.season.map(
+        (s) => this.seasonEmbeddings[s] || defaultSeasonEmb,
+      );
       features.season = this._averageEmbeddings(seasonEmbs, defaultSeasonEmb);
     } else {
       features.season = [...defaultSeasonEmb]; // all_season
@@ -104,8 +151,13 @@ export class ProductFeatureExtractor {
 
     // 3. Occasion features (2D semantic embedding)
     if (product.occasion && product.occasion.length > 0) {
-      const occasionEmbs = product.occasion.map(o => this.occasionEmbeddings[o] || defaultOccasionEmb);
-      features.occasion = this._averageEmbeddings(occasionEmbs, defaultOccasionEmb);
+      const occasionEmbs = product.occasion.map(
+        (o) => this.occasionEmbeddings[o] || defaultOccasionEmb,
+      );
+      features.occasion = this._averageEmbeddings(
+        occasionEmbs,
+        defaultOccasionEmb,
+      );
     } else {
       features.occasion = [...defaultOccasionEmb]; // casual
     }
@@ -116,20 +168,18 @@ export class ProductFeatureExtractor {
     features.rating = (product.averageRating || 0) / 5;
     features.popularity = this.normalizePopularity(product.totalReviews || 0);
 
-    // 5. Text features (TF-IDF) - lấy top terms
-    // Ưu tiên dùng productId map (ổn định), fallback về productIndex
+    // 5. Text features (TF-IDF) — dùng Global Vocabulary (v2.2)
+    // Mỗi chiều tương ứng 1 term CHUNG cho mọi sản phẩm → cosine có ý nghĩa
     const tfidfVector = [];
-    const resolvedIndex = this.productIdToIndex?.get(product._id?.toString()) ?? productIndex ?? 0;
-    if (this.tfidf.documents.length > resolvedIndex) {
-      this.tfidf
-        .listTerms(resolvedIndex)
-        .slice(0, 10)
-        .forEach((item) => {
-          tfidfVector.push(item.tfidf);
-        });
+    const resolvedIndex =
+      this.productIdToIndex?.get(product._id?.toString()) ?? productIndex ?? 0;
+    if (this.globalVocabulary && this.tfidf.documents.length > resolvedIndex) {
+      this.globalVocabulary.forEach((term) => {
+        tfidfVector.push(this.tfidf.tfidf(term, resolvedIndex));
+      });
     }
 
-    // Pad hoặc truncate về 10 dimensions
+    // Pad nếu globalVocabulary chưa được build (fallback)
     while (tfidfVector.length < 10) {
       tfidfVector.push(0);
     }
@@ -168,7 +218,7 @@ export class ProductFeatureExtractor {
     if (!embeddings || embeddings.length === 0) return [...defaultEmb];
     const dims = defaultEmb.length;
     const result = new Array(dims).fill(0);
-    embeddings.forEach(emb => {
+    embeddings.forEach((emb) => {
       for (let i = 0; i < dims; i++) {
         result[i] += emb[i];
       }
@@ -186,16 +236,16 @@ export class ProductFeatureExtractor {
    */
   featuresToVector(features) {
     return [
-      ...features.style,         // 2 dims (formality, trendiness)
-      features.gender,           // 1 dim
-      ...features.season,        // 2 dims (temperature, versatility)
-      ...features.occasion,      // 2 dims (formality, energy)
-      features.priceNormalized,  // 1 dim
-      features.discount,         // 1 dim
-      features.rating,           // 1 dim
-      features.popularity,       // 1 dim
-      ...features.tfidf,         // 10 dims
-    ];                           // Total: 21 dims
+      ...features.style, // 2 dims (formality, trendiness)
+      features.gender, // 1 dim
+      ...features.season, // 2 dims (temperature, versatility)
+      ...features.occasion, // 2 dims (formality, energy)
+      features.priceNormalized, // 1 dim
+      features.discount, // 1 dim
+      features.rating, // 1 dim
+      features.popularity, // 1 dim
+      ...features.tfidf, // 10 dims
+    ]; // Total: 21 dims
   }
 
   /**
@@ -225,14 +275,14 @@ export class UserProfileBuilder {
 
     // Source multiplier: click từ search có intent rõ ràng hơn click từ home
     this.sourceMultipliers = {
-      search: 1.3,          // User chủ động tìm kiếm → intent mạnh nhất
-      recommendation: 1.2,  // Click từ gợi ý → tin tưởng hệ thống
-      category: 1.1,        // Browsing có chủ đích
-      product_page: 1.0,    // Trung tính
-      wishlist: 1.0,        // Trung tính
-      cart: 1.0,            // Trung tính
-      home: 0.9,            // Casual browsing
-      other: 0.9,           // Không rõ nguồn
+      search: 1.3, // User chủ động tìm kiếm → intent mạnh nhất
+      recommendation: 1.2, // Click từ gợi ý → tin tưởng hệ thống
+      category: 1.1, // Browsing có chủ đích
+      product_page: 1.0, // Trung tính
+      wishlist: 1.0, // Trung tính
+      cart: 1.0, // Trung tính
+      home: 0.9, // Casual browsing
+      other: 0.9, // Không rõ nguồn
     };
 
     // Mapping từ keywords phổ biến → style/occasion
@@ -251,7 +301,7 @@ export class UserProfileBuilder {
       vintage: "vintage",
       "cổ điển": "vintage",
       "smart casual": "smart_casual",
-      "công sở": "smart_casual",
+      "lịch sự": "smart_casual",
     };
 
     this.keywordOccasionMap = {
@@ -259,7 +309,7 @@ export class UserProfileBuilder {
       "công sở": "work",
       office: "work",
       "dạ hội": "party",
-      "tiệc": "party",
+      tiệc: "party",
       party: "party",
       "hẹn hò": "date",
       date: "date",
@@ -288,23 +338,28 @@ export class UserProfileBuilder {
     }
 
     // Tách positive và negative behaviors
-    const positiveBehaviors = behaviors.filter(b => {
+    const positiveBehaviors = behaviors.filter((b) => {
       const w = this.actionWeights[b.actionType];
       return w === undefined || w > 0;
     });
-    const negativeBehaviors = behaviors.filter(b => {
+    const negativeBehaviors = behaviors.filter((b) => {
       const w = this.actionWeights[b.actionType];
       return w !== undefined && w < 0;
     });
 
     // Build user vector chỉ từ positive behaviors
     const userVector = this._buildVectorFromBehaviors(
-      positiveBehaviors, products, featureExtractor
+      positiveBehaviors,
+      products,
+      featureExtractor,
     );
 
     // Build anti-vector từ negative behaviors (dùng trọng số dương)
     const antiVector = this._buildVectorFromBehaviors(
-      negativeBehaviors, products, featureExtractor, true
+      negativeBehaviors,
+      products,
+      featureExtractor,
+      true,
     );
 
     if (!userVector) return null;
@@ -313,7 +368,8 @@ export class UserProfileBuilder {
     if (antiVector) {
       const antiInfluence = 0.2; // negative behaviors ảnh hưởng 20%
       for (let i = 0; i < userVector.length; i++) {
-        userVector[i] = userVector[i] * (1 - antiInfluence) +
+        userVector[i] =
+          userVector[i] * (1 - antiInfluence) +
           (userVector[i] - antiVector[i]) * antiInfluence;
       }
     }
@@ -330,7 +386,12 @@ export class UserProfileBuilder {
    * @param {boolean} useAbsoluteWeight - Dùng |weight| thay vì weight gốc
    * @returns {number[]|null} Weighted average vector
    */
-  _buildVectorFromBehaviors(behaviors, products, featureExtractor, useAbsoluteWeight = false) {
+  _buildVectorFromBehaviors(
+    behaviors,
+    products,
+    featureExtractor,
+    useAbsoluteWeight = false,
+  ) {
     if (!behaviors || behaviors.length === 0) return null;
 
     // Map productId -> product
@@ -361,7 +422,8 @@ export class UserProfileBuilder {
       const durationBoost = this.calculateDurationBoost(behavior.duration);
       const sourceMultiplier = this.getSourceMultiplier(behavior.source);
 
-      const finalWeight = weight * recencyWeight * durationBoost * sourceMultiplier;
+      const finalWeight =
+        weight * recencyWeight * durationBoost * sourceMultiplier;
 
       const vector = featureExtractor.getProductVector(product);
       weightedVectors.push({ vector, weight: finalWeight });
@@ -409,15 +471,23 @@ export class UserProfileBuilder {
     const now = Date.now();
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
-    const shortTermBehaviors = behaviors.filter(b =>
-      (now - new Date(b.createdAt).getTime()) <= SEVEN_DAYS
+    const shortTermBehaviors = behaviors.filter(
+      (b) => now - new Date(b.createdAt).getTime() <= SEVEN_DAYS,
     );
-    const longTermBehaviors = behaviors.filter(b =>
-      (now - new Date(b.createdAt).getTime()) > SEVEN_DAYS
+    const longTermBehaviors = behaviors.filter(
+      (b) => now - new Date(b.createdAt).getTime() > SEVEN_DAYS,
     );
 
-    const shortTermVector = this.buildUserProfile(shortTermBehaviors, products, featureExtractor);
-    const longTermVector = this.buildUserProfile(longTermBehaviors, products, featureExtractor);
+    const shortTermVector = this.buildUserProfile(
+      shortTermBehaviors,
+      products,
+      featureExtractor,
+    );
+    const longTermVector = this.buildUserProfile(
+      longTermBehaviors,
+      products,
+      featureExtractor,
+    );
 
     // Nếu chỉ có 1 trong 2, trả về cái có
     if (!shortTermVector && !longTermVector) return null;
@@ -428,8 +498,8 @@ export class UserProfileBuilder {
     const shortWeight = 0.6;
     const longWeight = 0.4;
 
-    return shortTermVector.map((v, i) =>
-      v * shortWeight + longTermVector[i] * longWeight
+    return shortTermVector.map(
+      (v, i) => v * shortWeight + longTermVector[i] * longWeight,
     );
   }
 
@@ -439,7 +509,7 @@ export class UserProfileBuilder {
    */
   extractStylePreferences(behaviors, products = []) {
     const styleCounts = {};
-    const productMap = new Map(products.map(p => [p._id.toString(), p]));
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
     behaviors.forEach((behavior) => {
       let styles = [];
@@ -460,7 +530,7 @@ export class UserProfileBuilder {
         }
       }
 
-      styles.forEach(style => {
+      styles.forEach((style) => {
         const weight = this.actionWeights[behavior.actionType] || 1;
         styleCounts[style] = (styleCounts[style] || 0) + weight;
       });
@@ -490,7 +560,9 @@ export class UserProfileBuilder {
       const metaOccasion = behavior.metadata?.occasion;
       const metaOccasions = Array.isArray(metaOccasion)
         ? metaOccasion
-        : (typeof metaOccasion === "string" && metaOccasion.trim() ? [metaOccasion] : []);
+        : typeof metaOccasion === "string" && metaOccasion.trim()
+          ? [metaOccasion]
+          : [];
       metaOccasions.forEach((occ) => {
         occasionCounts[occ] = (occasionCounts[occ] || 0) + weight * 1.5;
       });
@@ -591,7 +663,7 @@ export class UserProfileBuilder {
     return {
       styles: [...styles],
       occasions: [...occasions],
-      keywords
+      keywords,
     };
   }
 }

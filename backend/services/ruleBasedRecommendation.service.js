@@ -233,7 +233,10 @@ export class RuleBasedEngine {
     } = context;
 
     // Calculate individual rule scores
-    const recencyScore = this.calculateRecencyScore(product, behaviors);
+    // LƯU Ý v2.2: Recency Rule đã BỊ LOẠI khỏi weighted combination.
+    // Lý do: User Profile đã áp dụng exponential decay (e^(-days/30)) trong
+    // buildUserProfile() → nếu tính recency lần nữa ở đây sẽ double penalize
+    // hành vi cũ. Trọng số 15% được phân bổ cho Style (+8%) và Occasion (+7%).
     const popularityScore = this.calculatePopularityScore(product);
     const seasonalScore = this.calculateSeasonalScore(product);
     const discountScore = this.calculateDiscountScore(product);
@@ -244,14 +247,13 @@ export class RuleBasedEngine {
     const freshnessScore = this.calculateFreshnessScore(product);
     const wishlistScore = this.calculateWishlistScore(product, wishlistProductIds);
 
-    // Weighted combination
+    // Weighted combination — v2.2: Removed recency (was 0.15), redistributed
     const weights = {
-      recency: 0.15,
       popularity: 0.15,
       seasonal: 0.10,
       discount: 0.08,
-      occasion: 0.12,
-      style: 0.15,
+      occasion: 0.19,    // +7% (was 0.12) — absorbed from recency
+      style: 0.23,       // +8% (was 0.15) — absorbed from recency
       priceRange: 0.08,
       stock: 0.07,
       freshness: 0.05,
@@ -259,7 +261,6 @@ export class RuleBasedEngine {
     };
 
     const ruleScore =
-      recencyScore * weights.recency +
       popularityScore * weights.popularity +
       seasonalScore * weights.seasonal +
       discountScore * weights.discount +
@@ -273,7 +274,6 @@ export class RuleBasedEngine {
     return {
       ruleScore,
       breakdown: {
-        recency: recencyScore,
         popularity: popularityScore,
         seasonal: seasonalScore,
         discount: discountScore,

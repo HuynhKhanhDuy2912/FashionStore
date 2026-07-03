@@ -6,6 +6,7 @@ import ProductInfoModal from "../components/ProductInfoModal.jsx";
 import SizeGuideModal from "../components/SizeGuideModal.jsx";
 import VirtualTryOnPanel from "../components/VirtualTryOnPanel.jsx";
 import RecommendationSection from "../components/RecommendationSection.jsx";
+import OutfitSuggestion from "../components/OutfitSuggestion.jsx";
 import BestSellersSection from "../components/BestSellersSection.jsx";
 import ProductQAModal from "../components/ProductQAModal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -1108,8 +1109,39 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Outfit suggestion — Complete the look */}
+      <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pt-16 border-t border-gray-100">
+        <OutfitSuggestion
+          productId={productId}
+          token={token}
+          onAddToWishlist={(item) => handleWishlist(item, "product_detail_outfit")}
+          onAddToCart={async (product, variant) => {
+            if (!token) {
+              toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+              return;
+            }
+            try {
+              await apiRequest("/carts/me/items", {
+                method: "POST",
+                token,
+                body: {
+                  productId: product._id,
+                  variantId: variant?._id,
+                  quantity: 1,
+                  source: "product_detail_outfit"
+                }
+              });
+              toast.success(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
+            } catch (err) {
+              toast.error(err.message);
+            }
+          }}
+          wishlistProductIds={wishlistProductIds}
+        />
+      </div>
+
       {/* Similar products */}
-      <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:py-16">
+      <div className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16">
         <RecommendationSection
           type="similar"
           productId={productId}
@@ -1143,7 +1175,7 @@ export default function ProductDetailPage() {
       </div>
 
 
-      {/* Bán chạy nhất */}
+      {/* Bestseller products */}
       <BestSellersSection
         excludeProductId={productId}
         className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16"

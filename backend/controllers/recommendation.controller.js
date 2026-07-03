@@ -4,6 +4,7 @@ import {
   getTrendingProducts,
   getPersonalizedBestsellers,
   getPersonalizedNewArrivals,
+  getOutfitRecommendations,
   clearRecommendationCache
 } from "../services/hybridRecommendation.service.js";
 import ProductVariant from "../models/ProductVariant.js";
@@ -168,6 +169,37 @@ export const getPersonalizedNewArrivalsController = async (req, res) => {
       success: true,
       message: "Personalized new arrivals fetched successfully",
       data: await enrichProducts(newArrivals)
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Outfit recommendations — complementary products for "Complete the Look"
+ * Works for both guests (basic style matching) and logged-in users (+ personalization)
+ */
+export const getOutfitRecommendationsController = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const outfit = await getOutfitRecommendations(
+      productId,
+      req.user || null,
+      req.query.limit
+    );
+
+    // Enrich outfit items with variants and gallery images
+    if (outfit.outfitItems && outfit.outfitItems.length > 0) {
+      outfit.outfitItems = await enrichProducts(outfit.outfitItems);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Outfit recommendations fetched successfully",
+      data: outfit
     });
   } catch (error) {
     return res.status(500).json({

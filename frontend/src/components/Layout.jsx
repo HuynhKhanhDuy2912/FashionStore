@@ -229,7 +229,7 @@ export default function Layout() {
 
     const updateHeader = () => {
       const currentScrollY = window.scrollY;
-      
+
       if (currentScrollY < 50) {
         setIsHeaderVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -237,7 +237,7 @@ export default function Layout() {
       } else if (currentScrollY < lastScrollY) {
         setIsHeaderVisible(true);
       }
-      
+
       lastScrollY = currentScrollY;
       ticking = false;
     };
@@ -871,7 +871,7 @@ export default function Layout() {
       </main>
 
       {!isAdminView ? (
-        <footer className="mt-20 border-t border-gray-200 bg-[#101010] text-white">
+        <footer className="mt-10 border-t border-gray-200 bg-[#101010] text-white">
           <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-10 px-4 py-6 md:grid-cols-[1.28fr_0.8fr_0.8fr_0.8fr_1.35fr] lg:px-8 lg:py-10">
             <div>
               <NavLink to="/" className="inline-flex items-center gap-3">

@@ -128,7 +128,7 @@ function getStyleLabel(style) {
     casual: "Thường ngày (Casual)", minimal: "Tối giản (Minimal)",
     streetwear: "Đường phố (Streetwear)", elegant: "Thanh lịch (Elegant)",
     sporty: "Thể thao (Sporty)", vintage: "Cổ điển (Vintage)",
-    smart_casual: "Công sở năng động (Smart Casual)",
+    smart_casual: "Lịch sự (Smart Casual)",
   };
   return map[style] || style;
 }
