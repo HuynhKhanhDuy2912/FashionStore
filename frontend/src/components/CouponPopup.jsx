@@ -137,7 +137,7 @@ export default function CouponPopup() {
         }}
       >
         {/* Header */}
-        <div className="relative border-b border-white/10 bg-[#ee3b00] px-6 py-6 text-white">
+        <div className="relative border-b border-white/10 bg-black px-6 py-6 text-white">
           <button
             type="button"
             onClick={handleClose}
@@ -202,7 +202,7 @@ export default function CouponPopup() {
                     onClick={() => handleCopy(coupon.code)}
                     className={`inline-flex h-10 w-full items-center justify-center gap-2 border px-3 text-[11px] font-bold uppercase tracking-wider transition ${isSaved
                       ? "cursor-not-allowed border-gray-200 bg-white text-gray-400"
-                      : "border-gray-600 bg-white text-black hover:bg-black hover:text-white"
+                      : "border-gray-300 bg-white text-black hover:bg-black hover:text-white"
                       }`}
                   >
                     {isSaved || copiedCode === coupon.code ? (

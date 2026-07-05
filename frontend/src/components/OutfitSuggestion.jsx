@@ -51,7 +51,7 @@ export default function OutfitSuggestion({
       try {
         const options = token ? { token } : {};
         const response = await apiRequest(
-          `/recommendations/outfit/${productId}?limit=8`,
+          `/recommendations/outfit/${productId}?limit=12`,
           options
         );
         setOutfit(response.data);

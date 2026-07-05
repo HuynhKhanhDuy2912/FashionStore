@@ -667,7 +667,7 @@ export default function ProductDetailPage() {
       <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 py-4 px-6">
         <Link to="/" className="hover:text-black">TRANG CHỦ</Link>
         <span>/</span>
-        <Link to="/products" className="hover:text-sm">SẢN PHẨM</Link>
+        <Link to="/products" className="hover:text-black">SẢN PHẨM</Link>
         <span>/</span>
         <span className="text-black truncate max-w-auto">{displayName}</span>
       </nav>
@@ -1067,7 +1067,7 @@ export default function ProductDetailPage() {
               <button
                 onClick={handleAddToCart}
                 disabled={!selectedVariant || selectedVariant.stock === 0}
-                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors cursor-pointer border-none text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-xs hover:bg-gray-700 transition-colors cursor-pointer border-none text-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {!selectedVariant || selectedVariant.stock === 0 ? "HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG"}
               </button>
@@ -1075,14 +1075,14 @@ export default function ProductDetailPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowVirtualTryOnModal(true)}
-                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center flex items-center justify-center gap-2"
+                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors cursor-pointer border border-black text-center flex items-center justify-center gap-2"
                   >
                     <Sparkles size={16} />
                     THỬ ĐỒ ẢO
                   </button>
                   <button
                     onClick={handleBuyNow}
-                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-100 transition-colors cursor-pointer border border-black text-center"
+                    className="flex-1 py-4 bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors cursor-pointer border border-black text-center"
                   >
                     MUA NGAY
                   </button>
