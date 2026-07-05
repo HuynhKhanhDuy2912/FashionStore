@@ -139,7 +139,9 @@ export class OutfitRecommendationEngine {
         slotMap.set(cat._id.toString(), slot);
       }
     });
-    console.log(`[OutfitEngine] Total mapped: ${slotMap.size}/${categories.length} categories`);
+    console.log(
+      `[OutfitEngine] Total mapped: ${slotMap.size}/${categories.length} categories`,
+    );
 
     this.slotCache.set(this.SLOT_CACHE_KEY, slotMap);
     return slotMap;
@@ -383,7 +385,9 @@ export class OutfitRecommendationEngine {
       });
 
       if (complementaryCandidates.length === 0) {
-        console.log(`[OutfitEngine] No complementary candidates found for seed slot "${seedSlot}" (targets: ${targetSlots.join(", ")})`);
+        console.log(
+          `[OutfitEngine] No complementary candidates found for seed slot "${seedSlot}" (targets: ${targetSlots.join(", ")})`,
+        );
         return {
           seed: seedProduct,
           outfitItems: [],
@@ -396,12 +400,14 @@ export class OutfitRecommendationEngine {
       const slotDistribution = {};
       complementaryCandidates.forEach((p) => {
         const catId = p.categoryId?._id?.toString() || p.categoryId?.toString();
-        const pSlot = slotMap.get(catId) || this._getCategorySlot(p.categoryId?.name);
+        const pSlot =
+          slotMap.get(catId) || this._getCategorySlot(p.categoryId?.name);
         slotDistribution[pSlot] = (slotDistribution[pSlot] || 0) + 1;
       });
-      console.log(`[OutfitEngine] Seed: "${seedProduct.name}" (slot: ${seedSlot}) → Target slots: [${targetSlots.join(", ")}]`);
+      console.log(
+        `[OutfitEngine] Seed: "${seedProduct.name}" (slot: ${seedSlot}) → Target slots: [${targetSlots.join(", ")}]`,
+      );
       console.log(`[OutfitEngine] Candidate distribution:`, slotDistribution);
-
 
       // 7. Score tất cả candidates
       const scored = complementaryCandidates.map((candidate) => {
@@ -441,7 +447,10 @@ export class OutfitRecommendationEngine {
       const outfitItems = [];
       const exhaustedSlots = new Set();
 
-      while (outfitItems.length < limit && exhaustedSlots.size < availableSlotNames.length) {
+      while (
+        outfitItems.length < limit &&
+        exhaustedSlots.size < availableSlotNames.length
+      ) {
         for (const slotName of availableSlotNames) {
           if (outfitItems.length >= limit) break;
           if (exhaustedSlots.has(slotName)) continue; // skip đã hết

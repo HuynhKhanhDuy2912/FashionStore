@@ -59,11 +59,11 @@ class HybridRecommendationEngine {
     // Loại bỏ popularity top-level (đã tính bên trong rule-based)
     // → phân bổ lại cho content-based và collaborative (cá nhân hóa ~87%)
     this.weights = {
-      content: 0.35,       // +5% — hybrid content (user-based + item-based)
+      content: 0.35, // +5% — hybrid content (user-based + item-based)
       collaborative: 0.25, // +5% — co-occurrence từ hành vi tất cả users
-      rule: 0.20,          // giữ nguyên — 9 business rules
-      behavior: 0.15,      // giữ nguyên — category/style/occasion overlap
-      category: 0.05,      // giữ nguyên — boost danh mục ưa thích
+      rule: 0.2, // giữ nguyên — 9 business rules
+      behavior: 0.15, // giữ nguyên — category/style/occasion overlap
+      category: 0.05, // giữ nguyên — boost danh mục ưa thích
     };
   }
 
@@ -128,9 +128,7 @@ class HybridRecommendationEngine {
       ];
       const interactedProductVectors = allInteractedIds
         .map((id) => {
-          const product = filteredProducts.find(
-            (p) => p._id.toString() === id,
-          );
+          const product = filteredProducts.find((p) => p._id.toString() === id);
           return product
             ? this.featureExtractor.getProductVector(product)
             : null;

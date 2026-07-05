@@ -22,13 +22,17 @@ const list = async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 10000);
 
+    const showHidden = req.query.showHidden === "true";
+    const filter = {};
+    if (!showHidden) filter.isHidden = { $ne: true };
+
     const [items, total] = await Promise.all([
-      Category.find({})
+      Category.find(filter)
         .populate({ path: "parentId", select: "name imageUrl" })
         .sort({ createdAt: 1 })
         .skip((page - 1) * limit)
         .limit(limit),
-      Category.countDocuments({})
+      Category.countDocuments(filter)
     ]);
 
     return res.status(200).json({
@@ -116,10 +120,13 @@ const create = async (req, res) => {
       });
     }
 
+    const isHidden = req.body?.isHidden || false;
+
     const payload = {
       name,
       parentId: parentId || null,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      isHidden
     };
 
     req.body = payload;
@@ -200,10 +207,13 @@ const update = async (req, res) => {
       });
     }
 
+    const isHidden = req.body?.isHidden !== undefined ? req.body.isHidden : (current.isHidden || false);
+
     req.body = {
       name: nextName,
       parentId: finalParentId || null,
-      imageUrl: nextImageUrl
+      imageUrl: nextImageUrl,
+      isHidden
     };
 
     return baseCrud.update(req, res);
