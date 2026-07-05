@@ -239,7 +239,12 @@ export default function CartPage() {
             </Link>
           </div>
         </div>
-      ) : !hasItems && !loading ? (
+      ) : loading && !cart ? (
+        <div className="flex flex-col items-center justify-center py-24 space-y-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-black"></div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">Đang tải giỏ hàng...</p>
+        </div>
+      ) : !hasItems ? (
         <div className="border border-gray-200 bg-gray-50 px-6 py-24 text-center">
           <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-white text-black shadow-sm">
             <ShoppingCart className="h-8 w-8" strokeWidth={1.6} />

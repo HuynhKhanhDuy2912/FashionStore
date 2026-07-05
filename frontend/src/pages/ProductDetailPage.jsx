@@ -628,7 +628,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (!product) {
+  if (!product || product._id !== productId) {
     return (
       <section className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
