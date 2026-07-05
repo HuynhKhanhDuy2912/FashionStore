@@ -1175,35 +1175,45 @@ export default function ProductDetailPage() {
       </div>
 
 
-      {/* Bestseller products */}
-      <BestSellersSection
-        excludeProductId={productId}
-        className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16"
-        onAddToWishlist={(item) => handleWishlist(item, "product_detail_bestseller")}
-        onAddToCart={async (prod, variant) => {
-          if (!token) {
+      {/* Bestseller products — cá nhân hóa khi đã đăng nhập */}
+      {token ? (
+        <RecommendationSection
+          type="personalized-bestsellers"
+          token={token}
+          limit={12}
+          excludeIds={[productId]}
+          className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16"
+          onAddToWishlist={(item) => handleWishlist(item, "product_detail_bestseller")}
+          onAddToCart={async (prod, variant) => {
+            try {
+              await apiRequest("/carts/me/items", {
+                method: "POST",
+                token,
+                body: {
+                  productId: prod._id,
+                  variantId: variant._id,
+                  quantity: 1,
+                  source: "product_detail_bestseller"
+                }
+              });
+              toast.success(`Đã thêm ${formatProductName(prod.name)} vào giỏ hàng`);
+            } catch (err) {
+              toast.error(err.message);
+            }
+          }}
+          wishlistProductIds={wishlistProductIds}
+        />
+      ) : (
+        <BestSellersSection
+          excludeProductId={productId}
+          className="mx-auto max-w-[1440px] px-4 pb-12 md:px-8 md:pb-16"
+          onAddToWishlist={(item) => handleWishlist(item, "product_detail_bestseller")}
+          onAddToCart={async (prod, variant) => {
             toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
-            return;
-          }
-
-          try {
-            await apiRequest("/carts/me/items", {
-              method: "POST",
-              token,
-              body: {
-                productId: prod._id,
-                variantId: variant._id,
-                quantity: 1,
-                source: "product_detail_bestseller"
-              }
-            });
-            toast.success(`Đã thêm ${formatProductName(prod.name)} vào giỏ hàng`);
-          } catch (err) {
-            toast.error(err.message);
-          }
-        }}
-        wishlistProductIds={wishlistProductIds}
-      />
+          }}
+          wishlistProductIds={wishlistProductIds}
+        />
+      )}
 
       <ProductInfoModal
         open={showProductInfoModal}

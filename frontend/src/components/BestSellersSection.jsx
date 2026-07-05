@@ -30,7 +30,7 @@ export default function BestSellersSection({
       try {
         const [productRes, variantRes, collectionRes] = await Promise.all([
           apiRequest("/products?limit=200"),
-          apiRequest("/product-variants?limit=2000"),
+          apiRequest("/product-variants?limit=5000"),
           apiRequest("/collections?limit=50&isActive=true"),
         ]);
 

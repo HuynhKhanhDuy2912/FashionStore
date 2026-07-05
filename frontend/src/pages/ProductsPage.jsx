@@ -250,8 +250,8 @@ export default function ProductsPage() {
       try {
         setIsLoading(true);
         const requests = [
-          apiRequest("/products?limit=500"),
-          apiRequest("/product-variants?limit=1200"),
+          apiRequest("/products?limit=1000"),
+          apiRequest("/product-variants?limit=10000"),
           apiRequest("/categories?limit=1000"),
           apiRequest("/collections?limit=100&isActive=true"),
         ];

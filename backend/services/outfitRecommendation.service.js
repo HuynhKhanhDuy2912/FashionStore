@@ -89,7 +89,10 @@ export class OutfitRecommendationEngine {
 
   /**
    * Xác định outfit slot cho 1 category dựa trên tên.
-   * Duyệt qua slotKeywords, lowercase matching.
+   *
+   * Sử dụng **longest-match-first** để tránh xung đột keyword:
+   * - "giày tây" (shoes, 7 chars) thắng "tây" (bottom, 3 chars)
+   * - "chân váy" (bottom, 8 chars) thắng "váy" (one_piece, 3 chars)
    *
    * @param {string} categoryName - Tên category (VD: "Áo Thun Nam")
    * @returns {string|null} Slot name hoặc null nếu không nhận diện được
@@ -98,12 +101,20 @@ export class OutfitRecommendationEngine {
     if (!categoryName) return null;
     const lower = categoryName.toLowerCase();
 
+    // Tìm tất cả các keyword match, ưu tiên keyword dài nhất (cụ thể nhất)
+    let bestSlot = null;
+    let bestKeywordLength = 0;
+
     for (const [slot, keywords] of Object.entries(this.slotKeywords)) {
-      if (keywords.some((kw) => lower.includes(kw))) {
-        return slot;
+      for (const kw of keywords) {
+        if (lower.includes(kw) && kw.length > bestKeywordLength) {
+          bestSlot = slot;
+          bestKeywordLength = kw.length;
+        }
       }
     }
-    return null;
+
+    return bestSlot;
   }
 
   /**
@@ -119,12 +130,16 @@ export class OutfitRecommendationEngine {
     const categories = await Category.find({}).select("name").lean();
     const slotMap = new Map();
 
+    // Debug: log category → slot mapping
+    console.log("[OutfitEngine] Building category → slot map:");
     categories.forEach((cat) => {
       const slot = this._getCategorySlot(cat.name);
+      console.log(`  - "${cat.name}" → ${slot || "UNMAPPED"}`);
       if (slot) {
         slotMap.set(cat._id.toString(), slot);
       }
     });
+    console.log(`[OutfitEngine] Total mapped: ${slotMap.size}/${categories.length} categories`);
 
     this.slotCache.set(this.SLOT_CACHE_KEY, slotMap);
     return slotMap;
@@ -368,6 +383,7 @@ export class OutfitRecommendationEngine {
       });
 
       if (complementaryCandidates.length === 0) {
+        console.log(`[OutfitEngine] No complementary candidates found for seed slot "${seedSlot}" (targets: ${targetSlots.join(", ")})`);
         return {
           seed: seedProduct,
           outfitItems: [],
@@ -375,6 +391,17 @@ export class OutfitRecommendationEngine {
           outfitOccasions: [],
         };
       }
+
+      // Debug: log slot distribution of candidates
+      const slotDistribution = {};
+      complementaryCandidates.forEach((p) => {
+        const catId = p.categoryId?._id?.toString() || p.categoryId?.toString();
+        const pSlot = slotMap.get(catId) || this._getCategorySlot(p.categoryId?.name);
+        slotDistribution[pSlot] = (slotDistribution[pSlot] || 0) + 1;
+      });
+      console.log(`[OutfitEngine] Seed: "${seedProduct.name}" (slot: ${seedSlot}) → Target slots: [${targetSlots.join(", ")}]`);
+      console.log(`[OutfitEngine] Candidate distribution:`, slotDistribution);
+
 
       // 7. Score tất cả candidates
       const scored = complementaryCandidates.map((candidate) => {
@@ -397,30 +424,53 @@ export class OutfitRecommendationEngine {
       // 8. Sort giảm dần
       scored.sort((a, b) => b.complementaryScore - a.complementaryScore);
 
-      // 9. Group theo slot, mỗi slot lấy top items (đảm bảo diversity)
-      // Tính số lượng slot thực tế có sản phẩm để chia đều limit
-      const availableSlots = new Set(scored.map((item) => item.slot)).size;
-      const actualTargetSlots =
-        availableSlots > 0 ? availableSlots : targetSlots.length;
-      const perSlotLimit = Math.max(Math.ceil(limit / actualTargetSlots), 2);
-      const slotCounts = {};
-      const outfitItems = [];
-
+      // 9. Group theo slot, đảm bảo diversity bằng round-robin
+      // Trước tiên group scored items theo slot, giữ nguyên thứ tự score
+      const slotBuckets = {};
       for (const item of scored) {
-        const count = slotCounts[item.slot] || 0;
-        if (count >= perSlotLimit) continue;
+        if (!slotBuckets[item.slot]) slotBuckets[item.slot] = [];
+        slotBuckets[item.slot].push(item);
+      }
 
-        outfitItems.push({
-          ...item.product,
-          slot: item.slot,
-          complementaryScore: Math.round(item.complementaryScore * 100),
-          outfitReasons: item.reasons,
-          recommendationReasons: item.reasons,
-          recommendationGroup: "outfit",
-        });
+      // Round-robin: lấy lần lượt 1 item từ mỗi slot cho đến khi đủ limit
+      // Đảm bảo mỗi slot đều được đại diện (ví dụ: shoes → top + bottom + one_piece)
+      const availableSlotNames = Object.keys(slotBuckets);
+      const slotPointers = {}; // track vị trí hiện tại trong mỗi bucket
+      availableSlotNames.forEach((s) => (slotPointers[s] = 0));
 
-        slotCounts[item.slot] = count + 1;
-        if (outfitItems.length >= limit) break;
+      const outfitItems = [];
+      const exhaustedSlots = new Set();
+
+      while (outfitItems.length < limit && exhaustedSlots.size < availableSlotNames.length) {
+        for (const slotName of availableSlotNames) {
+          if (outfitItems.length >= limit) break;
+          if (exhaustedSlots.has(slotName)) continue; // skip đã hết
+
+          const pointer = slotPointers[slotName];
+          const bucket = slotBuckets[slotName];
+
+          if (pointer >= bucket.length) {
+            exhaustedSlots.add(slotName);
+            continue;
+          }
+
+          const item = bucket[pointer];
+          slotPointers[slotName] = pointer + 1;
+
+          outfitItems.push({
+            ...item.product,
+            slot: item.slot,
+            complementaryScore: Math.round(item.complementaryScore * 100),
+            outfitReasons: item.reasons,
+            recommendationReasons: item.reasons,
+            recommendationGroup: "outfit",
+          });
+
+          // Kiểm tra slot exhausted
+          if (slotPointers[slotName] >= bucket.length) {
+            exhaustedSlots.add(slotName);
+          }
+        }
       }
 
       // 10. Xác định outfit style và occasions

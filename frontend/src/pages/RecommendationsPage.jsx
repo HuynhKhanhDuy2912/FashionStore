@@ -55,7 +55,7 @@ export default function RecommendationsPage() {
     try {
       const [recommendationResponse, variantResponse, wishlistResponse] = await Promise.all([
         apiRequest("/recommendations/me?limit=24", { token }),
-        apiRequest("/product-variants?limit=1200"),
+        apiRequest("/product-variants?limit=5000"),
         token ? apiRequest("/wishlists/me", { token }) : Promise.resolve({ data: { items: [] } }),
       ]);
 

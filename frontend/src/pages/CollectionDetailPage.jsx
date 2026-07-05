@@ -190,7 +190,7 @@ export default function CollectionDetailPage() {
         // 2. Lấy full products + variants + wishlist song song
         const requests = [
           apiRequest("/products?limit=500"),
-          apiRequest("/product-variants?limit=2000"),
+          apiRequest("/product-variants?limit=5000"),
         ];
         if (token) {
           requests.push(apiRequest("/wishlists/me", { token }));

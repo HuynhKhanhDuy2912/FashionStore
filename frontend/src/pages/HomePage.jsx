@@ -152,8 +152,8 @@ export default function HomePage() {
           collectionResponse,
           wishlistResponse,
         ] = await Promise.all([
-          apiRequest("/products?limit=100"),
-          apiRequest("/product-variants?limit=1200"),
+          apiRequest("/products?limit=500"),
+          apiRequest("/product-variants?limit=5000"),
           apiRequest("/banners/active"),
           apiRequest("/collections?limit=6&isActive=true"),
           token

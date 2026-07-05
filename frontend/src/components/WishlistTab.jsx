@@ -71,7 +71,7 @@ export default function WishlistTab({ token, onError }) {
         return;
       }
 
-      const variantResponse = await apiRequest("/product-variants?limit=1200");
+      const variantResponse = await apiRequest("/product-variants?limit=10000");
       const allVariants = variantResponse.data || [];
 
       const variantsByProductId = allVariants.reduce((acc, variant) => {
