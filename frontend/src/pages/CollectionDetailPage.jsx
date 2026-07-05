@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ChevronDown,
   Heart,
   LayoutGrid,
   List,
@@ -11,6 +10,7 @@ import {
   X,
   ChevronsRight,
   ChevronsLeft,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
@@ -686,7 +686,6 @@ export default function CollectionDetailPage() {
           </div>
         ) : null}
 
-        {/* Product Grid/List */}
         <div className="mt-6">
           {paginatedProducts.length === 0 ? (
             <div className="border border-gray-200 bg-white py-24 text-center">
@@ -797,7 +796,7 @@ export default function CollectionDetailPage() {
                             <div className="flex items-center justify-between gap-2">
                               <div className="min-w-0">
                                 {product.collectionName ? (
-                                  <p className="line-clamp-1 text-[12px] font-bold uppercase text-red-600">
+                                  <p className="line-clamp-1 text-[14px] font-bold uppercase text-[#ff0000]">
                                     {product.collectionName}
                                   </p>
                                 ) : (
@@ -872,7 +871,7 @@ export default function CollectionDetailPage() {
                       className={`${viewMode === "list" ? "pt-2 md:pt-0" : "px-3 py-3"} bg-white`}
                     >
                       {viewMode === "list" && product.collectionName ? (
-                        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-red-600">
+                        <p className="line-clamp-1 text-[14px] font-bold uppercase text-[#ff0000]">
                           {product.collectionName}
                         </p>
                       ) : null}
@@ -938,11 +937,7 @@ export default function CollectionDetailPage() {
                                   {formatPrice(priceBeforeDiscount)}
                                 </p>
                                 <span
-                                  className="inline-flex items-center bg-red-600 py-0.5 pl-2 pr-1.5 text-[12px] font-bold leading-none text-white"
-                                  style={{
-                                    clipPath:
-                                      "polygon(18% 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%)",
-                                  }}
+                                  className="inline-flex items-center justify-center rounded-full bg-[#ff0000] px-2.5 py-[3px] text-[12px] font-extrabold leading-none text-white shadow-sm"
                                 >
                                   -{effectiveDiscount}%
                                 </span>
@@ -952,13 +947,13 @@ export default function CollectionDetailPage() {
                           <button
                             type="button"
                             onClick={() => toggleWishlist(product)}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium transition text-red-600 hover:text-red-400"
+                            className="inline-flex items-center mt-1 gap-1.5 text-xs font-medium transition text-[#ff0000] hover:text-red-400"
                           >
                             <Heart
                               size={13}
                               className={
                                 wishlistProductIds.has(product._id)
-                                  ? "fill-red-600 text-red-600"
+                                  ? "fill-[#ff0000] text-[#ff0000]"
                                   : "text-current"
                               }
                             />
@@ -984,11 +979,7 @@ export default function CollectionDetailPage() {
                                 {formatPrice(priceBeforeDiscount)}
                               </p>
                               <span
-                                className="inline-flex items-center bg-red-600 py-0.5 pl-2 pr-1.5 text-[12px] font-bold leading-none text-white"
-                                style={{
-                                  clipPath:
-                                    "polygon(18% 0%, 100% 0%, 100% 100%, 6px 100%, 0% 50%)",
-                                }}
+                                className="inline-flex items-center justify-center rounded-full bg-[#ff0000] px-2.5 py-[3px] text-[12px] font-extrabold leading-none text-white shadow-sm"
                               >
                                 -{effectiveDiscount}%
                               </span>
@@ -1000,7 +991,7 @@ export default function CollectionDetailPage() {
                           <button
                             type="button"
                             onClick={() => toggleWishlist(product)}
-                            className={`inline-flex items-center gap-1.5 text-xs font-medium transition ${wishlistProductIds.has(product._id) ? "text-red-600" : "text-gray-500 hover:text-red-600"}`}
+                            className="inline-flex items-center mt-1 gap-1.5 text-xs font-medium transition text-[#ff0000] hover:text-red-400"
                           >
                             <Heart
                               size={13}
@@ -1070,7 +1061,7 @@ export default function CollectionDetailPage() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={normalizedCurrentPage === 1}
-                  className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+                  className="flex items-center justify-center bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
                 >
                   <ChevronsLeft size={18} />
                 </button>
@@ -1086,7 +1077,7 @@ export default function CollectionDetailPage() {
                       <button
                         key={p}
                         onClick={() => setCurrentPage(p)}
-                        className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${normalizedCurrentPage === p
+                        className={`h-9 w-9 text-sm font-semibold transition ${normalizedCurrentPage === p
                           ? "bg-black text-white"
                           : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                           }`}
@@ -1100,7 +1091,7 @@ export default function CollectionDetailPage() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={normalizedCurrentPage === totalPages}
-                  className="flex items-center justify-center rounded bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+                  className="flex items-center justify-center bg-white p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
                 >
                   <ChevronsRight size={18} />
                 </button>

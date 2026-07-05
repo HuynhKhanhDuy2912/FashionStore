@@ -261,26 +261,10 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 p-6">
-        <div className="mb-8 space-y-3">
-          <div className="h-8 w-72 animate-pulse rounded-md bg-slate-200" />
-          <div className="h-4 w-96 animate-pulse rounded-md bg-slate-200" />
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-36 animate-pulse rounded-lg bg-white shadow-sm"
-            />
-          ))}
-        </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-28 animate-pulse rounded-lg bg-white shadow-sm"
-            />
-          ))}
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+          <p className="text-sm text-slate-500">Đang tải dữ liệu...</p>
         </div>
       </div>
     );

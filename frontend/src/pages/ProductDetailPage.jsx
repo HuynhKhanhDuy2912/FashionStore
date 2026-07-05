@@ -955,14 +955,14 @@ export default function ProductDetailPage() {
           {availableColors.length > 0 && (
             <div>
               <div className="mb-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-black">
+                <p className="text-[14px] font-bold uppercase text-black">
                   {selectedColor}
                 </p>
                 {(() => {
                   const selectedColorVariants = variants.filter(v => v.color === selectedColor);
                   const isSelectedColorOutOfStock = selectedColorVariants.length > 0 && selectedColorVariants.every(v => Number(v.stock || 0) === 0);
                   if (isSelectedColorOutOfStock) {
-                    return <p className="text-[15px] font-bold text-[#c24b33] mt-1">Sản phẩm hết hàng</p>;
+                    return <p className="text-[14px] font-bold text-[#ff0000] mt-1">Sản phẩm hết hàng</p>;
                   }
                   return null;
                 })()}

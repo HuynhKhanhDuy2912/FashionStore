@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Copy, Check, ArrowRight, BadgePercent, Tag, Truck } from "lucide-react";
+import { X, Copy, Check, ArrowRight, BadgePercent, Gift, Ticket, Truck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -8,7 +8,7 @@ const formatCurrency = (v = 0) => `${Number(v).toLocaleString("vi-VN")}đ`;
 
 const TYPE_ICONS = {
   percentage: BadgePercent,
-  fixed_amount: Tag,
+  fixed_amount: Ticket,
   free_shipping: Truck
 };
 
@@ -58,8 +58,6 @@ export default function CouponPopup() {
       let data = [];
 
       if (token) {
-        // Authenticated: fetch available coupons (already excludes fully-used)
-        // and the user's saved coupon IDs (includes used-up ones still in wallet)
         const [availableResponse, savedResponse] = await Promise.all([
           apiRequest("/coupons/available", { token }),
           apiRequest("/coupons/saved", { token })
@@ -69,10 +67,8 @@ export default function CouponPopup() {
         const savedCodes = (savedResponse.data || []).map((c) => c.code);
         setReceivedCodes(savedCodes);
 
-        // Filter out coupons user already saved (they're already in their wallet)
         data = availableCoupons.filter((c) => !savedCodes.includes(c.code));
       } else {
-        // Not authenticated: show all public coupons
         const publicResponse = await apiRequest("/coupons/public");
         data = publicResponse.data || [];
         setReceivedCodes([]);
@@ -141,24 +137,24 @@ export default function CouponPopup() {
         }}
       >
         {/* Header */}
-        <div className="relative border-b border-white/10 bg-black px-6 py-6 text-white">
+        <div className="relative border-b border-white/10 bg-[#ee3b00] px-6 py-6 text-white">
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-4 top-4 grid h-9 w-9 place-items-center border border-white/20 text-white transition hover:bg-white hover:text-black"
+            className="absolute right-4 top-4 rounded-sm grid h-9 w-9 place-items-center border border-white text-white transition hover:bg-white hover:text-black"
             aria-label="Đóng"
           >
             <X className="h-4 w-4" />
           </button>
 
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.28em] text-white/60">
-            <Tag className="h-4 w-4" strokeWidth={1.5} />
+          <p className="flex items-center gap-2 text-[15px] font-bold uppercase text-white">
+            <Gift className="h-4 w-4" strokeWidth={1.5} />
             FashionStore
           </p>
-          <h2 className="mt-3 pr-10 text-2xl font-light tracking-tight">
+          <h2 className="mt-3 pr-10 text-2xl font-bold tracking-tight">
             Ưu đãi dành cho bạn
           </h2>
-          <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/70">
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-white">
             Lưu mã vào ví voucher và dùng khi thanh toán.
           </p>
         </div>
@@ -179,8 +175,8 @@ export default function CouponPopup() {
                 className={`relative flex overflow-hidden border border-gray-200 ${isFreeShipping ? "bg-blue-50/60" : "bg-emerald-50/60"}`}
               >
                 <div className="flex min-w-0 flex-1 items-start gap-3 p-4">
-                  <div className={`grid h-10 w-10 shrink-0 place-items-center ${toneClass}`}>
-                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  <div className={`grid h-10 w-10 shrink-0 place-items-center my-auto ${toneClass}`}>
+                    <Icon className="h-7 w-7" strokeWidth={1.5} />
                   </div>
 
                   <div className="min-w-0">
@@ -204,11 +200,10 @@ export default function CouponPopup() {
                     type="button"
                     disabled={isSaved}
                     onClick={() => handleCopy(coupon.code)}
-                    className={`inline-flex h-10 w-full items-center justify-center gap-2 border px-3 text-[11px] font-bold uppercase tracking-wider transition ${
-                      isSaved
-                        ? "cursor-not-allowed border-gray-200 bg-white text-gray-400"
-                        : "border-black bg-black text-white hover:bg-white hover:text-black"
-                    }`}
+                    className={`inline-flex h-10 w-full items-center justify-center gap-2 border px-3 text-[11px] font-bold uppercase tracking-wider transition ${isSaved
+                      ? "cursor-not-allowed border-gray-200 bg-white text-gray-400"
+                      : "border-gray-600 bg-white text-black hover:bg-black hover:text-white"
+                      }`}
                   >
                     {isSaved || copiedCode === coupon.code ? (
                       <>

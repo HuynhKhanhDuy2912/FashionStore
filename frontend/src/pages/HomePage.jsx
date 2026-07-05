@@ -284,7 +284,7 @@ export default function HomePage() {
         });
         toast.success(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
 
-        // Track add_to_wishlist behavior (đối xứng với remove_from_wishlist)
+        // Track add_to_wishlist behavior
         trackBehavior(token, {
           actionType: "add_to_wishlist",
           productId,

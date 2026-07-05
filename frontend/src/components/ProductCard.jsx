@@ -138,7 +138,7 @@ export default function ProductCard({
         >
           <div className="flex h-full items-center justify-center gap-3">
             {product.collectionName || product.collectionId?.name ? (
-              <p className="mr-auto text-[15px] font-semibold leading-4 text-red-600">
+              <p className="mr-auto text-[14px] uppercase font-bold text-[#ff0000]">
                 {product.collectionName || product.collectionId?.name}
               </p>
             ) : null}
@@ -202,7 +202,7 @@ export default function ProductCard({
       <div className="bg-white px-3 py-3">
         {product.recommendationReasons?.length ? (
           <div className="mb-2 flex items-center justify-between">
-            <span className="inline-flex items-center bg-red-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-widest text-red-600 border border-red-100 rounded-sm">
+            <span className="inline-flex items-center bg-red-50 px-2 py-0.5 text-[13px] font-bold text-[#ff0000] border border-red-100 rounded-sm">
               {product.recommendationReasons[0]}
             </span>
             {token && product.matchScore > 0 ? (
@@ -257,9 +257,9 @@ export default function ProductCard({
             <button
               type="button"
               onClick={() => onAddToWishlist(product)}
-              className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium transition text-red-600 hover:text-red-400`}
+              className={`inline-flex shrink-0 items-center gap-1 text-xs font-medium transition text-[#ff0000] hover:text-red-400`}
             >
-              <Heart size={13} className={isWishlisted ? "fill-red-600 text-red-600" : "text-current"} />
+              <Heart size={13} className={isWishlisted ? "fill-[#ff0000] text-[#ff0000]" : "text-current"} />
               Yêu thích
             </button>
           ) : null}

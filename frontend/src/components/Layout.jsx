@@ -78,29 +78,6 @@ const footerPolicyLinks = [
   "Điều khoản mua hàng",
 ];
 
-const footerServiceItems = [
-  {
-    icon: Truck,
-    title: "Giao hàng toàn quốc",
-    copy: "Miễn phí từ 999.000đ",
-  },
-  {
-    icon: RotateCcw,
-    title: "Đổi trả 07 ngày",
-    copy: "Linh hoạt, rõ ràng",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Thanh toán an toàn",
-    copy: "COD, VNPay, PayPal",
-  },
-  {
-    icon: MessageCircle,
-    title: "Tư vấn nhanh",
-    copy: "Hỗ trợ chọn size",
-  },
-];
-
 function InstagramLogo({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -468,7 +445,7 @@ export default function Layout() {
               >
                 <NavLink
                   to="/"
-                  className="text-[17px] font-semibold text-black hover:text-red-600"
+                  className="text-[14px] font-bold uppercase text-black hover:text-red-600"
                 >
                   Trang chủ
                 </NavLink>
@@ -480,7 +457,7 @@ export default function Layout() {
                       key={root._id}
                       type="button"
                       onClick={() => toggleMegaMenu(root._id)}
-                      className={`border-none bg-transparent p-0 text-[17px] transition font-semibold text-black ${isActive
+                      className={`border-none bg-transparent p-0 text-[14px] font-bold uppercase text-black ${isActive
                         ? "underline underline-offset-8 decoration-3 decoration-black"
                         : "hover:text-red-600"
                         }`}
@@ -491,19 +468,19 @@ export default function Layout() {
                 })}
                 <NavLink
                   to="/collections"
-                  className="text-[17px] font-semibold text-black hover:text-red-600"
+                  className="text-[14px] font-bold uppercase text-black hover:text-red-600"
                 >
                   Bộ sưu tập
                 </NavLink>
                 <NavLink
                   to="/recommendations"
-                  className="text-[17px] font-semibold text-black hover:text-red-600"
+                  className="text-[14px] font-bold uppercase text-black hover:text-red-600"
                 >
                   Gợi ý
                 </NavLink>
                 <NavLink
                   to="/contact"
-                  className="text-[17px] font-semibold text-black hover:text-red-600"
+                  className="text-[14px] font-bold uppercase text-black hover:text-red-600"
                 >
                   Liên hệ
                 </NavLink>
@@ -802,7 +779,7 @@ export default function Layout() {
                     type="button"
                     className="flex items-center gap-4 text-left"
                     onClick={() => {
-                      if (item.key === "stores") navigate("/products");
+                      if (item.key === "all") navigate("/products");
                       if (item.key === "sale") navigate("/products?sale=1");
                       if (item.key === "new") navigate("/products?newArrivals=1");
                       if (item.key === "best-seller") navigate("/products?bestSeller=1");

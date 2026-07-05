@@ -9,8 +9,8 @@ import { apiRequest } from "../lib/api";
  * Hỗ trợ 3 loại: personalized, similar, trending
  */
 export default function RecommendationSection({
-  type = "personalized", // "personalized" | "similar" | "trending"
-  productId = null, // Required for type="similar"
+  type = "personalized",
+  productId = null,
   token = null,
   limit = 12,
   title,
@@ -20,8 +20,8 @@ export default function RecommendationSection({
   onAddToCart,
   wishlistProductIds = new Set(),
   className = "",
-  showAIBadge = false, // Show AI badge for personalized recommendations
-  excludeIds = [] // Array of product IDs to exclude
+  showAIBadge = false,
+  excludeIds = []
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

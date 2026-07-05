@@ -244,7 +244,7 @@ export default function CartPage() {
           <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-white text-black shadow-sm">
             <ShoppingCart className="h-8 w-8" strokeWidth={1.6} />
           </div>
-          <h3 className="mb-3 text-xl font-bold uppercase tracking-widest text-black">Giỏ hàng trống</h3>
+          <h3 className="mb-3 text-l font-bold uppercase text-black">Chưa có sản phẩm nào</h3>
           <p className="mx-auto mb-8 max-w-md text-sm leading-6 text-gray-500">
             Bạn chưa có sản phẩm nào trong giỏ hàng. Khám phá bộ sưu tập mới và thêm những món phù hợp với phong cách của bạn.
           </p>

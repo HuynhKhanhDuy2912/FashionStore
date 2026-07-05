@@ -476,7 +476,7 @@ export default function AdminLayout() {
                   to="/admin"
                   className="hidden items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-gray-50 lg:flex"
                 >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center border border-gray-300 bg-white text-sm font-extrabold text-black">
+                  <span className="grid h-10 w-10 rounded-md shrink-0 place-items-center border border-gray-300 bg-white text-sm font-extrabold text-black">
                     FS
                   </span>
                   <span className="min-w-0">
