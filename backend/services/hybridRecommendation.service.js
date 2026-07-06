@@ -354,7 +354,7 @@ class HybridRecommendationEngine {
         category: "style",
       },
       {
-        reason: "Đúng phong cách bạn yêu thích",
+        reason: "Phù hợp phong cách của bạn",
         score: bd.style,
         threshold: 0.8,
         category: "style",

@@ -12,6 +12,8 @@ import {
   Filter,
   X,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import AdminPageHeader from "../../components/AdminPageHeader.jsx";
 import ImageUpload from "../../components/ImageUpload.jsx";
@@ -118,7 +120,7 @@ export default function AdminCategoriesPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await apiRequest("/categories?limit=1000", { token });
+      const response = await apiRequest("/categories?limit=1000&showHidden=true", { token });
       setCategories(response.data || []);
     } catch (loadError) {
       toast.error(loadError.message);
@@ -357,6 +359,25 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  const handleToggleVisibility = async (category) => {
+    try {
+      await apiRequest(`/categories/${category._id}`, {
+        method: "PUT",
+        token,
+        body: {
+          isHidden: !category.isHidden,
+        },
+      });
+      
+      toast.success(
+        category.isHidden ? "Đã hiện danh mục" : "Đã ẩn danh mục"
+      );
+      await loadCategories();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   const editParentOptions = useMemo(() => {
     if (!editingId) return [];
     const editingNode = categoryOptions.find((item) => item._id === editingId);
@@ -427,12 +448,17 @@ export default function AdminCategoriesPage() {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-gray-900">
+                  <p className={`truncate text-sm font-semibold ${node.isHidden ? "text-gray-400" : "text-gray-900"}`}>
                     {node.name}
                   </p>
                   <span className="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-600">
                     Cấp {node.depth + 1}
                   </span>
+                  {node.isHidden && (
+                    <span className="shrink-0 rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-600">
+                      Đã ẩn
+                    </span>
+                  )}
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500">
                   {hasChildren
@@ -443,6 +469,18 @@ export default function AdminCategoriesPage() {
             </div>
 
             <div className="flex shrink-0 gap-2">
+              <button
+                className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-semibold transition ${
+                  node.isHidden 
+                    ? "border-green-600 bg-green-600 text-white hover:bg-green-700" 
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={() => handleToggleVisibility(node)}
+                title={node.isHidden ? "Hiện danh mục" : "Ẩn danh mục"}
+              >
+                {node.isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                {node.isHidden ? "Hiện" : "Ẩn"}
+              </button>
               <button
                 className="flex items-center gap-1.5 rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                 onClick={() => handleEdit(node)}
