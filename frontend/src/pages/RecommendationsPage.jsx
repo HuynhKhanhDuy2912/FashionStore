@@ -36,13 +36,13 @@ export default function RecommendationsPage() {
       for_you: { title: "Gợi ý khác", items: [] },
     };
 
-    itemsWithVariants.forEach(item => {
+    itemsWithVariants.forEach((item) => {
       const g = item.recommendationGroup || "for_you";
       if (groups[g]) groups[g].items.push(item);
       else groups.for_you.items.push(item);
     });
 
-    return Object.values(groups).filter(g => g.items.length > 0);
+    return Object.values(groups).filter((g) => g.items.length > 0);
   }, [itemsWithVariants]);
 
   const loadRecommendations = async (isRefresh = false) => {
@@ -53,16 +53,23 @@ export default function RecommendationsPage() {
     }
 
     try {
-      const [recommendationResponse, variantResponse, wishlistResponse] = await Promise.all([
-        apiRequest("/recommendations/me?limit=24", { token }),
-        apiRequest("/product-variants?limit=5000"),
-        token ? apiRequest("/wishlists/me", { token }) : Promise.resolve({ data: { items: [] } }),
-      ]);
+      const [recommendationResponse, variantResponse, wishlistResponse] =
+        await Promise.all([
+          apiRequest("/recommendations/me?limit=24", { token }),
+          apiRequest("/product-variants?limit=5000"),
+          token
+            ? apiRequest("/wishlists/me", { token })
+            : Promise.resolve({ data: { items: [] } }),
+        ]);
 
       setItems(recommendationResponse.data || []);
       setVariants(variantResponse.data || []);
       setWishlistProductIds(
-        new Set((wishlistResponse.data?.items || []).map((item) => item.productId?._id).filter(Boolean)),
+        new Set(
+          (wishlistResponse.data?.items || [])
+            .map((item) => item.productId?._id)
+            .filter(Boolean),
+        ),
       );
       setError("");
 
@@ -107,22 +114,26 @@ export default function RecommendationsPage() {
           next.delete(productId);
           return next;
         });
-        setMessage(`Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`);
+        setMessage(
+          `Đã bỏ ${formatProductName(product.name)} khỏi danh sách yêu thích`,
+        );
       } else {
         await apiRequest("/wishlists/me", {
           method: "POST",
           token,
           body: {
             productId,
-            addedFrom: "recommendation"
-          }
+            addedFrom: "recommendation",
+          },
         });
         setWishlistProductIds((current) => {
           const next = new Set(current);
           next.add(productId);
           return next;
         });
-        setMessage(`Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`);
+        setMessage(
+          `Đã thêm ${formatProductName(product.name)} vào danh sách yêu thích`,
+        );
       }
       setTimeout(() => setMessage(""), 3000);
     } catch (requestError) {
@@ -139,8 +150,8 @@ export default function RecommendationsPage() {
           productId: product._id,
           variantId: variant._id,
           quantity: 1,
-          source: "recommendation"
-        }
+          source: "recommendation",
+        },
       });
 
       setMessage(`Đã thêm ${formatProductName(product.name)} vào giỏ hàng`);
@@ -155,10 +166,11 @@ export default function RecommendationsPage() {
       {/* Toast notification */}
       {(message || error) && (
         <div
-          className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${error
-            ? "border-red-200 bg-red-50 text-red-800"
-            : "border-gray-200 bg-white text-black"
-            }`}
+          className={`fixed bottom-6 right-4 z-50 flex max-w-sm items-start gap-3 border px-4 py-3 shadow-lg md:right-8 ${
+            error
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-gray-200 bg-white text-black"
+          }`}
         >
           <p className="flex-1 text-sm font-medium">{error || message}</p>
           <button
@@ -176,7 +188,7 @@ export default function RecommendationsPage() {
 
       {/* Hero section */}
       <section className="border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white">
-        <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pb-16">
+        <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pb-6">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="h-5 w-5 text-black" strokeWidth={2} />
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">
@@ -184,25 +196,17 @@ export default function RecommendationsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-black md:text-4xl">
                 Gợi ý dành riêng cho bạn
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
-                Được chọn lọc thông minh dựa trên phong cách, sở thích và hành vi mua sắm của bạn.
-                Hệ thống học từ mỗi lần tương tác để đưa ra gợi ý ngày càng chính xác hơn.
+              <p className="mt-3 w-full text-sm leading-relaxed text-gray-600">
+                Được chọn lọc thông minh dựa trên phong cách, sở thích và hành
+                vi mua sắm của bạn. Hệ thống học từ mỗi lần tương tác để đưa ra
+                gợi ý ngày càng chính xác hơn.
               </p>
             </div>
-
-            <button
-              onClick={() => loadRecommendations(true)}
-              disabled={refreshing}
-              className="inline-flex shrink-0 items-center gap-2 border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-black transition hover:border-black hover:bg-gray-50 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? "Đang làm mới..." : "Làm mới gợi ý"}
-            </button>
           </div>
         </div>
       </section>
@@ -226,29 +230,21 @@ export default function RecommendationsPage() {
               Chưa có đủ dữ liệu
             </h3>
             <p className="mx-auto max-w-md text-sm text-gray-500">
-              Hãy khám phá và tương tác với các sản phẩm để hệ thống có thể học sở thích của bạn và đưa ra gợi ý chính xác hơn.
+              Hãy khám phá và tương tác với các sản phẩm để hệ thống có thể học
+              sở thích của bạn và đưa ra gợi ý chính xác hơn.
             </p>
           </div>
         ) : (
           <>
-            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-black">
-                  {itemsWithVariants.length} sản phẩm được phân nhóm
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Được cập nhật và sắp xếp theo lý do gợi ý phù hợp nhất
-                </p>
-              </div>
-            </div>
-
             <div className="flex flex-col gap-12">
               {groupedRecommendations.map((group, idx) => (
                 <div key={idx} className="group-section">
-                  <h3 className="mb-4 text-xl font-bold tracking-tight text-black flex items-center gap-2">
+                  <h3 className="mb-4 text-2xl font-bold tracking-tight text-black flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-gray-400" />
                     {group.title}
-                    <span className="text-[16px] font-normal text-gray-500 ml-2">({group.items.length})</span>
+                    <span className="text-xl font-normal text-gray-500 ml-1">
+                      ({group.items.length}) sản phẩm
+                    </span>
                   </h3>
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
                     {group.items.map((product) => (
@@ -273,11 +269,11 @@ export default function RecommendationsPage() {
         <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8 md:pb-16">
           <RecommendationSection
             type="trending"
-            limit={12}
+            limit={16}
             onAddToWishlist={handleWishlist}
             onAddToCart={handleAddToCart}
             wishlistProductIds={wishlistProductIds}
-            excludeIds={itemsWithVariants.map(p => p._id)}
+            excludeIds={itemsWithVariants.map((p) => p._id)}
           />
         </div>
       </section>
