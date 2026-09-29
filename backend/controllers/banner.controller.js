@@ -1,6 +1,13 @@
 import Banner from "../models/Banner.js";
-import Collection from "../models/Collection.js";
 import { createCrudControllers } from "./base.controller.js";
+import {
+  getAdminBannersService,
+  getActiveBannersService,
+  createBannerService,
+  updateBannerService,
+  toggleBannerStatusService,
+  updateBannerOrderService,
+} from "../services/banner.service.js";
 
 const baseBannerController = createCrudControllers(Banner, {
   modelName: "Banner",
@@ -9,9 +16,7 @@ const baseBannerController = createCrudControllers(Banner, {
 
 export const getAdminBanners = async (_req, res) => {
   try {
-    const banners = await Banner.find({})
-      .populate("collectionId", "_id name slug")
-      .sort({ order: 1, createdAt: -1 });
+    const banners = await getAdminBannersService();
 
     return res.status(200).json({
       success: true,
@@ -28,9 +33,7 @@ export const getAdminBanners = async (_req, res) => {
 
 export const getActiveBanners = async (_req, res) => {
   try {
-    const banners = await Banner.find({ isActive: true })
-      .populate("collectionId", "_id name slug")
-      .sort({ order: 1, createdAt: -1 });
+    const banners = await getActiveBannersService();
 
     return res.status(200).json({
       success: true,
@@ -47,41 +50,15 @@ export const getActiveBanners = async (_req, res) => {
 
 export const createBanner = async (req, res) => {
   try {
-    const imageUrl = (req.body?.imageUrl || "").trim();
+    const banner = await createBannerService(req.body);
 
-    if (!imageUrl) {
-      return res.status(400).json({
-        success: false,
-        message: "Banner image is required",
-      });
-    }
-
-    const collectionId = req.body?.collectionId || null;
-    if (collectionId) {
-      const collectionExists = await Collection.exists({
-        _id: collectionId,
-        isActive: true,
-      });
-      if (!collectionExists) {
-        return res.status(400).json({
-          success: false,
-          message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn",
-        });
-      }
-    }
-
-    req.body = {
-      title: (req.body?.title || "").trim(),
-      imageUrl,
-      collectionId,
-      isActive:
-        req.body?.isActive !== undefined ? Boolean(req.body.isActive) : true,
-      order: Number(req.body?.order) || 0,
-    };
-
-    return baseBannerController.create(req, res);
+    return res.status(201).json({
+      success: true,
+      message: "Banner created successfully",
+      data: banner,
+    });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(error.statusCode || 400).json({
       success: false,
       message: error.message,
     });
@@ -90,37 +67,15 @@ export const createBanner = async (req, res) => {
 
 export const updateBanner = async (req, res) => {
   try {
-    const payload = {};
+    const banner = await updateBannerService(req.params.id, req.body);
 
-    if (req.body?.title !== undefined)
-      payload.title = String(req.body.title).trim();
-    if (req.body?.imageUrl !== undefined)
-      payload.imageUrl = String(req.body.imageUrl).trim();
-    if (req.body?.collectionId !== undefined) {
-      const collectionId = req.body.collectionId || null;
-      if (collectionId) {
-        const collectionExists = await Collection.exists({
-          _id: collectionId,
-          isActive: true,
-        });
-        if (!collectionExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Bộ sưu tập không hợp lệ hoặc đã bị ẩn",
-          });
-        }
-      }
-      payload.collectionId = collectionId;
-    }
-    if (req.body?.isActive !== undefined)
-      payload.isActive = Boolean(req.body.isActive);
-    if (req.body?.order !== undefined)
-      payload.order = Number(req.body.order) || 0;
-
-    req.body = payload;
-    return baseBannerController.update(req, res);
+    return res.status(200).json({
+      success: true,
+      message: "Banner updated successfully",
+      data: banner,
+    });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(error.statusCode || 400).json({
       success: false,
       message: error.message,
     });
@@ -129,18 +84,7 @@ export const updateBanner = async (req, res) => {
 
 export const toggleBannerStatus = async (req, res) => {
   try {
-    const { bannerId } = req.params;
-    const banner = await Banner.findById(bannerId);
-
-    if (!banner) {
-      return res.status(404).json({
-        success: false,
-        message: "Banner not found",
-      });
-    }
-
-    banner.isActive = !banner.isActive;
-    await banner.save();
+    const banner = await toggleBannerStatusService(req.params.bannerId);
 
     return res.status(200).json({
       success: true,
@@ -148,7 +92,7 @@ export const toggleBannerStatus = async (req, res) => {
       data: banner,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
       message: error.message,
     });
@@ -157,28 +101,7 @@ export const toggleBannerStatus = async (req, res) => {
 
 export const updateBannerOrder = async (req, res) => {
   try {
-    const { bannerId } = req.params;
-    const { order } = req.body;
-
-    if (typeof order !== "number") {
-      return res.status(400).json({
-        success: false,
-        message: "Order must be a number",
-      });
-    }
-
-    const banner = await Banner.findByIdAndUpdate(
-      bannerId,
-      { order },
-      { new: true },
-    );
-
-    if (!banner) {
-      return res.status(404).json({
-        success: false,
-        message: "Banner not found",
-      });
-    }
+    const banner = await updateBannerOrderService(req.params.bannerId, req.body.order);
 
     return res.status(200).json({
       success: true,
@@ -186,7 +109,7 @@ export const updateBannerOrder = async (req, res) => {
       data: banner,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
       message: error.message,
     });

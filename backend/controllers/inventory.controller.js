@@ -152,7 +152,7 @@ export const exportTransactionHistory = async (req, res) => {
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.send("﻿" + csv);
+    res.send(csv);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

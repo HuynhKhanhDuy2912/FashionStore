@@ -62,7 +62,7 @@ export const getMyOrderById = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
+    const statusCode = error.message === "Không tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
@@ -85,7 +85,7 @@ export const cancelMyOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
+    const statusCode = error.message === "Không tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
@@ -160,7 +160,7 @@ export const getAdminOrderById = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
+    const statusCode = error.message === "Không tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
@@ -183,7 +183,7 @@ export const updateAdminOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
+    const statusCode = error.message === "Không tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
@@ -205,7 +205,7 @@ export const refundOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    const statusCode = error.message === "Khôn tìm thấy đơn hàng!" ? 404 : 400;
+    const statusCode = error.message === "Không tìm thấy đơn hàng!" ? 404 : 400;
 
     return res.status(statusCode).json({
       success: false,
