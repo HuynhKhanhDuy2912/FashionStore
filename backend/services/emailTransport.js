@@ -108,7 +108,16 @@ async function sendViaSmtp({ to, subject, html, text, replyTo }) {
  */
 export async function sendEmail({ to, subject, html, text, replyTo }) {
   if (hasBrevoConfig()) {
-    return sendViaBrevo({ to, subject, html, text, replyTo });
+    try {
+      return await sendViaBrevo({ to, subject, html, text, replyTo });
+    } catch (brevoError) {
+      console.warn(`[Email] Brevo API thất bại (${brevoError.message}).`);
+      if (hasSmtpConfig()) {
+        console.log("[Email] Đang tự động chuyển sang gửi qua SMTP...");
+        return await sendViaSmtp({ to, subject, html, text, replyTo });
+      }
+      throw brevoError;
+    }
   }
 
   if (hasSmtpConfig()) {
