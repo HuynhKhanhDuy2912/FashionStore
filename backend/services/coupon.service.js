@@ -3,10 +3,7 @@ import CouponUsage from "../models/CouponUsage.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
 
-/**
- * Validate a coupon code for a specific user and order subtotal.
- * Returns the coupon document if valid, throws an error otherwise.
- */
+// ─────────────── Validate ───────────────
 export const validateCoupon = async (code, userId, subtotal) => {
   const coupon = await Coupon.findOne({ code: code.toUpperCase().trim() });
 
@@ -79,9 +76,7 @@ export const validateCoupon = async (code, userId, subtotal) => {
   return coupon;
 };
 
-/**
- * Calculate the discount amount based on coupon type and order values.
- */
+// ─────────────── Calculate ───────────────
 export const calculateDiscount = (coupon, subtotal, shippingFee = 0) => {
   let discountAmount = 0;
 
@@ -118,9 +113,7 @@ export const calculateDiscount = (coupon, subtotal, shippingFee = 0) => {
   return Math.max(Math.round(discountAmount), 0);
 };
 
-/**
- * Validate coupon and calculate discount in one step.
- */
+// ─────────────── Validate & Calculate ───────────────
 export const validateAndCalculateCoupon = async (
   code,
   userId,
@@ -141,47 +134,45 @@ export const validateAndCalculateCoupon = async (
   return { coupon, discountAmount };
 };
 
-/**
- * Record a coupon usage after order creation.
- */
+// ─────────────── Apply ───────────────
 export const applyCoupon = async (
   couponId,
   userId,
   orderId,
   discountAmount,
+  options = {},
 ) => {
-  await CouponUsage.create({
-    couponId,
-    userId,
-    orderId,
-    discountAmount,
-  });
+  const { session } = options;
 
-  await Coupon.findByIdAndUpdate(couponId, {
-    $inc: { currentUsage: 1 },
-  });
+  await CouponUsage.create(
+    [{ couponId, userId, orderId, discountAmount }],
+    { session },
+  );
+
+  await Coupon.findByIdAndUpdate(
+    couponId,
+    { $inc: { currentUsage: 1 } },
+    { session },
+  );
 };
 
-/**
- * Revoke coupon usage when an order is cancelled.
- * Decrements currentUsage and removes CouponUsage records.
- */
-export const revokeCoupon = async (orderId) => {
-  const usages = await CouponUsage.find({ orderId });
+// ─────────────── Revoke ───────────────
+export const revokeCoupon = async (orderId, options = {}) => {
+  const { session } = options;
+  const usages = await CouponUsage.find({ orderId }).session(session || null);
 
   for (const usage of usages) {
-    await Coupon.findByIdAndUpdate(usage.couponId, {
-      $inc: { currentUsage: -1 },
-    });
+    await Coupon.findByIdAndUpdate(
+      usage.couponId,
+      { $inc: { currentUsage: -1 } },
+      { session },
+    );
   }
 
-  await CouponUsage.deleteMany({ orderId });
+  await CouponUsage.deleteMany({ orderId }, { session });
 };
 
-/**
- * Get available coupons for a specific user.
- * Filters out expired, inactive, fully used, and per-user exhausted coupons.
- */
+// ─────────────── Get available ───────────────
 export const getAvailableCoupons = async (userId, subtotal = 0) => {
   const now = new Date();
 
@@ -338,9 +329,7 @@ export const getSavedCoupons = async (userId, subtotal = 0) => {
   );
 };
 
-/**
- * Get public active coupons for homepage display (no auth required).
- */
+// ─────────────── Get Public ───────────────
 export const getPublicCoupons = async () => {
   const now = new Date();
 
@@ -361,9 +350,7 @@ export const getPublicCoupons = async () => {
     .lean();
 };
 
-/**
- * Admin: Get all coupons with pagination and filters.
- */
+// ─────────────── Get Admin ───────────────
 export const getAdminCoupons = async (query = {}) => {
   const page = Math.max(Number(query.page) || 1, 1);
   const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 100);
@@ -409,9 +396,7 @@ export const getAdminCoupons = async (query = {}) => {
   };
 };
 
-/**
- * Admin: Get coupon details with usage statistics.
- */
+// ─────────────── Get Admin Detail ───────────────
 export const getAdminCouponDetail = async (couponId) => {
   const coupon = await Coupon.findById(couponId)
     .populate("createdBy", "username fullname")
@@ -429,9 +414,7 @@ export const getAdminCouponDetail = async (couponId) => {
   return { ...coupon, usages };
 };
 
-/**
- * Admin: Create a new coupon.
- */
+// ─────────────── Create ───────────────
 export const createCoupon = async (data, adminId) => {
   // Validate dates
   if (new Date(data.endDate) <= new Date(data.startDate)) {
@@ -458,9 +441,7 @@ export const createCoupon = async (data, adminId) => {
   });
 };
 
-/**
- * Admin: Update an existing coupon.
- */
+// ─────────────── Update ───────────────
 export const updateCoupon = async (couponId, data) => {
   if (data.endDate && data.startDate) {
     if (new Date(data.endDate) <= new Date(data.startDate)) {
@@ -493,9 +474,7 @@ export const updateCoupon = async (couponId, data) => {
   return coupon;
 };
 
-/**
- * Admin: Toggle coupon active status.
- */
+// ─────────────── Toggle ───────────────
 export const toggleCoupon = async (couponId) => {
   const coupon = await Coupon.findById(couponId);
   if (!coupon) throw new Error("Không tìm thấy mã giảm giá");
@@ -506,9 +485,7 @@ export const toggleCoupon = async (couponId) => {
   return coupon;
 };
 
-/**
- * Admin: Delete a coupon.
- */
+// ─────────────── Delete ───────────────
 export const deleteCoupon = async (couponId) => {
   const coupon = await Coupon.findByIdAndDelete(couponId);
   if (!coupon) throw new Error("Không tìm thấy mã giảm giá");
@@ -519,9 +496,7 @@ export const deleteCoupon = async (couponId) => {
   return coupon;
 };
 
-/**
- * Generate a dynamic reward coupon for a user.
- */
+// ─────────────── Generate Dynamic ───────────────
 export const generateDynamicRewardCoupon = async (
   prefix,
   discountType,

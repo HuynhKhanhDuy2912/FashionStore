@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Cart from "../models/Cart.js";
 import {
   sendOrderConfirmationEmail,
@@ -127,7 +128,7 @@ const buildOrderDraftFromCart = async (user, body) => {
     };
   });
 
-  // Receive shipping fee from frontend, with fallback to 0 (>= 999k) or 30k
+  // Receive shipping fee from frontend
   const providedShippingFee = body.shippingFee;
   let shippingFee =
     providedShippingFee !== undefined
@@ -136,7 +137,7 @@ const buildOrderDraftFromCart = async (user, body) => {
         ? 0
         : 30000;
 
-  // Apply product discount coupon (percentage / fixed_amount)
+  // Apply product discount coupon
   let couponDiscount = 0;
   let appliedCoupon = null;
   if (couponCode) {
@@ -235,45 +236,71 @@ export const createOrderFromCart = async (user, body) => {
     orderData,
   } = draft;
 
-  const order = await Order.create(orderData);
+  // ────────────── Bắt đầu Transaction ──────────────
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  await OrderItem.insertMany(
-    orderItemsData.map((d) => ({ ...d, orderId: order._id })),
-  );
+  let order;
+  try {
+    // 1. Tạo đơn hàng
+    [order] = await Order.create([orderData], { session });
 
-  await Payment.create({
-    orderId: order._id,
-    userId: user._id,
-    amount: orderData.totalPrice,
-    paymentMethod: orderData.paymentMethod,
-    paymentStatus: "pending",
-  });
-
-  // Record coupon usage
-  if (appliedCoupon) {
-    await applyCoupon(appliedCoupon._id, user._id, order._id, couponDiscount);
-  }
-  if (appliedShippingCoupon) {
-    await applyCoupon(
-      appliedShippingCoupon._id,
-      user._id,
-      order._id,
-      shippingDiscount,
+    // 2. Tạo chi tiết đơn hàng
+    await OrderItem.insertMany(
+      orderItemsData.map((d) => ({ ...d, orderId: order._id })),
+      { session },
     );
+
+    // 3. Tạo bản ghi thanh toán
+    await Payment.create(
+      [
+        {
+          orderId: order._id,
+          userId: user._id,
+          amount: orderData.totalPrice,
+          paymentMethod: orderData.paymentMethod,
+          paymentStatus: "pending",
+        },
+      ],
+      { session },
+    );
+
+    // 4. Ghi nhận sử dụng coupon
+    if (appliedCoupon) {
+      await applyCoupon(appliedCoupon._id, user._id, order._id, couponDiscount, { session });
+    }
+    if (appliedShippingCoupon) {
+      await applyCoupon(
+        appliedShippingCoupon._id,
+        user._id,
+        order._id,
+        shippingDiscount,
+        { session },
+      );
+    }
+
+    // KHÔNG trừ stock ngay - chỉ trừ khi đơn hàng được xác nhận (confirmed)
+    // Stock sẽ được trừ trong updateAdminOrderStatus khi status chuyển sang "confirmed"
+
+    // 5. Xóa các sản phẩm đã mua khỏi giỏ hàng
+    await CartItem.deleteMany(
+      selectedItemIds.length
+        ? { cartId: cart._id, _id: { $in: selectedItemIds } }
+        : { cartId: cart._id },
+      { session },
+    );
+
+    // ── Commit: tất cả các bước trên thành công => lưu vĩnh viễn ──
+    await session.commitTransaction();
+  } catch (error) {
+    // ── Rollback: nếu bất kỳ bước nào lỗi => hoàn tác toàn bộ ──
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-
-  // KHÔNG trừ stock ngay - chỉ trừ khi đơn hàng được xác nhận (confirmed)
-  // Stock sẽ được trừ trong updateAdminOrderStatus khi status chuyển sang "confirmed"
-
-  // Remove only purchased items from the cart.
-  await CartItem.deleteMany(
-    selectedItemIds.length
-      ? { cartId: cart._id, _id: { $in: selectedItemIds } }
-      : { cartId: cart._id },
-  );
 
   // Track purchase behavior for each product
-  // style/occasion là [String] trong Product → giữ nguyên dạng mảng để khớp schema mới
   const toArray = (value) =>
     Array.isArray(value) ? value : value ? [value] : [];
   const purchaseBehaviors = cartItems.map((item) => ({
@@ -306,7 +333,7 @@ export const createOrderFromCart = async (user, body) => {
 
   const populatedOrder = await populateOrder(Order.findById(order._id)).lean();
 
-  // Fire-and-forget: gửi email xác nhận đơn hàng (chỉ COD, VNPay/PayPal xử lý ở payment callback)
+  // Gửi email xác nhận đơn hàng (chỉ COD, VNPay/PayPal xử lý ở payment callback)
   if (orderData.paymentMethod === "cod") {
     const emailItems = await OrderItem.find({ orderId: order._id });
     sendOrderConfirmationEmail(populatedOrder, emailItems, user).catch((err) =>
@@ -334,7 +361,7 @@ export const grantRewardCoupons = async (userId, subTotal) => {
     const rewardFreeShipMax = await generateDynamicRewardCoupon(
       "FSMAX",
       "free_shipping",
-      0, // 0 nghĩa là freeship hoàn toàn
+      0,
       "Miễn phí vận chuyển hoàn toàn",
       null,
       0
@@ -455,37 +482,53 @@ export const cancelOrder = async (userId, orderId, cancellationReason = "") => {
     throw new Error("Cannot cancel order at this stage");
   }
 
-  // Restore stock - chỉ hoàn trả nếu đơn hàng đã được confirmed (đã trừ stock)
-  if (order.status === "confirmed") {
-    const items = await OrderItem.find({ orderId });
-    for (const item of items) {
-      const variant = await ProductVariant.findById(item.variantId);
+  // ─────────────── Bắt đầu Transaction ───────────────
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-      // Create return transaction
-      await createTransaction({
-        variantId: item.variantId,
-        productId: item.productId,
-        type: "return",
-        quantity: item.quantity,
-        previousStock: variant.stock,
-        newStock: variant.stock + item.quantity,
-        reason: "Hoàn trả từ đơn hàng bị hủy bởi khách hàng",
-        orderId: orderId,
-        createdBy: userId,
-      });
+  try {
+    // Restore stock - chỉ hoàn trả nếu đơn hàng đã được confirmed (đã trừ stock)
+    if (order.status === "confirmed") {
+      const items = await OrderItem.find({ orderId }).session(session);
+      for (const item of items) {
+        const variant = await ProductVariant.findById(item.variantId).session(session);
 
-      await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: item.quantity },
-      });
+        // Create return transaction
+        await createTransaction({
+          variantId: item.variantId,
+          productId: item.productId,
+          type: "return",
+          quantity: item.quantity,
+          previousStock: variant.stock,
+          newStock: variant.stock + item.quantity,
+          reason: "Hoàn trả từ đơn hàng bị hủy bởi khách hàng",
+          orderId: orderId,
+          createdBy: userId,
+        }, { session });
+
+        await ProductVariant.findByIdAndUpdate(
+          item.variantId,
+          { $inc: { stock: item.quantity } },
+          { session },
+        );
+      }
     }
+
+    // Revoke coupon usage
+    await revokeCoupon(orderId, { session });
+
+    order.status = "cancelled";
+    order.cancellationReason = reason;
+    await order.save({ session });
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
 
-  // Revoke coupon usage
-  await revokeCoupon(orderId);
-
-  order.status = "cancelled";
-  order.cancellationReason = reason;
-  await order.save();
   return order;
 };
 
@@ -509,9 +552,6 @@ export const refundAdminOrder = async (orderId, refundReason = "") => {
   if (!["cancelled", "completed"].includes(order.status)) {
     throw new Error("Đơn cần được hủy hoặc hoàn thành trước khi hoàn tiền");
   }
-
-  // KHÔNG đụng kho ở đây: đơn 'cancelled' (từ confirmed) đã được hoàn kho
-  // trong cancelOrder/updateAdminOrderStatus. Refund chỉ xử lý TIỀN.
 
   order.paymentStatus = "refunded";
   order.refundedAt = new Date();
@@ -563,7 +603,7 @@ export const markOrderAsReceivedByUser = async (userId, orderId) => {
 
   await order.save();
 
-  // Fire-and-forget: gửi email thông báo đơn hàng hoàn thành
+  // Gửi email thông báo đơn hàng hoàn thành
   const completedItems = await OrderItem.find({ orderId: order._id });
   const orderUser = await User.findById(userId);
   sendOrderCompletedEmail(order.toObject(), completedItems, orderUser).catch(
@@ -610,94 +650,112 @@ export const updateAdminOrderStatus = async (
     throw new Error(`Cannot change status from ${previousStatus} to ${status}`);
   }
 
-  // Khi chuyển từ pending sang confirmed - trừ stock
-  if (previousStatus === "pending" && status === "confirmed") {
-    const items = await OrderItem.find({ orderId });
-    for (const item of items) {
-      const variant = await ProductVariant.findById(item.variantId);
-      if (!variant) throw new Error(`Variant not found for item ${item._id}`);
-      if (variant.stock < item.quantity) {
-        throw new Error(`Not enough stock for variant ${variant.sku}`);
+  // ─────────────── Bắt đầu Transaction ───────────────
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Khi chuyển từ pending sang confirmed - trừ stock
+    if (previousStatus === "pending" && status === "confirmed") {
+      const items = await OrderItem.find({ orderId }).session(session);
+      for (const item of items) {
+        const variant = await ProductVariant.findById(item.variantId).session(session);
+        if (!variant) throw new Error(`Variant not found for item ${item._id}`);
+        if (variant.stock < item.quantity) {
+          throw new Error(`Not enough stock for variant ${variant.sku}`);
+        }
+
+        // Create export transaction
+        await createTransaction({
+          variantId: item.variantId,
+          productId: item.productId,
+          type: "export",
+          quantity: -item.quantity,
+          previousStock: variant.stock,
+          newStock: variant.stock - item.quantity,
+          reason: "Xuất kho cho đơn hàng",
+          orderId: orderId,
+          createdBy: order.userId,
+        }, { session });
+
+        await ProductVariant.findByIdAndUpdate(
+          item.variantId,
+          { $inc: { stock: -item.quantity } },
+          { session },
+        );
       }
-
-      // Create export transaction
-      await createTransaction({
-        variantId: item.variantId,
-        productId: item.productId,
-        type: "export",
-        quantity: -item.quantity,
-        previousStock: variant.stock,
-        newStock: variant.stock - item.quantity,
-        reason: "Xuất kho cho đơn hàng",
-        orderId: orderId,
-        createdBy: order.userId,
-      });
-
-      await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: -item.quantity },
-      });
     }
-  }
 
-  // Khi admin hủy đơn hàng đã confirmed - hoàn trả stock
-  if (previousStatus === "confirmed" && status === "cancelled") {
-    const items = await OrderItem.find({ orderId });
-    for (const item of items) {
-      const variant = await ProductVariant.findById(item.variantId);
+    // Khi admin hủy đơn hàng đã confirmed - hoàn trả stock
+    if (previousStatus === "confirmed" && status === "cancelled") {
+      const items = await OrderItem.find({ orderId }).session(session);
+      for (const item of items) {
+        const variant = await ProductVariant.findById(item.variantId).session(session);
 
-      // Create return transaction
-      await createTransaction({
-        variantId: item.variantId,
-        productId: item.productId,
-        type: "return",
-        quantity: item.quantity,
-        previousStock: variant.stock,
-        newStock: variant.stock + item.quantity,
-        reason: "Hoàn trả từ đơn hàng bị hủy",
-        orderId: orderId,
-        createdBy: order.userId,
-      });
+        // Create return transaction
+        await createTransaction({
+          variantId: item.variantId,
+          productId: item.productId,
+          type: "return",
+          quantity: item.quantity,
+          previousStock: variant.stock,
+          newStock: variant.stock + item.quantity,
+          reason: "Hoàn trả từ đơn hàng bị hủy",
+          orderId: orderId,
+          createdBy: order.userId,
+        }, { session });
 
-      await ProductVariant.findByIdAndUpdate(item.variantId, {
-        $inc: { stock: item.quantity },
-      });
+        await ProductVariant.findByIdAndUpdate(
+          item.variantId,
+          { $inc: { stock: item.quantity } },
+          { session },
+        );
+      }
     }
+
+    // Revoke coupon usage when cancelling
+    if (status === "cancelled") {
+      await revokeCoupon(orderId, { session });
+    }
+
+    // Cập nhật completedAt khi đơn hàng hoàn thành
+    if (status === "completed") {
+      order.completedAt = new Date();
+    } else if (previousStatus === "completed" && status !== "completed") {
+      order.completedAt = null;
+    }
+
+    // Cập nhật cancelledAt khi đơn hàng bị hủy
+    if (status === "cancelled") {
+      order.cancelledAt = new Date();
+      order.cancellationReason = reason;
+    } else if (previousStatus === "cancelled" && status !== "cancelled") {
+      order.cancelledAt = null;
+      order.cancellationReason = "";
+    }
+
+    order.status = status;
+
+    if (status === "completed" && order.paymentMethod === "cod") {
+      order.paymentStatus = "paid";
+      await Payment.findOneAndUpdate(
+        { orderId: order._id },
+        { paymentStatus: "paid", paidAt: new Date() },
+        { session },
+      );
+    }
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
 
-  // Revoke coupon usage when cancelling
-  if (status === "cancelled") {
-    await revokeCoupon(orderId);
-  }
-
-  // Cập nhật completedAt khi đơn hàng hoàn thành
-  if (status === "completed") {
-    order.completedAt = new Date();
-  } else if (previousStatus === "completed" && status !== "completed") {
-    order.completedAt = null;
-  }
-
-  // Cập nhật cancelledAt khi đơn hàng bị hủy
-  if (status === "cancelled") {
-    order.cancelledAt = new Date();
-    order.cancellationReason = reason;
-  } else if (previousStatus === "cancelled" && status !== "cancelled") {
-    order.cancelledAt = null;
-    order.cancellationReason = "";
-  }
-
-  order.status = status;
-
-  if (status === "completed" && order.paymentMethod === "cod") {
-    order.paymentStatus = "paid";
-    await Payment.findOneAndUpdate(
-      { orderId: order._id },
-      { paymentStatus: "paid", paidAt: new Date() },
-    );
-  }
-
-  await order.save();
-
-  // Fire-and-forget: gửi email khi admin chuyển trạng thái sang "completed"
+  // Gửi email khi admin chuyển trạng thái sang "completed"
   if (status === "completed") {
     const completedItems = await OrderItem.find({ orderId });
     const orderUser = await User.findById(order.userId);

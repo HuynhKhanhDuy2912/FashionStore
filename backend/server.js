@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 import app from "./app.js";
 import { connectDatabase } from "./config/db.js";

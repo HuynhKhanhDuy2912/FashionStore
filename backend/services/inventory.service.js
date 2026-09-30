@@ -1,11 +1,10 @@
 import InventoryTransaction from "../models/InventoryTransaction.js";
 import ProductVariant from "../models/ProductVariant.js";
-import Product from "../models/Product.js";
-import User from "../models/User.js";
 
-export const createTransaction = async (data) => {
+export const createTransaction = async (data, options = {}) => {
+  const { session } = options;
   const transaction = new InventoryTransaction(data);
-  await transaction.save();
+  await transaction.save({ session });
   return transaction;
 };
 
